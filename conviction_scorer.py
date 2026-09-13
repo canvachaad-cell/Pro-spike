@@ -168,6 +168,7 @@ class ConvictionScorer:
                 "display_badge": badge,
                 "data_completeness": {"resolved_count": 0, "total_count": 6, "label": "0/6 metrics resolved"},
                 "not_applicable_metrics": [],
+                "rpt_data_missing": False,
             }
 
         mcap = fund.get("market_cap_cr")
@@ -186,6 +187,7 @@ class ConvictionScorer:
             "display_badge": None,
             "data_completeness": {"resolved_count": 0, "total_count": 6, "label": "0/6 metrics resolved"},
             "not_applicable_metrics": [],
+            "rpt_data_missing": False,
         }
 
         # Large-cap disclaimer handling
@@ -195,7 +197,8 @@ class ConvictionScorer:
             # Check for Unverified Vetoes (missing data)
             unv = []
             if fund.get("rpt_status", "NOT_FOUND") == "NOT_FOUND" or fund.get("rpt_pct") is None:
-                unv.append("RPT % of Revenue filing missing (NOT_FOUND)")
+                base["not_applicable_metrics"].append("rpt_pct")
+                base["rpt_data_missing"] = True
             if fund.get("pledge_direction") is None:
                 unv.append("Promoter pledge trend data missing")
             if fund.get("sector_type") != "financial" and fund.get("fcf_pat_ratio") is None:
@@ -227,7 +230,8 @@ class ConvictionScorer:
         rpt_status = fund.get("rpt_status", "NOT_FOUND")
         rpt_pct = fund.get("rpt_pct")
         if rpt_status == "NOT_FOUND" or rpt_pct is None:
-            unverified_veto_reasons.append("RPT % of Revenue filing missing (NOT_FOUND)")
+            base["not_applicable_metrics"].append("rpt_pct")
+            base["rpt_data_missing"] = True
         elif rpt_pct > PROVISIONAL_RPT_VETO_PCT:
             veto_reasons.append(f"RPT % of Revenue exceeds veto threshold ({rpt_pct:.1f}% > {PROVISIONAL_RPT_VETO_PCT}%)")
 

@@ -52,52 +52,9 @@ class RPTFetcher:
             except Exception as e:
                 logger.warning(f"Error reading RPT cache for {symbol}: {e}")
 
-        # 2. Live Scrape - NSE XBRL API
-        try:
-            # Step 1: Hit main page to establish cookies (often required to bypass Akamai)
-            self.session.get("https://www.nseindia.com", timeout=5)
-            
-            # Step 2: Fetch corporate announcements
-            api_url = f"https://www.nseindia.com/api/corporate-announcements?index=equities&symbol={symbol}"
-            resp = self.session.get(api_url, timeout=10)
-            
-            if resp.status_code == 200:
-                data = resp.json()
-                for item in data:
-                    subject = item.get("subject", "").lower()
-                    if "related party" in subject and "xbrl" in item:
-                        xbrl_url = item.get("xbrl")
-                        if xbrl_url:
-                            # Step 3: Fetch the XBRL XML
-                            xml_resp = self.session.get(xbrl_url, timeout=10)
-                            if xml_resp.status_code == 200:
-                                root = ET.fromstring(xml_resp.content)
-                                # Step 4: Extract TotalValueOfTransactions (simplified heuristic)
-                                rpt_amount = 0.0
-                                for elem in root.iter():
-                                    if 'TotalValueOfTransactions' in elem.tag or 'ValueOfTransactions' in elem.tag:
-                                        try:
-                                            rpt_amount += float(elem.text)
-                                        except (ValueError, TypeError):
-                                            pass
-                                
-                                if rpt_amount > 0:
-                                    rpt_cr = rpt_amount / 10000000  # assuming rupees, convert to Cr
-                                    # Normalize against revenue if provided
-                                    rpt_pct = None
-                                    if revenue_cr and revenue_cr > 0:
-                                        rpt_pct = round((rpt_cr / revenue_cr) * 100, 2)
-                                    
-                                    return {
-                                        "status": "OK",
-                                        "rpt_amount_cr": round(rpt_cr, 2),
-                                        "rpt_pct": rpt_pct,
-                                        "filing_type": "Reg23_XBRL"
-                                    }
-        except Exception as e:
-            logger.warning(f"Live RPT scrape failed for {symbol}: {str(e)}")
-
-        # Explicit NOT_FOUND return when filing data is not available or parsing fails
+        # 2. No live scraping at query time - relies purely on the offline scraper cache
+        
+        # Explicit NOT_FOUND return when filing data is not available in the cache
         return {
             "status": "NOT_FOUND",
             "rpt_amount_cr": None,

@@ -14,7 +14,28 @@ class Test6MetricScorer(unittest.TestCase):
         self.assertEqual(classify(50000.0), "L")
         self.assertEqual(classify(None), "U")
 
-    def test_missing_veto_triggers_unverified_veto(self):
+    def test_missing_pledge_triggers_unverified_veto(self):
+        scorer = ConvictionScorer()
+        fund = {
+            "market_cap_cr": 8000.0,
+            "op_lev_ratio": 2.5,
+            "pledge_trend": [0.0],
+            "pledge_direction": None,  # Missing pledge veto metric
+            "interest_coverage_trend": "improving",
+            "roice_pct": 22.0,
+            "fcf_pat_ratio": 1.1,
+            "rpt_status": "OK",
+            "rpt_pct": 4.5,
+        }
+
+        res = scorer.score(fund)
+        self.assertEqual(res["stock_class"], "M")
+        self.assertTrue(res["unverified_veto"])
+        self.assertEqual(res["rating"], "UNVERIFIED_VETO")
+        self.assertIn("Unverified", res["display_badge"])
+        self.assertIsNotNone(res["score"])
+
+    def test_missing_rpt_gracefully_excludes(self):
         scorer = ConvictionScorer()
         fund = {
             "market_cap_cr": 8000.0,
@@ -24,16 +45,17 @@ class Test6MetricScorer(unittest.TestCase):
             "interest_coverage_trend": "improving",
             "roice_pct": 22.0,
             "fcf_pat_ratio": 1.1,
-            "rpt_status": "NOT_FOUND",  # Missing RPT veto metric
+            "rpt_status": "NOT_FOUND",  # Missing RPT metric
             "rpt_pct": None,
         }
 
         res = scorer.score(fund)
         self.assertEqual(res["stock_class"], "M")
-        self.assertTrue(res["unverified_veto"])
-        self.assertEqual(res["rating"], "UNVERIFIED_VETO")
-        self.assertIn("Unverified", res["display_badge"])
-        self.assertIsNotNone(res["score"])
+        self.assertFalse(res.get("unverified_veto", False))
+        self.assertNotEqual(res["rating"], "UNVERIFIED_VETO")
+        self.assertIn("rpt_pct", res["not_applicable_metrics"])
+        self.assertTrue(res["rpt_data_missing"])
+        self.assertEqual(res["data_completeness"]["resolved_count"], 5)
 
     def test_rpt_veto_trigger(self):
         scorer = ConvictionScorer()

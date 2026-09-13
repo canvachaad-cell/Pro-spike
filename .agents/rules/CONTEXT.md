@@ -4,16 +4,15 @@
 
 
 **Current Working Set (trading_dashboard):**
-- `trading_dashboard/ledger_manager.py`
-- `trading_dashboard/AGENTS.md`
+- `trading_dashboard/docs\known_bugs.md`
+- `trading_dashboard/test_6_metric_scorer.py`
+- `trading_dashboard/scripts\bse_rpt_scraper.py`
 - `trading_dashboard/dash_pages\_vikram_callback.py`
-- `trading_dashboard/watchlist\active_watchlist.csv`
+- `trading_dashboard/rpt_fetcher.py`
 - `trading_dashboard/conviction_scorer.py`
-- `trading_dashboard/dash_pages\dashboard.py`
+- `trading_dashboard/AGENTS.md`
+- `trading_dashboard/scratch\last_session.md`
 - `trading_dashboard/fundamental_fetcher.py`
-- `trading_dashboard/dash_app_v2.py`
-- `trading_dashboard/dash_pages\watchlist.py`
-- `trading_dashboard/dash_pages\institutional_signals.py`
 
 **Constraints for Today:**
 - Do NOT hallucinate variables or schemas. Use Dynamic Schema Discovery.

@@ -17,3 +17,32 @@
 
 ## 5. Read the Context
 - Before beginning work, ALWAYS read `.agents/rules/CONTEXT.md` to see the recently modified files and session constraints.
+
+## 6. DEMONCORE Operating Modes
+
+**DEMONCORE: PLAN_DEEP** — Before writing any code, produce a full dependency
+map and blast-radius check (upstream callers, shared state, schema guard).
+Hard stop until the user explicitly approves the plan. Mirror `.agents/agents/plan_deep.md`.
+
+**DEMONCORE: ROOT_CAUSE** — Stop writing patches. Produce a verified-vs-assumed
+audit table. One root cause, one minimal fix, one stated verification method.
+If unresolved after 2 passes, escalate: output `/boost` with the audit table attached.
+Mirror `.agents/agents/root_cause.md`.
+
+**DEMONCORE: DEEP_AUDIT** — Deeply audit a specific part of the app for bugs, 
+destructive/breaking risks, security gaps, and architectural debt. 
+Mirror `.agents/agents/deep_audit.md`.
+
+**FULL_TEST** — Run a complete end-to-end QA sweep of the app via browser automation.
+Mirror `.agents/agents/full_test.md`.
+
+**Kilo-specific enforcement:**
+- All PLAN_DEEP outputs are saved as `.kilo/plans/<timestamp>-<slug>.md` so
+  they appear in Kilo's plan history.
+- ROOT_CAUSE audit tables are appended to the active plan document, not dropped
+  as inline chat responses, so they persist across sessions.
+- DEEP_AUDIT reports are saved as `.kilo/plans/<timestamp>-deep-audit-<scope>.md`
+  to persist the findings.
+- FULL_TEST QA reports are saved as `.kilo/plans/<timestamp>-full-test-report.md`.
+  Auto-patches must not commit to main until the report is approved.
+- No mode may open a new Kilo worktree until the user approves the plan.

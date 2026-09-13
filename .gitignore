@@ -22,3 +22,30 @@ backups/
 scratch/
 .kilo/
 logs/
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Large model files (too big for GitHub)
+flexgate_rf_model.pkl
+shadow_box_model.pkl
+
+# Cache and temp files
+bse_page.html
+*.html
+data/rpt_cache.json
+data/rpt_filings_cache.json
+data/rpt_pdfs/
+data/fundamental_analysis_cache.json
+data/nse_to_bse_map.json
+conditions_output.txt
+conditions_search.txt
+folder_tree.txt
+dash_dash_temp.txt
+dashboard_temp.txt
+vikram_temp.txt
+
+# Agents internal
+.agents/agents/
+.agents/skills/

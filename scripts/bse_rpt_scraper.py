@@ -6,10 +6,14 @@ import pandas as pd
 import pdfplumber
 import requests
 from datetime import datetime, timedelta
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from fundamental_fetcher import FundamentalFetcher
 
 SCORES_PATH = 'data/fundamental_scores.csv'
-FUND_CACHE_PATH = 'data/fundamental_analysis_cache.json'
-RPT_CACHE_PATH = 'data/rpt_filings_cache.json'
+FUND_CACHE_PATH = 'data/fundamental_cache.json'
+RPT_CACHE_PATH = 'data/rpt_cache.json'
 PDF_DIR = 'data/rpt_pdfs'
 
 # ETF and Fund exclusions
@@ -65,12 +69,28 @@ def extract_rpt_value_from_pdf(pdf_path):
 def main():
     os.makedirs(PDF_DIR, exist_ok=True)
     df = pd.read_csv(SCORES_PATH)
-    
-    with open(FUND_CACHE_PATH, 'r') as f:
-        fund_cache = json.load(f)
+    if os.path.exists('watchlist/active_watchlist.csv'):
+        active_df = pd.read_csv('watchlist/active_watchlist.csv')
+        if 'symbol' in active_df.columns:
+            active_df['ticker'] = active_df['symbol']
+            df = pd.concat([df, active_df], ignore_index=True)
+            
+    fund_cache = {}
+    if os.path.exists(FUND_CACHE_PATH):
+        with open(FUND_CACHE_PATH, 'r') as f:
+            fund_cache = json.load(f)
         
     rpt_cache = init_cache()
     
+    # Fill missing bse_scrip/sector from fund_cache if available (using fundamental_cache structure)
+    for idx, row in df.iterrows():
+        ticker = row.get('ticker')
+        if pd.isna(row.get('sector_type')) or pd.isna(row.get('bse_scrip')):
+            fd = fund_cache.get(ticker, {}).get('data', {})
+            if pd.isna(row.get('sector_type')) and fd.get('sector_type'):
+                df.at[idx, 'sector_type'] = fd.get('sector_type')
+            # Scrip extraction from URL not trivial here, but we keep the row if it has scrip.
+            
     targets = df[(df['sector_type'] != 'financial') & (~df['ticker'].isin(EXCLUDE_TICKERS)) & (df['bse_scrip'].notna())].copy()
     targets = targets.drop_duplicates(subset=['ticker'])
     
@@ -85,8 +105,8 @@ def main():
     
     for idx, row in targets.iterrows():
         ticker = row['ticker']
-        # Even if in cache, re-fetch if None to try the new logic
-        if ticker in rpt_cache and rpt_cache[ticker] is not None:
+        # Even if in cache, re-fetch if NOT_FOUND to try the new logic
+        if ticker in rpt_cache and rpt_cache[ticker] and isinstance(rpt_cache[ticker], dict) and rpt_cache[ticker].get("status") == "OK":
             continue
             
         scrip = str(row['bse_scrip']).split('.')[0]
@@ -142,30 +162,41 @@ def main():
                     rpt_val = extract_rpt_value_from_pdf(pdf_path)
                     if rpt_val is not None:
                         fund_data = fund_cache.get(ticker, {}).get('data', {})
-                        mcap = fund_data.get('market_cap_cr')
+                        revenue = fund_data.get('revenue_ttm_cr')
                         
-                        if mcap and mcap > 0:
-                            rpt_pct = (rpt_val / mcap) * 100
-                            rpt_cache[ticker] = rpt_pct
-                            print(f"[{ticker}] SUCCESS: RPT = {rpt_val} Cr, MCap = {mcap} Cr -> RPT/MCap = {rpt_pct:.2f}%")
+                        if not revenue:
+                            print(f"[{ticker}] Revenue not in cache, fetching live...")
+                            fetcher = FundamentalFetcher()
+                            live_data = fetcher.fetch(ticker)
+                            revenue = live_data.get('revenue_ttm_cr')
+
+                        if revenue and revenue > 0:
+                            rpt_pct = round((rpt_val / revenue) * 100, 2)
+                            rpt_cache[ticker] = {
+                                "status": "OK",
+                                "rpt_amount_cr": round(rpt_val, 2),
+                                "rpt_pct": rpt_pct,
+                                "filing_type": "BSE_PDF"
+                            }
+                            print(f"[{ticker}] SUCCESS: RPT = {rpt_val} Cr, Revenue = {revenue} Cr -> RPT/Revenue = {rpt_pct}%")
                         else:
-                            print(f"[{ticker}] REJECTED: No market cap found in cache.")
-                            rpt_cache[ticker] = None
+                            print(f"[{ticker}] REJECTED: No revenue found in cache.")
+                            rpt_cache[ticker] = {"status": "NOT_FOUND", "rpt_amount_cr": None, "rpt_pct": None, "filing_type": None}
                     else:
                         print(f"[{ticker}] REJECTED: Parse failed/No grand total.")
-                        rpt_cache[ticker] = None
+                        rpt_cache[ticker] = {"status": "NOT_FOUND", "rpt_amount_cr": None, "rpt_pct": None, "filing_type": None}
                 else:
                     print(f"[{ticker}] Failed to download PDF (HTTP {pdf_r.status_code})")
-                    rpt_cache[ticker] = None
+                    rpt_cache[ticker] = {"status": "NOT_FOUND", "rpt_amount_cr": None, "rpt_pct": None, "filing_type": None}
             else:
                 print(f"[{ticker}] No Related Party filings found in date range.")
-                rpt_cache[ticker] = None
+                rpt_cache[ticker] = {"status": "NOT_FOUND", "rpt_amount_cr": None, "rpt_pct": None, "filing_type": None}
                 
             save_cache(rpt_cache)
             
         except Exception as e:
             print(f"[{ticker}] Error: {e}")
-            rpt_cache[ticker] = None
+            rpt_cache[ticker] = {"status": "NOT_FOUND", "rpt_amount_cr": None, "rpt_pct": None, "filing_type": None}
             save_cache(rpt_cache)
             
         time.sleep(0.5)
