@@ -19,6 +19,10 @@ app = Dash(
     ]
 )
 
+# Expose Flask server for gunicorn (Procfile: gunicorn dash_app_v2:server)
+server = app.server
+
+
 def get_icon(icon_name):
     return DashIconify(icon=icon_name, width=18, height=18)
 
@@ -250,4 +254,4 @@ def toggle_sidebar(n_clicks, state):
 import dash_pages._vikram_callback  # noqa: E402, F401
 
 if __name__ == '__main__':
-    app.run(debug=os.environ.get("DASH_DEBUG") == "1", port=8050)
+    app.run(debug=os.environ.get("DASH_DEBUG") == "1", host="0.0.0.0", port=int(os.environ.get("PORT", 8050)))
