@@ -1146,8 +1146,9 @@ def ask_vikram(question, history):
                 else:
                     break
     
-    # If we exhausted the static list and everything failed with 503/429, trigger dynamic probe
-    if last_err and ("503" in str(last_err) or "429" in str(last_err)):
+    # If we exhausted the static list and everything failed, trigger dynamic probe
+    # (whether due to 503, 429, 404, or empty responses from deprecated models)
+    if last_err:
         text, sources, probe_err = _probe_dynamic_fallback(system_prompt, contents, search_was_requested)
         if text:
             if search_was_requested and not sources and not _working_search:

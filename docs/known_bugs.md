@@ -158,3 +158,13 @@
 **FIX**: Replaced the silent dynamic math with a hardcoded, explicit `METRIC_WEIGHTS_5` constant that activates specifically when `rpt_data_missing` is True. Manually rebalanced the 5-metric weights so that Interest Coverage (26%) holds more weight than Promoter Pledge (22%), reflecting its importance as a governance proxy. The UI data completeness label was also updated to explicitly say "5-Metric Mode".
 **FAILED ATTEMPTS**: Designed a complex "Governance Proxy Score" (a composite of Pledge, Coverage, and FCF) to artificially fill the 26% gap. Abandoned it because giving a synthetic proxy the exact same weight as a verified regulatory filing is dishonest and overly complex.
 **AI PROCESS**: Analyzed the mathematical reality of the existing codebase to prove the score was already being renormalized correctly, but invisibly. Drafted a `/fix_before_touch` plan to swap the dynamic math for explicit, human-auditable constants. Verified via `test_6_metric_scorer.py`.
+
+---
+
+## BUG-010 — Dynamic Probe Bypass Flaw
+**STATUS**: FIXED
+**FILE**: `dash_pages/_vikram_callback.py`
+**SYMPTOM**: User experienced `Gemini error: empty response` followed by a hard crash of Vikram, despite the dynamic probe introduced in BUG-008.
+**ROOT CAUSE**: The dynamic probe was conditionally gated to *only* run if the last error contained "503" or "429". Because `gemini-3.6-flash` was removed from the API (throwing a 404/400) and lite models sometimes throw `empty response`, the static loop finished with a non-503 error. Because the error wasn't 503, the dynamic probe was entirely bypassed, leading to a fatal crash.
+**FIX**: Removed the `("503" in str(last_err) or "429" in str(last_err))` restriction. If the static fallback list fails for *any* reason (`if last_err:`), the dynamic probe is now immediately triggered to find a working flash model.
+**AI PROCESS**: Audited `ask_vikram` and cross-referenced with a live test script (`test_models.py`) to discover that `3.6-flash` was missing from the API. Proved that a non-503 error would break the retry loop and bypass the probe. Drafted `/fix_before_touch` plan, replaced the trigger condition, and manually restarted the background Dash server to ensure the memory image updated.
