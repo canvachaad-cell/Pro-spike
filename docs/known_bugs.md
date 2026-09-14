@@ -168,3 +168,13 @@
 **ROOT CAUSE**: The dynamic probe was conditionally gated to *only* run if the last error contained "503" or "429". Because `gemini-3.6-flash` was removed from the API (throwing a 404/400) and lite models sometimes throw `empty response`, the static loop finished with a non-503 error. Because the error wasn't 503, the dynamic probe was entirely bypassed, leading to a fatal crash.
 **FIX**: Removed the `("503" in str(last_err) or "429" in str(last_err))` restriction. If the static fallback list fails for *any* reason (`if last_err:`), the dynamic probe is now immediately triggered to find a working flash model.
 **AI PROCESS**: Audited `ask_vikram` and cross-referenced with a live test script (`test_models.py`) to discover that `3.6-flash` was missing from the API. Proved that a non-503 error would break the retry loop and bypass the probe. Drafted `/fix_before_touch` plan, replaced the trigger condition, and manually restarted the background Dash server to ensure the memory image updated.
+
+---
+
+## BUG-011 — Pledge Gate Flaw & FCF Weight Inflation
+**STATUS**: FIXED
+**FILE**: `conviction_scorer.py`
+**SYMPTOM**: High-quality, zero-pledge stocks like SAKSOFT were scoring 82/100, down from a historical 90/100, despite pristine fundamentals.
+**ROOT CAUSE**: 1) The Promoter Pledge gate scored `flat` direction at 0% pledge identically to `flat` at 9% pledge (both got a 7/10). Zero pledge is a near-perfect governance signal and should score higher. 2) The explicit 5-metric weights (`METRIC_WEIGHTS_5`) assigned 26% to Interest Coverage (which is trivially 10/10 for cash-rich small caps) and only 3% to FCF Quality (which is the strongest real-earnings signal). This suppressed the scores of genuinely cash-generative businesses.
+**FIX**: Updated `_gate_scores()` to check `pledge[-1] == 0` when direction is `flat`, awarding a 9/10 for zero-pledge stability. Rebalanced `METRIC_WEIGHTS_5` to accurately reflect signal strength: Op Leverage (38%), Pledge Trend (25%), FCF Quality (20%), Interest Coverage (9%), RoICE (8%).
+**AI PROCESS**: Conducted a `DEEP_AUDIT` of the SAKSOFT score decomposition to mathematically prove that FCF was under-rewarded. Generated a highly precise `/fix_before_touch` plan with exact line-number diffs to prevent Gemini code-editing mistakes. Verified fix via syntax check and `test_6_metric_scorer.py`. SAKSOFT now computes to the mathematically correct 87/100.

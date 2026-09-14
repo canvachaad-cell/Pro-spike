@@ -30,11 +30,11 @@ METRIC_WEIGHTS = {
 }
 
 METRIC_WEIGHTS_5 = {
-    "op_leverage": 0.41,
-    "interest_coverage": 0.26,
-    "pledge_trend": 0.22,
+    "op_leverage": 0.38,
+    "pledge_trend": 0.25,
+    "fcf_quality": 0.20,
+    "interest_coverage": 0.09,
     "roice": 0.08,
-    "fcf_quality": 0.03,
 }
 
 
@@ -86,7 +86,14 @@ def _gate_scores(fund):
         elif direction == "falling":
             gate["pledge_trend"] = 8
         elif direction == "flat":
-            gate["pledge_trend"] = 7
+            # Zero absolute pledge + flat direction = near-perfect governance
+            # (promoter never pledged; no risk to fall). Score 9.
+            # Non-zero pledge + flat = existing pledge not growing. Score 7.
+            latest_pledge = pledge[-1] if pledge else None
+            if latest_pledge is not None and latest_pledge == 0:
+                gate["pledge_trend"] = 9
+            else:
+                gate["pledge_trend"] = 7
         else:
             gate["pledge_trend"] = 3 if (pledge[-1] or 0) < 2 else 0
 

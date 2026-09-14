@@ -5,9 +5,9 @@
 
 **Current Working Set (trading_dashboard):**
 - `trading_dashboard/docs\known_bugs.md`
+- `trading_dashboard/conviction_scorer.py`
 - `trading_dashboard/dash_pages\_vikram_callback.py`
 - `trading_dashboard/test_6_metric_scorer.py`
-- `trading_dashboard/conviction_scorer.py`
 - `trading_dashboard/scratch\last_session.md`
 - `trading_dashboard/dash_app_v2.py`
 - `trading_dashboard/test_models.py`
