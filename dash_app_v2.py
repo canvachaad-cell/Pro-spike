@@ -79,14 +79,14 @@ mobile_bottom_nav = html.Nav(
             className="mobile-nav-item", id="nav-btn-watchlist", href="/watchlist",
             children=[html.Span("bookmark", className="material-symbols-outlined nav-icon"), html.Span("Watchlist")]
         ),
-        html.A(
+        html.Div(
             id="mobile-vikram-tab",
-            className="mobile-nav-item", href="#",
+            className="mobile-nav-item cursor-pointer",
             children=[html.Span("smart_toy", className="material-symbols-outlined nav-icon"), html.Span("Vikram")]
         ),
         dcc.Link(
-            className="mobile-nav-item", id="nav-btn-more", href="/institutional-signals",
-            children=[html.Span("more_horiz", className="material-symbols-outlined nav-icon"), html.Span("More")]
+            className="mobile-nav-item", id="nav-btn-inst-signals", href="/institutional-signals",
+            children=[html.Span("shield", className="material-symbols-outlined nav-icon"), html.Span("Inst. Signals")]
         )
     ]
 )
@@ -150,7 +150,7 @@ app.layout = html.Div(
         # Vikram AI Analyst slide-in panel (right side, hidden by default)
         html.Aside(
             id="vikram-panel",
-            className="fixed top-0 right-0 h-screen w-full md:w-[400px] z-[100] flex flex-col bg-surface-container-low/95 backdrop-blur-2xl border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]",
+            className="fixed top-0 right-0 h-screen w-full md:w-[400px] z-[999] flex flex-col bg-surface-container-low/95 backdrop-blur-2xl border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]",
             style={"transform": "translateX(100%)", "transition": "transform 0.3s ease"},
             children=[
                 html.Div(

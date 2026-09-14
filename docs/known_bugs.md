@@ -178,3 +178,13 @@
 **ROOT CAUSE**: 1) The Promoter Pledge gate scored `flat` direction at 0% pledge identically to `flat` at 9% pledge (both got a 7/10). Zero pledge is a near-perfect governance signal and should score higher. 2) The explicit 5-metric weights (`METRIC_WEIGHTS_5`) assigned 26% to Interest Coverage (which is trivially 10/10 for cash-rich small caps) and only 3% to FCF Quality (which is the strongest real-earnings signal). This suppressed the scores of genuinely cash-generative businesses.
 **FIX**: Updated `_gate_scores()` to check `pledge[-1] == 0` when direction is `flat`, awarding a 9/10 for zero-pledge stability. Rebalanced `METRIC_WEIGHTS_5` to accurately reflect signal strength: Op Leverage (38%), Pledge Trend (25%), FCF Quality (20%), Interest Coverage (9%), RoICE (8%).
 **AI PROCESS**: Conducted a `DEEP_AUDIT` of the SAKSOFT score decomposition to mathematically prove that FCF was under-rewarded. Generated a highly precise `/fix_before_touch` plan with exact line-number diffs to prevent Gemini code-editing mistakes. Verified fix via syntax check and `test_6_metric_scorer.py`. SAKSOFT now computes to the mathematically correct 87/100.
+
+---
+
+## BUG-012 — Mobile Nav Obscures Vikram Chat & "More" Poor Discoverability
+**STATUS**: FIXED
+**FILE**: `dash_app_v2.py`
+**SYMPTOM**: On mobile devices, clicking the "Vikram" tab opened the side panel, but the chat input was completely hidden behind the bottom navigation bar. Clicking the Vikram tab also caused an abrupt jump to the top of the page. Furthermore, the Institutional Signals route was hidden under a generic "More" icon.
+**ROOT CAUSE**: 1) `mobile-bottom-nav` had CSS `z-index: 200`, while `vikram-panel` was `z-[100]`, causing an inversion where the nav bar blocked the panel's footer. 2) The Vikram mobile tab was an `html.A(href="#")`, which triggers default browser scroll-to-top behavior.
+**FIX**: Elevated `vikram-panel` to `z-[999]`. Converted the Vikram tab to an `html.Div` with `cursor-pointer`. Renamed the generic "More" tab to "Inst. Signals" and updated the Material icon from `more_horiz` to `shield`.
+**AI PROCESS**: Used Lighthouse UI heuristics to audit the mobile DOM layout. Drafted a precise `/fix_before_touch` plan to swap the React components and Tailwind classes without disrupting existing Dash clientside callbacks.
