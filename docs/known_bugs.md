@@ -214,3 +214,17 @@
 5. Changed `--text-muted` to `#94a3b8` in `style.css` for WCAG AA compliance (5.3:1 contrast ratio).
 **FAILED ATTEMPTS**: None.
 **AI PROCESS**: Used `multi_replace_file_content` to surgically insert attributes and template overrides without breaking Dash routing or callbacks.
+
+---
+
+## BUG-015 — Mobile Flow & Axe-Core Violations (ui-audit)
+**STATUS**: FIXED
+**FILE**: `dash_app_v2.py`, `dash_pages/dashboard.py`
+**SYMPTOM**: Axe-core reported 4 violations: missing image alt, non-focusable scrolling div, non-landmark wrappers, and contrast false-positive on a decorative icon. Heuristic review showed the Desktop ⌘K bar blocking the mobile navigation pill, and Stats tiles buried beneath 10 signal cards on mobile screens.
+**ROOT CAUSE**: The `vikram-trigger` div lacked `hidden md:flex`, bleeding into mobile UI. The Bento grid used sequential source-order DOM flow which forced the Stats column to the bottom on mobile viewports.
+**FIX**: 
+1. Added `hidden md:flex` to `vikram-trigger` to prevent Z-index collision with the mobile bottom nav.
+2. Flipped CSS flex ordering in `dashboard.py`: Signals column became `order-2 xl:order-1`, and Stats became `order-1 xl:order-2`.
+3. Patched Axe-core violations by adding `tabIndex="0"`, `alt="User profile picture"`, `role="complementary"`, and `aria-hidden="true"` to respective elements.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Utilized the newly installed `.agents/skills/ui-audit` custom skill to run Playwright testing, extracted the JSON violations, evaluated Nielsen heuristics, and proposed an exact structural fix via artifact.

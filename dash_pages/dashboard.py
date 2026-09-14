@@ -294,7 +294,7 @@ def layout():
                 children=[
                     # Left Column (Dominant Signals Area - span 2 columns)
                     html.Div(
-                        className="xl:col-span-2 flex flex-col gap-4",
+                        className="xl:col-span-2 flex flex-col gap-4 order-2 xl:order-1",
                         children=[
                             html.Div(
                                 className="glass-panel p-6 rounded-2xl flex flex-col relative overflow-hidden h-full",
@@ -347,13 +347,13 @@ def layout():
                     
                     # Right Column (Stats Tiles - span 1 column)
                     html.Div(
-                        className="flex flex-col gap-6",
+                        className="flex flex-col gap-6 order-1 xl:order-2",
                         children=[
                             # Total Stocks Bento Tile
                             html.Div(
                                 className="glass-panel rounded-2xl p-6 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-secondary/10",
                                 children=[
-                                    html.Div(className="absolute top-0 right-0 p-4 text-secondary/20 group-hover:text-secondary/40 transition-colors", children=[html.Span("stacked_bar_chart", className="material-symbols-outlined text-[48px]")]),
+                                    html.Div(className="absolute top-0 right-0 p-4 text-secondary/20 group-hover:text-secondary/40 transition-colors", children=[html.Span("stacked_bar_chart", **{"aria-hidden": "true"}, className="material-symbols-outlined text-[48px]")]),
                                     html.Div("Total Scanned", className="font-label-sm text-[12px] font-bold text-on-surface-variant tracking-widest uppercase mb-1"),
                                     html.Div(f"{total_scanned:,}", className="font-display-lg text-[40px] font-bold text-secondary animate-number-roll"),
                                     html.Div(f"As of {as_of_str}", className="text-[10px] text-on-surface-variant mt-4")

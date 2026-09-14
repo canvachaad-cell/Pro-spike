@@ -682,5 +682,51 @@
    "rpt_pct": null,
    "rpt_amount_cr": null
   }
+ },
+ "INTELLECT": {
+  "ts": 1789388156.8699052,
+  "data": {
+   "symbol": "INTELLECT",
+   "url": "https://www.screener.in/company/INTELLECT/consolidated/",
+   "name": "Intellect Design Arena Ltd",
+   "market_cap_cr": 9581.0,
+   "price": 683.0,
+   "promoter_trend": "Sep 2023: 30.42% -> Dec 2023: 30.38% -> Mar 2024: 30.35% -> Jun 2024: 30.26% -> Sep 2024: 30.05% -> Dec 2024: 29.95% -> Mar 2025: 29.91% -> Jun 2025: 29.87% -> Sep 2025: 29.84% -> Dec 2025: 29.81% -> Mar 2026: 29.73% -> Jun 2026: 29.63%",
+   "promoter_holding": 29.63,
+   "dii_trend": "Sep 2023: 3.90% -> Dec 2023: 3.84% -> Mar 2024: 3.79% -> Jun 2024: 5.23% -> Sep 2024: 6.35% -> Dec 2024: 7.09% -> Mar 2025: 8.23% -> Jun 2025: 7.15% -> Sep 2025: 7.19% -> Dec 2025: 7.11% -> Mar 2026: 7.10% -> Jun 2026: 7.34%",
+   "dii_holding": 7.34,
+   "fii_trend": "Sep 2023: 24.39% -> Dec 2023: 25.09% -> Mar 2024: 27.85% -> Jun 2024: 27.53% -> Sep 2024: 27.19% -> Dec 2024: 26.21% -> Mar 2025: 24.86% -> Jun 2025: 27.83% -> Sep 2025: 27.53% -> Dec 2025: 26.60% -> Mar 2026: 25.57% -> Jun 2026: 23.51%",
+   "fii_holding": 23.51,
+   "pledge_trend": [
+    0.0
+   ],
+   "pledge_direction": "flat",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "quarterly_quarters": 13,
+   "revenue_ttm_cr": 3181.0,
+   "revenue_4q_growth": 0.225346687211094,
+   "ebit_4q_growth": 0.10661764705882353,
+   "op_lev_ratio": 0.4731271995977878,
+   "op_lev_inflecting": false,
+   "interest_coverage_trend": "deteriorating",
+   "interest_coverage_recent": 127.62,
+   "ocf_3yr_cr": [
+    410.0,
+    431.0,
+    510.0
+   ],
+   "pat_3yr_cr": [
+    323.0,
+    334.0,
+    343.0
+   ],
+   "fcf_pat_ratio": 1.35,
+   "roice_pct": 11.7,
+   "borrowings_cr": 159.0,
+   "free_float_cr": 6742,
+   "rpt_status": "NOT_FOUND",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
  }
 }

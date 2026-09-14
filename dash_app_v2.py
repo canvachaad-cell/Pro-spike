@@ -140,6 +140,7 @@ top_navbar = html.Header(
                     className="relative flex items-center justify-center cursor-pointer group",
                     children=[
                         html.Img(
+                            alt="User profile picture",
                             className="w-10 h-10 rounded-full border-2 border-surface-container-high object-cover transition-all duration-300 group-hover:border-primary",
                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSPGwdD37lUGqWROw7FbCdpsC09lzG81peku_8eXOQ5lhQIBmGTRWYwMd2ih-sO4Efzsi-FiItAyFEtnl9Trh2C_jDb78r21h1SXAIShk7Lhf_L5OCBwvtTYZlfCl35aBGDb6ivgxsHATQLjcZsap-8TF1B9xjyzM-hWf5k2sygd7Lp6MxuWFHkF78sUWs7RkfRQLWbIgfKgboAJMB09guDKkIWZPI0MuAChf6sK8faa-Axtck-uo4kw"
                         ),
@@ -161,7 +162,9 @@ app.layout = html.Div(
         # Floating Command Bar — opens the Vikram AI panel
         html.Div(
             id="vikram-trigger",
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-full bg-surface-container-highest/90 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] cursor-pointer hover:bg-surface-container-highest transition-colors",
+            role="complementary",
+            **{"aria-label": "Open Vikram AI Command Bar"},
+            className="hidden md:flex fixed bottom-6 left-1/2 -translate-x-1/2 z-50 items-center gap-3 px-4 py-2.5 rounded-full bg-surface-container-highest/90 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] cursor-pointer hover:bg-surface-container-highest transition-colors",
             children=[
                 DashIconify(icon="material-symbols:search", width=20, height=20, className="text-on-surface-variant"),
                 html.Span("Ask Vikram — AI Analyst", className="text-on-surface-variant font-body-md text-sm pr-12"),
@@ -236,7 +239,8 @@ app.layout = html.Div(
                 top_navbar,
                 html.Div(
                     style={"flex": "1", "overflowY": "auto"},
-                    className="p-margin-mobile md:p-margin-desktop pb-24 page-content-mobile-pad",
+                    tabIndex="0",
+                    className="p-margin-mobile md:p-margin-desktop pb-24 page-content-mobile-pad focus:outline-none",
                     children=[
                         html.Div(
                             className="max-w-[1800px] mx-auto w-full",

@@ -5,15 +5,15 @@
 
 **Current Working Set (trading_dashboard):**
 - `trading_dashboard/docs\known_bugs.md`
-- `trading_dashboard/scratch\lighthouse_mobile_verify.json`
+- `trading_dashboard/test-results\.last-run.json`
+- `trading_dashboard/dash_pages\dashboard.py`
 - `trading_dashboard/dash_app_v2.py`
+- `trading_dashboard/tests\ux_audit.spec.js`
+- `trading_dashboard/playwright.config.js`
+- `trading_dashboard/package.json`
+- `trading_dashboard/package-lock.json`
+- `trading_dashboard/scratch\lighthouse_mobile_verify.json`
 - `trading_dashboard/scratch\lighthouse_mobile.json`
-- `trading_dashboard/scratch\lighthouse_report.json`
-- `trading_dashboard/AGENTS.md`
-- `trading_dashboard/conviction_scorer.py`
-- `trading_dashboard/dash_pages\_vikram_callback.py`
-- `trading_dashboard/test_6_metric_scorer.py`
-- `trading_dashboard/scratch\last_session.md`
 
 **Constraints for Today:**
 - Do NOT hallucinate variables or schemas. Use Dynamic Schema Discovery.
