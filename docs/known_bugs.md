@@ -256,3 +256,27 @@
 3. **Selective Search**: Added `_should_force_search()` to suppress the expensive Gemini Google Search grounding tool if the query doesn't explicitly ask for news/results AND we already have fresh fundamentals.
 **FAILED ATTEMPTS**: None.
 **AI PROCESS**: Developed `PLAN_DEEP` to identify the three major latency bottlenecks and refactored the prompt assembly without changing the output formatting.
+
+---
+
+## BUG-018 — Vikram AI Thread Contention on Render Free Tier
+**STATUS**: FIXED
+**FILE**: `dash_pages/_vikram_callback.py`
+**SYMPTOM**: Vikram responded quickly on localhost but was extremely slow/hung on the live Render dashboard.
+**ROOT CAUSE**: Render Free Tier runs on a strict 0.1 vCPU quota. The previous speed optimization (BUG-017) spawned 5 parallel `ThreadPoolExecutor` workers. Running 5 heavy python threads concurrently on a 0.1 CPU slice caused massive thread contention and context-switching overhead, freezing the container.
+**FIX**: 
+1. Implemented dynamic worker allocation: `workers = 2 if os.environ.get("RENDER") else 5`.
+2. Limited Render environments to 2 threads to respect the CPU quota while preserving 5 threads for high-performance local execution.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Diagnosed the architectural bottleneck immediately based on the user's description of environment discrepancy ("fast on local, slow on Render") without needing server logs.
+
+---
+
+## BUG-022 — Vikram Infinite Spinner on Render (gevent vs httpx clash)
+**STATUS**: FIXED
+**FILE**: `render.yaml`
+**SYMPTOM**: Vikram still hangs infinitely on Render despite deploying the `gevent` worker class in BUG-021. Localhost remains lightning fast.
+**ROOT CAUSE**: The `gevent` library monkey-patches standard library networking to make a single OS thread cooperative. However, the new `google-genai` SDK uses modern networking layers (`httpx`/`grpc` or native C-extensions) that bypass gevent's cooperative I/O. Because the single OS thread became completely blocked by the Gemini SDK for 25+ seconds, Gunicorn could not answer Dash UI heartbeats, leading to silent connection timeouts on the browser. Localhost worked perfectly because `Werkzeug` (Flask dev server) spawns real OS threads dynamically.
+**FIX**: Abandoned `gevent` and switched to native Python OS threading. Updated `render.yaml` to use `--worker-class gthread` with `--threads 4`. This mimics localhost's behavior; even if the Gemini SDK blocks one thread, Gunicorn has 3 other real OS threads to answer incoming Dash heartbeats and keep the UI connection alive.
+**FAILED ATTEMPTS**: Using `--worker-class gevent` (BUG-021) which falsely assumed all downstream API libraries would respect standard-library monkey-patching.
+**AI PROCESS**: Triggered `DEMONCORE: ROOT_CAUSE` to perform an evidence-only audit. Deduced that if the site is up but the UI hangs, the worker thread is deadlocking. Realized `gevent` is frequently incompatible with modern API SDKs and swapped to the `gthread` worker class to guarantee real OS thread separation.
