@@ -9,3 +9,8 @@ dash-ag-grid
 dash-iconify
 matplotlib
 gunicorn
+yfinance
+numpy
+scikit-learn
+google-generativeai
+joblib
