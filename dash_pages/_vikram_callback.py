@@ -992,11 +992,9 @@ def _ensure_configured():
     except ImportError as e:
         return f"google-genai import failed: {e}"
     try:
-        # On Render, cap at 15s — gevent will yield during the HTTP wait, so
-        # tighter timeout means faster failure and faster fallback to the probe.
-        # On localhost 25s is fine since Werkzeug handles concurrent requests.
-        _gemini_http_timeout = 15_000 if os.environ.get("RENDER") else 25_000
-        _client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=_gemini_http_timeout))
+        # 25s per-request HTTP timeout — fast enough to feel responsive, long
+        # enough for Vikram's typical 10-18s complex query latency on Gemini flash.
+        _client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=25_000))
     except Exception as e:
         return f"Could not configure Gemini: {e}"
     return None
@@ -1077,10 +1075,8 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested):
     global _working_model, _working_search
     import time
 
-    # On Render, 28s is too long. The gevent worker serves heartbeats
-    # during the probe, but Render's load balancer has a 30s idle timeout.
-    # Cap the probe at 20s on Render to guarantee a clean error before LB kills the conn.
-    PROBE_TOTAL_TIMEOUT = 20 if os.environ.get("RENDER") else 28  # seconds — hard outer wall clock cap
+    # Hard cap on dynamic probe wall-clock time
+    PROBE_TOTAL_TIMEOUT = 28  # seconds
 
     try:
         models = list(_client.models.list())
