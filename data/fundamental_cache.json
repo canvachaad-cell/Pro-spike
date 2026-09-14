@@ -410,5 +410,95 @@
    "rpt_pct": null,
    "rpt_amount_cr": null
   }
+ },
+ "SAKSOFT": {
+  "ts": 1789374526.7683046,
+  "data": {
+   "symbol": "SAKSOFT",
+   "url": "https://www.screener.in/company/SAKSOFT/consolidated/",
+   "name": "Saksoft Ltd",
+   "market_cap_cr": 1942.0,
+   "price": 146.0,
+   "promoter_trend": "Sep 2023: 66.66% -> Dec 2023: 66.64% -> Mar 2024: 66.64% -> Jun 2024: 66.64% -> Sep 2024: 66.64% -> Dec 2024: 66.64% -> Mar 2025: 66.68% -> Jun 2025: 66.68% -> Sep 2025: 66.68% -> Dec 2025: 66.68% -> Mar 2026: 66.72% -> Jun 2026: 66.72%",
+   "promoter_holding": 66.72,
+   "dii_trend": "Sep 2023: 0.00% -> Dec 2023: 0.03% -> Mar 2024: 0.00% -> Jun 2024: 0.00% -> Sep 2024: 0.00% -> Dec 2024: 0.00% -> Mar 2025: 0.05% -> Jun 2025: 0.00% -> Sep 2025: 0.14% -> Dec 2025: 0.14% -> Mar 2026: 0.00% -> Jun 2026: 0.01%",
+   "dii_holding": 0.01,
+   "fii_trend": "Sep 2023: 3.96% -> Dec 2023: 3.93% -> Mar 2024: 4.00% -> Jun 2024: 3.53% -> Sep 2024: 3.25% -> Dec 2024: 2.86% -> Mar 2025: 2.79% -> Jun 2025: 2.78% -> Sep 2025: 2.29% -> Dec 2025: 2.23% -> Mar 2026: 2.40% -> Jun 2026: 2.18%",
+   "fii_holding": 2.18,
+   "pledge_trend": [
+    0.0
+   ],
+   "pledge_direction": "flat",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "quarterly_quarters": 13,
+   "revenue_ttm_cr": 1007.0,
+   "revenue_4q_growth": 0.08163265306122448,
+   "ebit_4q_growth": 0.18471337579617833,
+   "op_lev_ratio": 2.2627388535031847,
+   "op_lev_inflecting": true,
+   "interest_coverage_trend": "improving",
+   "interest_coverage_recent": 28.88,
+   "ocf_3yr_cr": [
+    117.0,
+    111.0,
+    171.0
+   ],
+   "pat_3yr_cr": [
+    96.0,
+    109.0,
+    133.0
+   ],
+   "fcf_pat_ratio": 1.18,
+   "roice_pct": 19.5,
+   "borrowings_cr": 44.0,
+   "free_float_cr": 646,
+   "rpt_status": "NOT_FOUND",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
+ },
+ "HDFCBANK": {
+  "ts": 1789374769.0015872,
+  "data": {
+   "symbol": "HDFCBANK",
+   "url": "https://www.screener.in/company/HDFCBANK/consolidated/",
+   "name": "HDFC Bank Ltd",
+   "market_cap_cr": 1091709.0,
+   "price": 708.0,
+   "promoter_trend": "Mar 2017: 26.00% -> Mar 2018: 25.60% -> Mar 2019: 26.50% -> Mar 2020: 26.14% -> Mar 2021: 25.97% -> Mar 2022: 25.78% -> Mar 2023: 25.59% -> Mar 2024: 0.00% -> Mar 2025: 0.00% -> Mar 2026: 0.00% -> Jun 2026: 0.00%",
+   "promoter_holding": 0.0,
+   "dii_trend": "Mar 2017: 12.94% -> Mar 2018: 14.97% -> Mar 2019: 16.41% -> Mar 2020: 21.74% -> Mar 2021: 20.99% -> Mar 2022: 24.55% -> Mar 2023: 28.09% -> Mar 2024: 33.33% -> Mar 2025: 35.68% -> Mar 2026: 40.14% -> Jun 2026: 41.75%",
+   "dii_holding": 41.75,
+   "fii_trend": "Mar 2017: 42.13% -> Mar 2018: 40.43% -> Mar 2019: 38.71% -> Mar 2020: 36.68% -> Mar 2021: 39.79% -> Mar 2022: 35.62% -> Mar 2023: 32.24% -> Mar 2024: 47.83% -> Mar 2025: 48.30% -> Mar 2026: 44.05% -> Jun 2026: 41.82%",
+   "fii_holding": 41.82,
+   "pledge_trend": [
+    0.0
+   ],
+   "pledge_direction": "flat",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "quarterly_quarters": 13,
+   "revenue_ttm_cr": 351818.0,
+   "revenue_4q_growth": 0.028127401787879938,
+   "interest_coverage_trend": "improving",
+   "interest_coverage_recent": -0.19,
+   "ocf_3yr_cr": [
+    19069.0,
+    127242.0,
+    113506.0
+   ],
+   "pat_3yr_cr": [
+    65446.0,
+    73440.0,
+    79219.0
+   ],
+   "fcf_pat_ratio": 1.19,
+   "roice_pct": -11.2,
+   "borrowings_cr": 588485.0,
+   "sector_type": "financial",
+   "free_float_cr": 1091709,
+   "rpt_status": "NOT_FOUND",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
  }
 }

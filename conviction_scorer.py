@@ -29,6 +29,14 @@ METRIC_WEIGHTS = {
     "fcf_quality": 0.03,
 }
 
+METRIC_WEIGHTS_5 = {
+    "op_leverage": 0.41,
+    "interest_coverage": 0.26,
+    "pledge_trend": 0.22,
+    "roice": 0.08,
+    "fcf_quality": 0.03,
+}
+
 
 def classify(market_cap_cr):
     if market_cap_cr is None:
@@ -276,7 +284,9 @@ class ConvictionScorer:
         weighted_score_sum = 0.0
         resolved_count = 0
 
-        for metric, w in METRIC_WEIGHTS.items():
+        active_weights = METRIC_WEIGHTS_5 if base["rpt_data_missing"] else METRIC_WEIGHTS
+
+        for metric, w in active_weights.items():
             if metric in base["not_applicable_metrics"]:
                 continue
             val = gate.get(metric)
@@ -286,10 +296,11 @@ class ConvictionScorer:
                 weighted_score_sum += (val * 10) * w
 
         total_applicable = 6 - len(base["not_applicable_metrics"])
+        mode_label = "5-Metric Mode" if base["rpt_data_missing"] else "6-Metric Mode"
         base["data_completeness"] = {
             "resolved_count": resolved_count,
             "total_count": total_applicable,
-            "label": f"Score based on {resolved_count}/{total_applicable} metrics resolved"
+            "label": f"{mode_label} ({resolved_count}/{total_applicable} metrics resolved)"
         }
 
         if resolved_weights > 0:

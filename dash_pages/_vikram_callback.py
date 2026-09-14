@@ -971,7 +971,7 @@ _working_search = None
 # Verified live 2026-09-04: gemini-3.5-flash + gemini-flash-latest work;
 # 3.5-flash-lite intermittently 503s (high demand, kept as last fallback);
 # gemini-2.5-flash / 2.5-flash-lite are 404-retired for this key.
-MODEL_CANDIDATES = ["gemini-3.5-flash", "gemini-flash-latest"]
+MODEL_CANDIDATES = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-flash-lite-latest"]
 
 
 def _ensure_configured():
@@ -1058,6 +1058,35 @@ _SEARCH_TRIGGER = re.compile(
 )
 
 
+def _probe_dynamic_fallback(system_prompt, contents, search_requested):
+    """Dynamically find a working model when the static cluster is overloaded.
+    Tries all flash models first with search, then without search as a fallback.
+    Applies a 1s sleep on 503/429 to survive transient spikes.
+    """
+    global _working_model, _working_search
+    import time
+    try:
+        models = list(_client.models.list())
+        # Prioritize flash models, ignore embedding/tts/vision specific models
+        model_names = [m.name.replace("models/", "") for m in models if "flash" in m.name and "tts" not in m.name and "image" not in m.name and "audio" not in m.name]
+    except Exception:
+        return None, None, "Dynamic probe failed to list models."
+
+    for use_search in ([True, False] if search_requested else [False]):
+        for name in model_names:
+            try:
+                text, sources = _generate(name, system_prompt, contents, use_search)
+                _working_model = name
+                _working_search = use_search
+                return text, sources, None
+            except Exception as e:
+                if "503" in str(e) or "429" in str(e):
+                    time.sleep(1)   # brief pause before trying next model
+                # all errors: skip to next model
+    return None, None, "All dynamically probed models (with and without search) returned errors."
+
+
+
 def ask_vikram(question, history):
     """Send system prompt + session history + question to Gemini with Google
     Search grounding. Falls back to no-tools if search fails on every model.
@@ -1094,21 +1123,40 @@ def ask_vikram(question, history):
     for m in MODEL_CANDIDATES:
         attempts.append((m, False))
 
+    import time
+
     last_err = None
     search_was_requested = bool(_SEARCH_TRIGGER.search(question or ""))
     for model_name, use_search in attempts:
-        try:
-            text, sources = _generate(model_name, system_prompt, contents, use_search)
-            _working_model = model_name
-            _working_search = use_search
-            if search_was_requested and not sources and not use_search:
+        success = False
+        for attempt in range(3):
+            try:
+                text, sources = _generate(model_name, system_prompt, contents, use_search)
+                _working_model = model_name
+                _working_search = use_search
+                if search_was_requested and not sources and not use_search:
+                    text = "(live search unavailable this query — answering from your data only)\n\n" + text
+                return text, sources, None
+            except Exception as e:
+                last_err = e
+                err_str = str(e)
+                if "503" in err_str or "429" in err_str:
+                    time.sleep(2 ** attempt) # Exponential backoff: 1s, 2s, 4s
+                    continue
+                else:
+                    break
+    
+    # If we exhausted the static list and everything failed with 503/429, trigger dynamic probe
+    if last_err and ("503" in str(last_err) or "429" in str(last_err)):
+        text, sources, probe_err = _probe_dynamic_fallback(system_prompt, contents, search_was_requested)
+        if text:
+            if search_was_requested and not sources and not _working_search:
                 text = "(live search unavailable this query — answering from your data only)\n\n" + text
             return text, sources, None
-        except Exception as e:
-            last_err = e
-            continue
-    return None, [], f"Gemini error: {last_err}"
+        else:
+            return None, [], f"Gemini error (after dynamic probe): {probe_err} | Last static err: {last_err}"
 
+    return None, [], f"Gemini error: {last_err}"
 
 # ---------------------------------------------------------------------------
 # Dash callbacks (registered on import from dash_app_v2)

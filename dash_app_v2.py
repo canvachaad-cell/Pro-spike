@@ -8,6 +8,7 @@ app = Dash(
     use_pages=True,
     pages_folder="dash_pages",
     suppress_callback_exceptions=True,
+    meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"}],
     external_scripts=[
         # NOTE: no forms plugin — it forces light-theme form resets (white input
         # backgrounds, default blue/purple focus rings) that fight the dark M3 theme.

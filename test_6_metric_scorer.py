@@ -98,7 +98,7 @@ class Test6MetricScorer(unittest.TestCase):
         self.assertFalse(res["unverified_veto"])
         self.assertEqual(res["rating"], "HIGH_CONVICTION")
         self.assertEqual(res["data_completeness"]["resolved_count"], 6)
-        self.assertIn("Score based on 6/6 metrics resolved", res["data_completeness"]["label"])
+        self.assertIn("6-Metric Mode (6/6 metrics resolved)", res["data_completeness"]["label"])
 
 
 if __name__ == "__main__":

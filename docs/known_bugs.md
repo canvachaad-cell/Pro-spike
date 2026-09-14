@@ -113,3 +113,48 @@
 **FIX**: Updated `MODEL_CANDIDATES` to `["gemini-3.5-flash", "gemini-flash-latest"]` which are verified working for this project's API key. Removed the deprecated 1.5 models entirely.
 **FAILED ATTEMPTS**: None (aside from previously conflating this with the Antigravity IDE vision bug).
 **AI PROCESS**: Searched for `gemini-1.5-pro` globally, located the fallback loop in `_vikram_callback.py`. Realized the loop at line 1110 suppresses intermediate errors and only returns the final exception. Updated the list based on verified-working comments in the codebase and verified syntax with `py_compile`.
+
+---
+
+## BUG-006 — Vikram Persistent 503 UNAVAILABLE (High Demand)
+**STATUS**: FIXED
+**FILE**: `dash_pages/_vikram_callback.py`
+**SYMPTOM**: Vikram UI consistently throws `503 UNAVAILABLE. This model is currently experiencing high demand.` Even with the exponential backoff (1s, 2s, 4s) added in BUG-005, the API remains congested and the loop eventually exhausts all retries and crashes.
+**ROOT CAUSE**: Google's free/beta tier API cluster is under heavy load. The fallback models `gemini-3.5-flash` and `gemini-flash-latest` are likely aliased to the same congested hardware pool.
+**FIX**: Conducted a `DEEP_AUDIT` iterating over 30+ models on the active API key. Discovered that while `gemini-flash-latest` and `gemini-3-flash-preview` were throwing 503s/429s, `gemini-3.6-flash`, `gemini-2.5-flash`, and `gemini-flash-lite-latest` were fully operational. Replaced the `MODEL_CANDIDATES` list with these robust endpoints to bypass the congestion entirely.
+**FAILED ATTEMPTS**: Added exponential backoff retry loop inside `_vikram_callback.py`. It correctly pauses, but the cluster remains down longer than the retry window (or all attempts fail).
+**AI PROCESS**: DEEP_AUDIT initiated. Wrote and executed a script (`test_models.py`) to systematically ping every single available `flash` and `pro` model on the Google GenAI API key. Filtered out models returning 503 (High Demand) and 429 (Quota Exceeded). Updated the fallback array with the confirmed working models.
+
+---
+
+## BUG-007 — Dashboard Unresponsive on Mobile Browsers (No Viewport)
+**STATUS**: FIXED
+**FILE**: `dash_app_v2.py`
+**SYMPTOM**: Mobile users see a zoomed-out desktop version of the dashboard. The `.mobile-bottom-nav` fails to display, and Tailwind responsive breakpoints (`md:flex`, etc.) are completely ignored by the device.
+**ROOT CAUSE**: The `Dash(__name__)` initialization was missing the standard HTML5 `<meta name="viewport" ...>` tag. Without it, mobile browsers assume the site is designed for desktop only and render it at a fixed width (e.g. 980px on iOS Safari), bypassing all mobile CSS logic.
+**FIX**: Injected `meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"}]` into the `Dash` constructor.
+**FAILED ATTEMPTS**: None. 
+**AI PROCESS**: Conducted a static mobile UX audit of `assets/style.css` and `dash_app_v2.py`. Found that while the CSS had perfect mobile styling and iOS home-bar dodging, the global viewport trigger was missing from the Dash initialization. Triggered `/fix_before_touch` to gain approval before patching the global configuration.
+
+---
+
+## BUG-008 — Vikram Persistent 503/429 Despite Static Fallbacks
+**STATUS**: FIXED
+**FILE**: `dash_pages/_vikram_callback.py`
+**SYMPTOM**: Even with the new API key and 4-model fallback list from BUG-006, Google's dynamic load balancing occasionally rate-limits the specific static models we hardcoded, causing total failure of the AI assistant.
+**ROOT CAUSE**: Relying on a hardcoded list of `MODEL_CANDIDATES` is fundamentally fragile against Google AI Studio's dynamic free-tier capacity limits (which shift per-minute based on global demand).
+**FIX**: Implemented `_probe_dynamic_fallback()` in `_vikram_callback.py`. When the static array exhausts all retries and still hits 503/429, Vikram now calls `client.models.list()`, iterates through all available flash models dynamically, tests them sequentially, and binds to the first one that successfully generates text. This bypasses any local or global API congestion permanently without hardcoding models.
+*(Iteration 2)*: Refined the probe to include a 1-second `time.sleep` on 503 errors to survive micro-spikes, and added a 2-pass loop to first attempt the probe with `use_search=True` and then fallback to `use_search=False` to prevent search-grounding limits from crashing the entire probe.
+**FAILED ATTEMPTS**: The static fallback array and exponential backoffs (BUG-005, BUG-006) proved insufficient against prolonged cluster congestion. The initial dynamic probe implementation lacked a `use_search=False` pass, causing it to fail completely if search grounding was blocked.
+**AI PROCESS**: Concluded that `503 UNAVAILABLE` and `429 RESOURCE_EXHAUSTED` are unfixable via static configuration. Drafted a `/fix_before_touch` implementation plan to introduce a dynamic model probe and injected it safely into the core exception handler. Subsequently audited the probe and applied a second patch to handle transient load spikes and search-grounding failures.
+
+---
+
+## BUG-009 — Invisible 5-Metric Renormalization & Suboptimal Weights
+**STATUS**: FIXED
+**FILE**: `conviction_scorer.py` line 275
+**SYMPTOM**: When RPT% data is missing (as is the case for most small caps like SAKSOFT), the Conviction Score of 81/100 feels mathematically inflated because the system silently renormalizes the 26% RPT weight across the other 5 metrics.
+**ROOT CAUSE**: The system used dynamic mathematical renormalization (`weighted_score_sum / resolved_weights`). This caused Interest Coverage to absorb only a small portion (rising to 20.3%) while Operating Leverage ballooned to 41.9%. Because Interest Coverage is a critical solvency/governance proxy when RPT% is missing, it was structurally underweighted.
+**FIX**: Replaced the silent dynamic math with a hardcoded, explicit `METRIC_WEIGHTS_5` constant that activates specifically when `rpt_data_missing` is True. Manually rebalanced the 5-metric weights so that Interest Coverage (26%) holds more weight than Promoter Pledge (22%), reflecting its importance as a governance proxy. The UI data completeness label was also updated to explicitly say "5-Metric Mode".
+**FAILED ATTEMPTS**: Designed a complex "Governance Proxy Score" (a composite of Pledge, Coverage, and FCF) to artificially fill the 26% gap. Abandoned it because giving a synthetic proxy the exact same weight as a verified regulatory filing is dishonest and overly complex.
+**AI PROCESS**: Analyzed the mathematical reality of the existing codebase to prove the score was already being renormalized correctly, but invisibly. Drafted a `/fix_before_touch` plan to swap the dynamic math for explicit, human-auditable constants. Verified via `test_6_metric_scorer.py`.
