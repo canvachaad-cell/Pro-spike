@@ -4,6 +4,7 @@
 
 
 **Current Working Set (trading_dashboard):**
+- `trading_dashboard/AGENTS.md`
 - `trading_dashboard/docs\known_bugs.md`
 - `trading_dashboard/dash_app_v2.py`
 - `trading_dashboard/conviction_scorer.py`
@@ -13,7 +14,6 @@
 - `trading_dashboard/test_models.py`
 - `trading_dashboard/test_vikram_loop.py`
 - `trading_dashboard/scratch\take_screenshot.py`
-- `trading_dashboard/fundamental_fetcher.py`
 
 **Constraints for Today:**
 - Do NOT hallucinate variables or schemas. Use Dynamic Schema Discovery.
