@@ -55,7 +55,6 @@ sidebar_footer = html.Div(
 
 sidebar = html.Nav(
     id="sidebar-el",
-    style={"gridColumn": "1 / 2"},
     className="hidden md:flex flex-col py-lg px-sm gap-xs bg-surface-container-low/80 backdrop-blur-xl h-[calc(100vh-32px)] my-4 ml-4 rounded-2xl sticky left-0 top-4 border border-white/5 shadow-[0_0_40px_rgba(0,0,0,0.5)] z-40",
     children=[
         sidebar_header,
@@ -201,7 +200,7 @@ app.layout = html.Div(
             ]
         ),
         html.Main(
-            style={"gridColumn": "2 / 3", "display": "flex", "flexDirection": "column", "minWidth": "0", "overflow": "hidden"},
+            style={"display": "flex", "flexDirection": "column", "minWidth": "0", "overflow": "hidden"},
             children=[
                 dcc.Location(id="url", refresh=False),
                 top_navbar,

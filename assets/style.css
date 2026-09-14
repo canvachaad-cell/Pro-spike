@@ -133,12 +133,100 @@ nav { flex: 1; padding: 0 12px; }
 ::-webkit-scrollbar-thumb:hover { background: #2a2f3a; }
 
 /* Layout adjustments */
-.dash-app-container {
-    display: flex;
+/* Mobile first: single column, sidebar hidden */
+.app-grid {
+    display: grid;
+    grid-template-columns: 1fr;
     height: 100vh;
     width: 100vw;
+    overflow-x: hidden;
+    transition: grid-template-columns 0.3s ease;
 }
 
+.app-grid > main {
+    grid-column: 1 / -1;
+}
+
+/* Desktop: restore sidebar + content columns */
+@media (min-width: 768px) {
+    .app-grid {
+        grid-template-columns: 272px 1fr;
+    }
+    .app-grid.sidebar-collapsed {
+        grid-template-columns: 80px 1fr;
+    }
+    .app-grid > #sidebar-el {
+        grid-column: 1 / 2;
+    }
+    .app-grid > main {
+        grid-column: 2 / 3;
+    }
+}
+
+/* Bottom nav — mobile only */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    height: 64px;
+    background: rgba(15, 17, 23, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: space-around;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (max-width: 767px) {
+    .mobile-bottom-nav {
+        display: flex;
+    }
+    .page-content-mobile-pad {
+        padding-bottom: 80px !important;
+    }
+}
+
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 3px;
+    padding: 8px 4px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    transition: color 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-nav-item.active {
+    color: var(--accent-indigo);
+}
+
+.mobile-nav-item .nav-icon {
+    font-size: 22px;
+    line-height: 1;
+}
+
+/* All data tables on mobile scroll horizontally — NEVER wrap columns */
+.table-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar {
+    height: 3px;
+}
 /* VERIFY CONDITIONS ACCORDION */
 .glass-panel {
     background-color: rgba(29, 33, 42, 0.7);
