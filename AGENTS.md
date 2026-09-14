@@ -1,18 +1,18 @@
-# Project Identity (`trading_dashboard`)
+# Project Identity (`Pro-spike`)
 > [!NOTE]
-> **Project Name:** `trading_dashboard`
+> **Project Name:** `Pro-spike`
 > **Core Promise:** Process daily Indian market data (NSE/BSE bhavcopies, delivery volumes), compute quantitative signals (Flexgate, Progressive Screener, Institutional Edge), and visualize market analytics flawlessly without corrupting production scripts or data ledgers.
 > **Target Audience:** Quantitative traders and analysts tracking institutional accumulation, breakouts, delivery volume surges, and portfolio watchlists.
 
 ## Stack
-- Python 3.x | Streamlit | Pandas | NumPy | Scikit-learn (`flexgate_rf_model.pkl`) | YFinance | BSE/NSE Scrapers & Parsers
+- Python 3.x | Dash | Pandas | NumPy | Scikit-learn (`flexgate_rf_model.pkl`) | YFinance | BSE/NSE Scrapers & Parsers
 
 ## Commands
-All run inside `trading_dashboard` root directory:
-- Dev / Dashboard: `streamlit run dashboard.py` (or `run_dash.bat`)
+All run inside `Pro-spike` root directory:
+- Dev / Dashboard: `python dash_app_v2.py`
 - Smart Pipeline Update: `python auto_update_smart.py`
 - Syntax Check: `python -m py_compile <filepath>`
-- Verification Check: `python test_ui.py` / `python check_pipeline.py`
+- Verification Check: `python check_pipeline.py`
 - **Verification Bar:** Clean execution without python tracebacks + manual UI/data verification. Never claim a fix is complete without verifying it empirically.
 
 ## Hard Rules for the AI
@@ -20,7 +20,6 @@ All run inside `trading_dashboard` root directory:
 > YOU MUST FOLLOW THESE RULES WITHOUT EXCEPTION.
 
 - **GROUNDING & NO FABRICATION:** Answer ONLY from explicitly provided context. Say "NOT IN CONTEXT" when missing. Never invent APIs, function names, file paths, or config keys.
-- **PRODUCTION QUARANTINE CLAUSE:** The files `dashboard_full.py`, `lollipop_dashboard_full.py`, and `run.bat` are the LIVE Streamlit production environment. They are strictly **READ-ONLY**. Refuse any edit requests on them.
 - **DATA SCHEMA CLAUSE:** Forbidden from inventing or hallucinating CSV column names. Always consult `.agents/rules/DATA-SCHEMA.md` or physically read file headers before writing logic.
 - **HARD STOP:** Before writing any code to fix a bug, you MUST invoke the `fix_before_touch` skill. You cannot write code until its checklist is complete.
 - **HARD STOP / PLAN FIRST:** Before making code edits or file modifications, output a numbered step-by-step plan and wait for explicit user approval. Show before/after diffs for all code changes.
@@ -42,6 +41,7 @@ All run inside `trading_dashboard` root directory:
 - Before touching Data Schemas / CSVs -> read `.agents/rules/DATA-SCHEMA.md`
 - Before touching Core Components / Data Loaders -> read `docs/known_bugs.md`
 - When user types `update !!` -> read `docs/future-updates.md` (if present) or `PROJECT_HISTORY.md`
+- When user types `update session log`, `session handoff`, or `wrap up session` -> invoke the `session_handoff` skill (`.agents/skills/session_handoff/SKILL.md`). Append dated summary to `scratch/last_session.md`. Never overwrite.
 
 ## Anti-Pattern Library
 > [!WARNING]

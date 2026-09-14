@@ -118,7 +118,7 @@ if "!current_branch!" NEQ "main" (
 )
 echo Pushing branch !current_branch! to GitHub...
 
-git push origin main
+git push prospike main
 
 if errorlevel 1 (
     echo.
@@ -130,7 +130,7 @@ if errorlevel 1 (
     echo   - GitHub authentication expired
     echo   - Repository permissions issue
     echo.
-    echo To fix: Run 'git push origin main' manually
+    echo To fix: Run 'git push prospike main' manually
     echo ======================================================================
     goto :error
 )
@@ -141,7 +141,7 @@ echo SUCCESS! DASHBOARD UPDATED
 echo ======================================================================
 echo Commit: %commit_msg%
 echo Status: Pushed to GitHub successfully
-echo URL:    https://github.com/fawaz2023/trading-dashboard
+echo URL:    https://github.com/canvachaad-cell/Pro-spike
 echo.
 echo The Dash deployment will reflect the new data immediately
 echo ======================================================================
