@@ -1154,7 +1154,10 @@ def ask_vikram(question, history):
 
     q_type = _classify_query(question)
     
-    with _cf.ThreadPoolExecutor(max_workers=5) as pool:
+    # Render's free tier has a 0.1 CPU limit which causes massive thread contention.
+    # We drop workers to 2 on Render to stay within limits, while keeping 5 for localhost.
+    workers = 2 if os.environ.get("RENDER") else 5
+    with _cf.ThreadPoolExecutor(max_workers=workers) as pool:
         f_port = pool.submit(build_portfolio_context) if q_type != "engine_audit" else None
         f_sig  = pool.submit(build_engine_signals)
         f_fund = pool.submit(_build_fundamental_context_safe, question) if q_type == "stock_analysis" else None
