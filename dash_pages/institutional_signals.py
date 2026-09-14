@@ -98,6 +98,8 @@ def _grid_table(columns, rows, min_width=760, wide=None):
     )
     return html.Div(
         className="glass-panel rounded-2xl overflow-x-auto",
+        tabIndex="0",
+        **{"aria-label": "Data table"},
         children=[inner_wrapper],
     )
 
@@ -354,6 +356,8 @@ def completed_trades():
 
     return html.Details(
         className="glass-panel rounded-2xl mt-4 overflow-x-auto",
+        tabIndex="0",
+        **{"aria-label": "Completed trades data table"},
         children=[
             html.Summary("🕰️ Historical / Completed Trades", className="px-4 py-3 font-label-caps text-on-surface-variant uppercase tracking-wider text-xs cursor-pointer select-none"),
             html.Div(
@@ -604,6 +608,8 @@ def velocity_simulation(ledger_csv, risk_pct, ai_threshold=None, title="₹10L V
         ledger_section.append(
             html.Details(
                 className="glass-panel rounded-2xl mt-4 overflow-x-auto",
+                tabIndex="0",
+                **{"aria-label": "Simulation ledger data table"},
                 children=[
                     html.Summary("📝 View Trade-by-Trade Simulation Ledger", className="px-4 py-3 font-label-caps text-on-surface-variant uppercase tracking-wider text-xs cursor-pointer select-none"),
                     html.Div(
@@ -697,12 +703,12 @@ def render_engine_tab(tab_value):
 
 def layout():
     return html.Div(
-        className="px-4 md:px-6 pt-6 pb-2 w-full flex flex-col gap-4",
+        className="px-4 md:px-6 pt-6 pb-32 w-full flex flex-col gap-4",
         children=[
             html.Section(
                 className="flex flex-col gap-1",
                 children=[
-                    html.H2("Institutional Signals", className="font-display-lg text-headline-lg md:text-[36px] text-on-surface tracking-tight"),
+                    html.H1("Institutional Signals", className="font-display-lg text-headline-lg md:text-[36px] text-on-surface tracking-tight"),
                     html.P("Multi-Strategy Execution Engine — high-conviction data signals for professional trading.", className="font-body-md text-on-surface-variant"),
                 ],
             ),
@@ -716,17 +722,22 @@ def layout():
                     ".",
                 ],
             ),
-            dcc.Tabs(
-                id="engine-tabs",
-                value="legacy",
-                parent_className="w-full",
-                parent_style={"borderBottom": "none", "backgroundColor": "transparent"},
+            html.Div(
+                className="w-full overflow-x-auto hide-scrollbar touch-pan-x mb-2",
                 children=[
-                    dcc.Tab(label="🔬 Legacy Screener", value="legacy", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
-                    dcc.Tab(label="🏆 SBIA Alpha Engine (High-Velocity)", value="alpha", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
-                    dcc.Tab(label="🔭 SBIA FlexGate Engine (Base-Loading)", value="flexgate", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
-                    dcc.Tab(label="🤖 FlexGate 2.0 (ML Engine)", value="flexgate2", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
-                ],
+                    dcc.Tabs(
+                        id="engine-tabs",
+                        value="legacy",
+                        parent_className="w-full min-w-max flex",
+                        parent_style={"borderBottom": "none", "backgroundColor": "transparent"},
+                        children=[
+                            dcc.Tab(label="🔬 Legacy Screener", value="legacy", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
+                            dcc.Tab(label="🏆 SBIA Alpha Engine (High-Velocity)", value="alpha", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
+                            dcc.Tab(label="🔭 SBIA FlexGate Engine (Base-Loading)", value="flexgate", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
+                            dcc.Tab(label="🤖 FlexGate 2.0 (ML Engine)", value="flexgate2", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
+                        ],
+                    )
+                ]
             ),
             html.Div(id="engine-tab-content", children=_tab_legacy()),
         ],
