@@ -12,5 +12,5 @@ gunicorn
 yfinance
 numpy
 scikit-learn
-google-generativeai
+google-genai
 joblib
