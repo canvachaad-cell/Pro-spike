@@ -1,0 +1,284 @@
+{
+ "PFIZER": {
+  "ts": 1789316000.9262433,
+  "data": {
+   "symbol": "PFIZER",
+   "url": "https://www.screener.in/company/PFIZER/consolidated/",
+   "name": "Pfizer Ltd",
+   "market_cap_cr": 18574.0,
+   "price": 4060.0,
+   "promoter_trend": "Sep 2023: 63.92% -> Dec 2023: 63.92% -> Mar 2024: 63.92% -> Jun 2024: 63.92% -> Sep 2024: 63.92% -> Dec 2024: 63.92% -> Mar 2025: 63.92% -> Jun 2025: 63.92% -> Sep 2025: 63.92% -> Dec 2025: 63.92% -> Mar 2026: 63.92% -> Jun 2026: 63.92%",
+   "promoter_holding": 63.92,
+   "dii_trend": "Sep 2023: 15.00% -> Dec 2023: 15.15% -> Mar 2024: 15.32% -> Jun 2024: 15.83% -> Sep 2024: 16.03% -> Dec 2024: 16.80% -> Mar 2025: 17.10% -> Jun 2025: 17.23% -> Sep 2025: 17.11% -> Dec 2025: 17.05% -> Mar 2026: 16.89% -> Jun 2026: 17.80%",
+   "dii_holding": 17.8,
+   "fii_trend": "Sep 2023: 2.82% -> Dec 2023: 3.03% -> Mar 2024: 3.32% -> Jun 2024: 3.22% -> Sep 2024: 3.54% -> Dec 2024: 2.74% -> Mar 2025: 2.18% -> Jun 2025: 2.40% -> Sep 2025: 2.60% -> Dec 2025: 2.71% -> Mar 2026: 2.81% -> Jun 2026: 1.65%",
+   "fii_holding": 1.65,
+   "pledge_trend": [
+    0.0
+   ],
+   "pledge_direction": "flat",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "borrowings_cr": 0.0,
+   "free_float_cr": 6701,
+   "rpt_status": "NOT_FOUND",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
+ },
+ "HCG": {
+  "ts": 1789316012.5376396,
+  "data": {
+   "symbol": "HCG",
+   "url": "https://www.screener.in/company/HCG/consolidated/",
+   "name": "Healthcare Global Enterprises Ltd",
+   "market_cap_cr": 10360.0,
+   "price": 694.0,
+   "promoter_trend": "Sep 2023: 71.30% -> Dec 2023: 71.29% -> Mar 2024: 71.28% -> Jun 2024: 71.26% -> Sep 2024: 71.23% -> Dec 2024: 71.22% -> Mar 2025: 71.22% -> Jun 2025: 62.46% -> Sep 2025: 63.78% -> Dec 2025: 63.77% -> Mar 2026: 64.21% -> Jun 2026: 64.21%",
+   "promoter_holding": 64.21,
+   "dii_trend": "Sep 2023: 7.94% -> Dec 2023: 8.46% -> Mar 2024: 8.52% -> Jun 2024: 10.89% -> Sep 2024: 11.64% -> Dec 2024: 12.94% -> Mar 2025: 12.48% -> Jun 2025: 13.22% -> Sep 2025: 18.36% -> Dec 2025: 18.30% -> Mar 2026: 18.91% -> Jun 2026: 19.20%",
+   "dii_holding": 19.2,
+   "fii_trend": "Sep 2023: 6.29% -> Dec 2023: 6.37% -> Mar 2024: 6.74% -> Jun 2024: 3.95% -> Sep 2024: 4.30% -> Dec 2024: 2.77% -> Mar 2025: 2.44% -> Jun 2025: 2.16% -> Sep 2025: 3.59% -> Dec 2025: 3.22% -> Mar 2026: 2.76% -> Jun 2026: 2.73%",
+   "fii_holding": 2.73,
+   "pledge_trend": [
+    0.0
+   ],
+   "pledge_direction": "flat",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "quarterly_quarters": 13,
+   "revenue_ttm_cr": 2627.0,
+   "revenue_4q_growth": 0.1367373431414972,
+   "ebit_4q_growth": 0.18811881188118812,
+   "op_lev_ratio": 1.3757676400551448,
+   "op_lev_inflecting": false,
+   "interest_coverage_trend": "improving",
+   "interest_coverage_recent": 2.8,
+   "ocf_3yr_cr": [
+    285.0,
+    317.0,
+    347.0
+   ],
+   "pat_3yr_cr": [
+    41.0,
+    49.0,
+    23.0
+   ],
+   "fcf_pat_ratio": 8.4,
+   "roice_pct": 12.4,
+   "borrowings_cr": 1735.0,
+   "free_float_cr": 3708,
+   "rpt_status": "NOT_FOUND",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
+ },
+ "KINETICENG": {
+  "ts": 1789316064.1140106,
+  "data": {
+   "symbol": "KINETICENG",
+   "url": "https://www.screener.in/company/KINETICENG/consolidated/",
+   "name": "Kinetic Engineering Ltd",
+   "market_cap_cr": 617.0,
+   "price": 229.0,
+   "promoter_trend": "Sep 2023: 54.68% -> Dec 2023: 59.35% -> Mar 2024: 59.35% -> Jun 2024: 59.35% -> Sep 2024: 59.35% -> Dec 2024: 59.35% -> Mar 2025: 61.52% -> Jun 2025: 61.52% -> Sep 2025: 60.48% -> Dec 2025: 60.48% -> Mar 2026: 65.04% -> Jun 2026: 65.04%",
+   "promoter_holding": 65.04,
+   "dii_trend": "Sep 2023: 0.01% -> Dec 2023: 0.01% -> Mar 2024: 0.01% -> Jun 2024: 0.01% -> Sep 2024: 0.01% -> Dec 2024: 0.01% -> Mar 2025: 0.01% -> Jun 2025: 0.01% -> Sep 2025: 0.01% -> Dec 2025: 0.72% -> Mar 2026: 0.68% -> Jun 2026: 0.69%",
+   "dii_holding": 0.69,
+   "fii_trend": "Sep 2023: 0.00% -> Dec 2023: 0.00% -> Mar 2024: 0.00% -> Jun 2024: 7.90% -> Sep 2024: 7.20% -> Dec 2024: 7.12% -> Mar 2025: 5.69% -> Jun 2025: 4.71% -> Sep 2025: 4.67% -> Dec 2025: 3.70% -> Mar 2026: 3.28% -> Jun 2026: 3.23%",
+   "fii_holding": 3.23,
+   "pledge_trend": [
+    0.0
+   ],
+   "pledge_direction": "flat",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "quarterly_quarters": 13,
+   "revenue_ttm_cr": 173.0,
+   "revenue_4q_growth": 0.2536231884057971,
+   "interest_coverage_trend": "improving",
+   "interest_coverage_recent": 0.25,
+   "free_float_cr": 216,
+   "rpt_status": "NOT_FOUND",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
+ },
+ "LAURUSLABS": {
+  "ts": 1789316087.3302276,
+  "data": {
+   "symbol": "LAURUSLABS",
+   "url": "https://www.screener.in/company/LAURUSLABS/consolidated/",
+   "name": "Laurus Labs Ltd",
+   "market_cap_cr": 106387.0,
+   "price": 1969.0,
+   "promoter_trend": "Sep 2023: 27.20% -> Dec 2023: 27.18% -> Mar 2024: 27.18% -> Jun 2024: 27.18% -> Sep 2024: 27.18% -> Dec 2024: 27.62% -> Mar 2025: 27.62% -> Jun 2025: 27.60% -> Sep 2025: 27.60% -> Dec 2025: 27.49% -> Mar 2026: 27.49% -> Jun 2026: 27.47%",
+   "promoter_holding": 27.47,
+   "dii_trend": "Sep 2023: 11.01% -> Dec 2023: 11.13% -> Mar 2024: 11.78% -> Jun 2024: 13.56% -> Sep 2024: 13.05% -> Dec 2024: 12.74% -> Mar 2025: 11.78% -> Jun 2025: 11.94% -> Sep 2025: 11.72% -> Dec 2025: 12.42% -> Mar 2026: 13.96% -> Jun 2026: 13.73%",
+   "dii_holding": 13.73,
+   "fii_trend": "Sep 2023: 24.03% -> Dec 2023: 25.39% -> Mar 2024: 25.98% -> Jun 2024: 25.67% -> Sep 2024: 26.08% -> Dec 2024: 25.56% -> Mar 2025: 25.51% -> Jun 2025: 25.70% -> Sep 2025: 26.17% -> Dec 2025: 26.52% -> Mar 2026: 25.82% -> Jun 2026: 28.00%",
+   "fii_holding": 28.0,
+   "pledge_trend": [
+    0.0
+   ],
+   "pledge_direction": "flat",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "quarterly_quarters": 13,
+   "revenue_ttm_cr": 7269.0,
+   "revenue_4q_growth": 0.22600775847529095,
+   "ebit_4q_growth": 0.6058451816745656,
+   "op_lev_ratio": 2.6806388672749994,
+   "op_lev_inflecting": true,
+   "interest_coverage_trend": "improving",
+   "interest_coverage_recent": 12.59,
+   "ocf_3yr_cr": [
+    666.0,
+    602.0,
+    1624.0
+   ],
+   "pat_3yr_cr": [
+    162.0,
+    358.0,
+    890.0
+   ],
+   "fcf_pat_ratio": 2.05,
+   "roice_pct": 10.9,
+   "borrowings_cr": 2518.0,
+   "free_float_cr": 77162,
+   "rpt_status": "NOT_FOUND",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
+ },
+ "GLAXO": {
+  "ts": 1789316115.474292,
+  "data": {
+   "symbol": "GLAXO",
+   "url": "https://www.screener.in/company/GLAXO/consolidated/",
+   "name": "Glaxosmithkline Pharmaceuticals Ltd",
+   "market_cap_cr": 47915.0,
+   "price": 2828.0,
+   "promoter_trend": "Sep 2023: 75.00% -> Dec 2023: 75.00% -> Mar 2024: 75.00% -> Jun 2024: 75.00% -> Sep 2024: 75.00% -> Dec 2024: 75.00% -> Mar 2025: 75.00% -> Jun 2025: 75.00% -> Sep 2025: 75.00% -> Dec 2025: 75.00% -> Mar 2026: 75.00% -> Jun 2026: 75.00%",
+   "promoter_holding": 75.0,
+   "dii_trend": "Sep 2023: 10.01% -> Dec 2023: 8.64% -> Mar 2024: 7.90% -> Jun 2024: 7.51% -> Sep 2024: 7.34% -> Dec 2024: 7.30% -> Mar 2025: 7.79% -> Jun 2025: 7.71% -> Sep 2025: 7.75% -> Dec 2025: 7.70% -> Mar 2026: 7.68% -> Jun 2026: 7.81%",
+   "dii_holding": 7.81,
+   "fii_trend": "Sep 2023: 2.50% -> Dec 2023: 2.93% -> Mar 2024: 3.48% -> Jun 2024: 4.02% -> Sep 2024: 4.36% -> Dec 2024: 4.50% -> Mar 2025: 4.52% -> Jun 2025: 4.89% -> Sep 2025: 4.79% -> Dec 2025: 4.63% -> Mar 2026: 4.62% -> Jun 2026: 4.79%",
+   "fii_holding": 4.79,
+   "pledge_trend": [
+    0.0
+   ],
+   "pledge_direction": "flat",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "quarterly_quarters": 13,
+   "revenue_ttm_cr": 3954.0,
+   "revenue_4q_growth": 0.057502005883926184,
+   "ebit_4q_growth": 0.1302170283806344,
+   "op_lev_ratio": 2.2645649726288,
+   "op_lev_inflecting": true,
+   "interest_coverage_data_note": "limited_history_6q",
+   "interest_coverage_trend": "improving",
+   "interest_coverage_recent": 339.33,
+   "ocf_3yr_cr": [
+    582.0,
+    1290.0,
+    903.0
+   ],
+   "pat_3yr_cr": [
+    590.0,
+    928.0,
+    1036.0
+   ],
+   "fcf_pat_ratio": 1.09,
+   "roice_pct": 93.0,
+   "borrowings_cr": 33.0,
+   "free_float_cr": 11979,
+   "rpt_status": "NOT_FOUND",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
+ },
+ "GVPIL": {
+  "ts": 1789316130.1442811,
+  "data": {
+   "symbol": "GVPIL",
+   "url": "https://www.screener.in/company/GVPIL/consolidated/",
+   "name": "GE Power India Ltd",
+   "market_cap_cr": 4388.0,
+   "price": 653.0,
+   "promoter_trend": "Sep 2023: 68.58% -> Dec 2023: 68.58% -> Mar 2024: 68.58% -> Jun 2024: 68.58% -> Sep 2024: 68.58% -> Dec 2024: 68.58% -> Mar 2025: 68.58% -> Jun 2025: 68.58% -> Sep 2025: 68.58% -> Dec 2025: 68.58% -> Mar 2026: 68.58% -> Jun 2026: 68.58%",
+   "promoter_holding": 68.58,
+   "dii_trend": "Sep 2023: 5.27% -> Dec 2023: 3.87% -> Mar 2024: 3.50% -> Jun 2024: 2.99% -> Sep 2024: 2.80% -> Dec 2024: 2.80% -> Mar 2025: 2.30% -> Jun 2025: 0.46% -> Sep 2025: 0.40% -> Dec 2025: 0.43% -> Mar 2026: 1.13% -> Jun 2026: 1.05%",
+   "dii_holding": 1.05,
+   "fii_trend": "Sep 2023: 0.23% -> Dec 2023: 0.11% -> Mar 2024: 0.25% -> Jun 2024: 0.39% -> Sep 2024: 0.43% -> Dec 2024: 0.85% -> Mar 2025: 0.41% -> Jun 2025: 0.56% -> Sep 2025: 0.11% -> Dec 2025: 0.15% -> Mar 2026: 1.26% -> Jun 2026: 1.17%",
+   "fii_holding": 1.17,
+   "pledge_trend": [
+    0.0
+   ],
+   "pledge_direction": "flat",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "quarterly_quarters": 13,
+   "revenue_ttm_cr": 1292.0,
+   "revenue_4q_growth": 0.18859245630174792,
+   "interest_coverage_trend": "improving",
+   "interest_coverage_recent": 15.31,
+   "ocf_3yr_cr": [
+    182.0,
+    379.0,
+    469.0
+   ],
+   "pat_3yr_cr": [
+    -171.0,
+    203.0,
+    253.0
+   ],
+   "fcf_pat_ratio": 3.61,
+   "roice_pct": 6466.7,
+   "borrowings_cr": 18.0,
+   "free_float_cr": 1379,
+   "rpt_status": "NOT_FOUND",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
+ },
+ "TATAPOWER": {
+  "ts": 1789316156.946222,
+  "data": {
+   "symbol": "TATAPOWER",
+   "url": "https://www.screener.in/company/TATAPOWER/consolidated/",
+   "name": "Tata Power Company Ltd",
+   "market_cap_cr": 116518.0,
+   "price": 365.0,
+   "promoter_trend": "Sep 2023: 46.86% -> Dec 2023: 46.86% -> Mar 2024: 46.86% -> Jun 2024: 46.86% -> Sep 2024: 46.86% -> Dec 2024: 46.86% -> Mar 2025: 46.86% -> Jun 2025: 46.86% -> Sep 2025: 46.86% -> Dec 2025: 46.86% -> Mar 2026: 46.86% -> Jun 2026: 46.86%",
+   "promoter_holding": 46.86,
+   "dii_trend": "Sep 2023: 15.68% -> Dec 2023: 16.11% -> Mar 2024: 15.47% -> Jun 2024: 15.49% -> Sep 2024: 16.63% -> Dec 2024: 15.71% -> Mar 2025: 15.87% -> Jun 2025: 15.95% -> Sep 2025: 16.34% -> Dec 2025: 17.20% -> Mar 2026: 17.98% -> Jun 2026: 18.12%",
+   "dii_holding": 18.12,
+   "fii_trend": "Sep 2023: 10.00% -> Dec 2023: 9.85% -> Mar 2024: 9.44% -> Jun 2024: 9.50% -> Sep 2024: 9.15% -> Dec 2024: 9.45% -> Mar 2025: 9.38% -> Jun 2025: 10.05% -> Sep 2025: 10.19% -> Dec 2025: 10.00% -> Mar 2026: 10.04% -> Jun 2026: 10.03%",
+   "fii_holding": 10.03,
+   "pledge_trend": [
+    0.0
+   ],
+   "pledge_direction": "flat",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "quarterly_quarters": 13,
+   "revenue_ttm_cr": 63444.0,
+   "revenue_4q_growth": -0.04192086982784657,
+   "ebit_4q_growth": -0.026213813540004557,
+   "interest_coverage_trend": "deteriorating",
+   "interest_coverage_recent": 2.37,
+   "ocf_3yr_cr": [
+    12504.0,
+    12680.0,
+    5993.0
+   ],
+   "pat_3yr_cr": [
+    4280.0,
+    4775.0,
+    5118.0
+   ],
+   "fcf_pat_ratio": 2.2,
+   "roice_pct": 16.4,
+   "borrowings_cr": 76141.0,
+   "free_float_cr": 61918,
+   "rpt_status": "NOT_FOUND",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
+ }
+}

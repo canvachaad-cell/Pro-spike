@@ -24,9 +24,8 @@ from rpt_fetcher import RPTFetcher
 
 CACHE_PATH = os.path.join("data", "fundamental_cache.json")
 CACHE_TTL_SECONDS = 24 * 3600
-# screener.in intermittently stalls under load; 6s was too tight and caused
-# empty ⏳ scorecards. 15s + one retry (in fetch()) + stale-cache fallback.
-REQUEST_TIMEOUT = 15
+# screener.in intermittently stalls under load; 6s timeout + stale-cache fallback.
+REQUEST_TIMEOUT = 6
 _HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
 _lock = threading.Lock()
@@ -104,12 +103,10 @@ class FundamentalFetcher:
             self._purge_cache(symbol)
         data = self._fetch_live(symbol)
         if _quality_count(data) < MIN_QUALITY_KEYS:
-            # hollow consolidated page -> try standalone, then retry consolidated
+            # hollow consolidated page -> try standalone
             standalone = self._fetch_live(symbol, standalone=True)
             if _quality_count(standalone) > _quality_count(data):
                 data = standalone
-            else:
-                data = self._fetch_live(symbol)
         if _quality_count(data) < MIN_QUALITY_KEYS:
             stale = self._load_cache(symbol, allow_stale=True)
             if stale is not None and _quality_count(stale) >= MIN_QUALITY_KEYS:

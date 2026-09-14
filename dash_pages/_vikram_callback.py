@@ -865,6 +865,29 @@ def build_fundamental_context(question):
     return "\n".join(lines)
 
 
+import concurrent.futures as _cf
+
+_FETCH_TIMEOUT = 8  # seconds — hard cap for screener.in on Render
+
+def _build_fundamental_context_safe(question):
+    """Wraps build_fundamental_context with a hard wall-clock timeout.
+    If screener.in is slow, returns a degraded context so Vikram
+    falls back to Google Search grounding instead of hanging.
+    """
+    with _cf.ThreadPoolExecutor(max_workers=1) as ex:
+        fut = ex.submit(build_fundamental_context, question)
+        try:
+            return fut.result(timeout=_FETCH_TIMEOUT)
+        except _cf.TimeoutError:
+            return (
+                "(LIVE FUNDAMENTAL FETCH TIMED OUT — screener.in was too slow. "
+                "You MUST use your Google Search tool to find this company's key "
+                "fundamentals — market cap, promoter/pledge, OCF vs PAT, interest "
+                "coverage, RoCE — and mark each searched value with 🔍. "
+                "Do NOT use ⏳ without having searched first.)"
+            )
+
+
 # ---------------------------------------------------------------------------
 # Simulation ledger + risk architecture context (engine audit)
 # ---------------------------------------------------------------------------
@@ -948,7 +971,7 @@ _working_search = None
 # Verified live 2026-09-04: gemini-3.5-flash + gemini-flash-latest work;
 # 3.5-flash-lite intermittently 503s (high demand, kept as last fallback);
 # gemini-2.5-flash / 2.5-flash-lite are 404-retired for this key.
-MODEL_CANDIDATES = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite"]
+MODEL_CANDIDATES = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
 
 
 def _ensure_configured():
@@ -1050,7 +1073,7 @@ def ask_vikram(question, history):
         VIKRAM_SYSTEM_PROMPT
         .replace("{PORTFOLIO_CONTEXT}", build_portfolio_context())
         .replace("{ENGINE_SIGNALS}", build_engine_signals())
-        .replace("{FUNDAMENTAL_DATA}", build_fundamental_context(question))
+        .replace("{FUNDAMENTAL_DATA}", _build_fundamental_context_safe(question))
         .replace("{SIMULATION_LEDGER}", build_ledger_context())
         .replace("{RISK_ARCHITECTURE}", build_risk_architecture_context())
     )
