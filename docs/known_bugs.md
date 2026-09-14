@@ -188,3 +188,13 @@
 **ROOT CAUSE**: 1) `mobile-bottom-nav` had CSS `z-index: 200`, while `vikram-panel` was `z-[100]`, causing an inversion where the nav bar blocked the panel's footer. 2) The Vikram mobile tab was an `html.A(href="#")`, which triggers default browser scroll-to-top behavior.
 **FIX**: Elevated `vikram-panel` to `z-[999]`. Converted the Vikram tab to an `html.Div` with `cursor-pointer`. Renamed the generic "More" tab to "Inst. Signals" and updated the Material icon from `more_horiz` to `shield`.
 **AI PROCESS**: Used Lighthouse UI heuristics to audit the mobile DOM layout. Drafted a precise `/fix_before_touch` plan to swap the React components and Tailwind classes without disrupting existing Dash clientside callbacks.
+
+---
+
+## BUG-013 — UI/UX Phase 2: Vikram `dvh` Blowout & Desktop Negative Space
+**STATUS**: FIXED
+**FILE**: `dash_app_v2.py`, `assets/style.css`
+**SYMPTOM**: On mobile devices, the bottom of the Vikram side panel was pushed off-screen due to the browser's URL bar, making the chat input inaccessible. On desktop, large screens displayed massive empty margins because the layout was locked to 1200px. Additionally, the mobile nav bar looked dated (edge-to-edge block).
+**ROOT CAUSE**: 1) `h-screen` compiles to `100vh`, which ignores mobile UI bars. 2) Hardcoded `max-w-[1200px]` trapped the desktop layout.
+**FIX**: Swapped `h-screen` for `h-[100dvh]` to enable Dynamic Viewport Height scaling. Expanded desktop container to `max-w-[1800px]`. Redesigned `.mobile-bottom-nav` into a floating, pill-shaped island (`border-radius: 32px`, `bottom: 16px`).
+**AI PROCESS**: Reviewed layout components directly. Wrote a Gemini-proof implementation plan specifying exact line replacements and guarding against accidental prop deletion. Verified syntax.

@@ -150,7 +150,7 @@ app.layout = html.Div(
         # Vikram AI Analyst slide-in panel (right side, hidden by default)
         html.Aside(
             id="vikram-panel",
-            className="fixed top-0 right-0 h-screen w-full md:w-[400px] z-[999] flex flex-col bg-surface-container-low/95 backdrop-blur-2xl border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]",
+            className="fixed top-0 right-0 h-[100dvh] w-full md:w-[400px] z-[999] flex flex-col bg-surface-container-low/95 backdrop-blur-2xl border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]",
             style={"transform": "translateX(100%)", "transition": "transform 0.3s ease"},
             children=[
                 html.Div(
@@ -210,7 +210,7 @@ app.layout = html.Div(
                     className="p-margin-mobile md:p-margin-desktop pb-24 page-content-mobile-pad",
                     children=[
                         html.Div(
-                            className="max-w-[1200px] mx-auto w-full",
+                            className="max-w-[1800px] mx-auto w-full",
                             children=[
                                 dash.page_container
                             ]
