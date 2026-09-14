@@ -99,7 +99,16 @@ def ledger_table(path, engine_name):
                 html.Div(f"₹{float(r.get('EXIT_PRICE', 0) or 0):,.2f}" if pd.notna(r.get("EXIT_PRICE")) else "-", className="text-on-surface"),
             ]
         ))
-    return html.Div(className="glass-panel rounded-2xl overflow-hidden", children=[header] + rows)
+    return html.Div(
+        className="table-scroll-wrapper",
+        children=[
+            html.Div(
+                className="glass-panel rounded-2xl overflow-hidden",
+                style={"minWidth": "720px"},
+                children=[header] + rows
+            )
+        ]
+    )
 
 
 def layout():

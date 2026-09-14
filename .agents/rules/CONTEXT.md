@@ -5,14 +5,15 @@
 
 **Current Working Set (trading_dashboard):**
 - `trading_dashboard/docs\known_bugs.md`
-- `trading_dashboard/test_6_metric_scorer.py`
-- `trading_dashboard/scripts\bse_rpt_scraper.py`
 - `trading_dashboard/dash_pages\_vikram_callback.py`
-- `trading_dashboard/rpt_fetcher.py`
-- `trading_dashboard/conviction_scorer.py`
-- `trading_dashboard/AGENTS.md`
-- `trading_dashboard/scratch\last_session.md`
+- `trading_dashboard/scratch\take_screenshot.py`
 - `trading_dashboard/fundamental_fetcher.py`
+- `trading_dashboard/AGENTS.md`
+- `trading_dashboard/dash_app_v2.py`
+- `trading_dashboard/scratch\full_test.py`
+- `trading_dashboard/scratch\browseros_control.py`
+- `trading_dashboard/auto_push_github.bat`
+- `trading_dashboard/dash_pages\win_rate.py`
 
 **Constraints for Today:**
 - Do NOT hallucinate variables or schemas. Use Dynamic Schema Discovery.

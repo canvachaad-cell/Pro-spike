@@ -270,10 +270,10 @@ def layout():
                 children=[
                     html.Div([
                         html.H1(
-                            className="font-display-lg text-[48px] leading-[56px] font-bold text-on-surface mb-2 tracking-tight",
+                            className="font-display-lg text-[28px] md:text-[48px] leading-[1.2] md:leading-[56px] font-bold text-on-surface mb-2 tracking-tight",
                             children=[
                                 html.Span("Pro Spike", className="block font-label-sm text-[12px] leading-[16px] font-bold text-primary tracking-widest uppercase mb-1"),
-                                html.Span("Dashboard", className="block font-display-lg text-[48px] leading-[56px] font-bold text-on-surface tracking-tight")
+                                html.Span("Dashboard", className="block font-display-lg text-[28px] md:text-[48px] leading-[1.2] md:leading-[56px] font-bold text-on-surface tracking-tight")
                             ]
                         )
                     ]),

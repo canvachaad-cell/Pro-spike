@@ -119,7 +119,16 @@ def build_positions_section(wm):
 
     return html.Div([
         stats,
-        html.Div(className="glass-panel rounded-2xl overflow-hidden", children=[header] + rows),
+        html.Div(
+            className="table-scroll-wrapper",
+            children=[
+                html.Div(
+                    className="glass-panel rounded-2xl overflow-hidden",
+                    style={"minWidth": "900px"},
+                    children=[header] + rows
+                )
+            ]
+        ),
     ])
 
 
@@ -153,7 +162,16 @@ def build_closed_section(wm):
                 html.Div(f"{ret:+.2f}%", className=f"font-semibold {pnl_class(ret)}"),
             ]
         ))
-    return html.Div(className="glass-panel rounded-2xl overflow-hidden", children=[header] + rows)
+    return html.Div(
+        className="table-scroll-wrapper",
+        children=[
+            html.Div(
+                className="glass-panel rounded-2xl overflow-hidden",
+                style={"minWidth": "720px"},
+                children=[header] + rows
+            )
+        ]
+    )
 
 
 def stat_tile(label, value, accent="text-on-surface"):

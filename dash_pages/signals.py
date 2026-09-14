@@ -122,8 +122,14 @@ def build_signals_table(signals):
             ]
         ))
     return html.Div(
-        className="glass-panel rounded-2xl overflow-hidden",
-        children=[header] + rows,
+        className="table-scroll-wrapper",
+        children=[
+            html.Div(
+                className="glass-panel rounded-2xl overflow-hidden",
+                style={"minWidth": "700px"},
+                children=[header] + rows,
+            )
+        ]
     )
 
 
@@ -162,7 +168,16 @@ def build_history_section():
         className="grid grid-cols-6 gap-2 px-4 py-3 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant",
         children=[html.Div("Date"), html.Div("Symbol"), html.Div("Exch"), html.Div("Price"), html.Div("Delivery"), html.Div("Momentum")]
     )
-    table = html.Div(className="glass-panel rounded-2xl overflow-hidden", children=[header] + rows)
+    table = html.Div(
+        className="table-scroll-wrapper",
+        children=[
+            html.Div(
+                className="glass-panel rounded-2xl overflow-hidden", 
+                style={"minWidth": "600px"},
+                children=[header] + rows
+            )
+        ]
+    )
     return html.Div([stats, table])
 
 

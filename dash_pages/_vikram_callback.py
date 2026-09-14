@@ -971,7 +971,7 @@ _working_search = None
 # Verified live 2026-09-04: gemini-3.5-flash + gemini-flash-latest work;
 # 3.5-flash-lite intermittently 503s (high demand, kept as last fallback);
 # gemini-2.5-flash / 2.5-flash-lite are 404-retired for this key.
-MODEL_CANDIDATES = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+MODEL_CANDIDATES = ["gemini-3.5-flash", "gemini-flash-latest"]
 
 
 def _ensure_configured():
