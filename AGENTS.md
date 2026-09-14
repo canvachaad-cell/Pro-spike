@@ -14,7 +14,7 @@ All run inside `Pro-spike` root directory:
 - Syntax Check: `python -m py_compile <filepath>`
 - Verification Check: `python check_pipeline.py`
 - **Verification Bar:** Clean execution without python tracebacks + manual UI/data verification. Never claim a fix is complete without verifying it empirically.
-- **Git Push Rules:** This project uses TWO remotes. `origin` (fawaz2023) and `prospike` (canvachaad-cell). **When the user says "push git", you MUST run: `git push origin main ; git push prospike main`**. Do not just run `git push`.
+- **Git Push Rules:** This project has TWO remotes but **ONLY ONE should receive Dash code**. `origin` (fawaz2023/trading-dashboard) is a **SEPARATE, UNRELATED Streamlit project — NEVER push to it**. `prospike` (canvachaad-cell/Pro-spike) is the real Pro Spike Dash project. **When the user says "push git", you MUST run: `git push prospike main` ONLY.** Never push to `origin`.
 
 ## Hard Rules for the AI
 > [!IMPORTANT]

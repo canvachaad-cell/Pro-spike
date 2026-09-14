@@ -311,19 +311,7 @@ def toggle_sidebar(n_clicks, state):
     
     return new_class, {"collapsed": new_collapsed}, new_icon, new_title_style
 
-app.clientside_callback(
-    """
-    function(n_clicks) {
-        if (n_clicks) {
-            document.getElementById('vikram-panel').style.transform = 'translateX(0)';
-        }
-        return window.dash_clientside.no_update;
-    }
-    """,
-    Output("mobile-vikram-tab", "id"),
-    Input("mobile-vikram-tab", "n_clicks"),
-    prevent_initial_call=True
-)
+
 
 # Registers the Vikram AI Analyst chat callbacks (⌘K bar -> slide-in panel).
 # Underscore prefix keeps this module out of the Dash pages registry.

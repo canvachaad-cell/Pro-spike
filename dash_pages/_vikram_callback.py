@@ -971,7 +971,9 @@ _working_search = None
 # Verified live 2026-09-04: gemini-3.5-flash + gemini-flash-latest work;
 # 3.5-flash-lite intermittently 503s (high demand, kept as last fallback);
 # gemini-2.5-flash / 2.5-flash-lite are 404-retired for this key.
-MODEL_CANDIDATES = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-flash-lite-latest"]
+# gemini-2.5-flash is 404-retired for this API key (confirmed 2026-09-04).
+# gemini-3.6-flash is the primary; 3.5-flash is the warm fallback.
+MODEL_CANDIDATES = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-lite-latest"]
 
 
 def _ensure_configured():
@@ -987,7 +989,9 @@ def _ensure_configured():
     except ImportError as e:
         return f"google-genai import failed: {e}"
     try:
-        _client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=90_000))
+        # 25s per-request HTTP timeout — fast enough to feel responsive, long
+        # enough for Vikram's typical 8-15s complex query latency on Gemini flash.
+        _client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=25_000))
     except Exception as e:
         return f"Could not configure Gemini: {e}"
     return None
@@ -1060,20 +1064,36 @@ _SEARCH_TRIGGER = re.compile(
 
 def _probe_dynamic_fallback(system_prompt, contents, search_requested):
     """Dynamically find a working model when the static cluster is overloaded.
-    Tries all flash models first with search, then without search as a fallback.
-    Applies a 1s sleep on 503/429 to survive transient spikes.
+
+    HARD CAP: This entire function must complete within PROBE_TOTAL_TIMEOUT
+    seconds. If every model fails or the loop is too slow, we return a clean
+    error instead of hanging the Dash thread indefinitely.
     """
     global _working_model, _working_search
     import time
+
+    PROBE_TOTAL_TIMEOUT = 28  # seconds — hard outer wall clock cap
+
     try:
         models = list(_client.models.list())
-        # Prioritize flash models, ignore embedding/tts/vision specific models
-        model_names = [m.name.replace("models/", "") for m in models if "flash" in m.name and "tts" not in m.name and "image" not in m.name and "audio" not in m.name]
+        model_names = [
+            m.name.replace("models/", "") for m in models
+            if "flash" in m.name
+            and "tts" not in m.name
+            and "image" not in m.name
+            and "audio" not in m.name
+        ]
     except Exception:
         return None, None, "Dynamic probe failed to list models."
 
+    probe_start = time.monotonic()
+
     for use_search in ([True, False] if search_requested else [False]):
         for name in model_names:
+            # Hard cap: if we've spent more than PROBE_TOTAL_TIMEOUT seconds
+            # in this probe, abort immediately to unblock the Dash thread.
+            if time.monotonic() - probe_start > PROBE_TOTAL_TIMEOUT:
+                return None, None, f"Dynamic probe timed out after {PROBE_TOTAL_TIMEOUT}s — all models were too slow."
             try:
                 text, sources = _generate(name, system_prompt, contents, use_search)
                 _working_model = name
@@ -1081,8 +1101,7 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested):
                 return text, sources, None
             except Exception as e:
                 if "503" in str(e) or "429" in str(e):
-                    time.sleep(1)   # brief pause before trying next model
-                # all errors: skip to next model
+                    time.sleep(1)
     return None, None, "All dynamically probed models (with and without search) returned errors."
 
 
@@ -1128,7 +1147,6 @@ def ask_vikram(question, history):
     last_err = None
     search_was_requested = bool(_SEARCH_TRIGGER.search(question or ""))
     for model_name, use_search in attempts:
-        success = False
         for attempt in range(3):
             try:
                 text, sources = _generate(model_name, system_prompt, contents, use_search)
@@ -1237,9 +1255,10 @@ def _loader_bubble():
     Output("vikram-panel", "style"),
     Input("vikram-trigger", "n_clicks"),
     Input("vikram-close", "n_clicks"),
+    Input("mobile-vikram-tab", "n_clicks"),
     prevent_initial_call=True,
 )
-def vikram_panel_visibility(trigger_clicks, close_clicks):
+def vikram_panel_visibility(trigger_clicks, close_clicks, mobile_clicks):
     if dash.ctx.triggered_id == "vikram-close":
         return PANEL_HIDDEN_STYLE
     return PANEL_SHOWN_STYLE

@@ -228,3 +228,17 @@
 3. Patched Axe-core violations by adding `tabIndex="0"`, `alt="User profile picture"`, `role="complementary"`, and `aria-hidden="true"` to respective elements.
 **FAILED ATTEMPTS**: None.
 **AI PROCESS**: Utilized the newly installed `.agents/skills/ui-audit` custom skill to run Playwright testing, extracted the JSON violations, evaluated Nielsen heuristics, and proposed an exact structural fix via artifact.
+
+---
+
+## BUG-016 — Vikram AI Callback "Stuck" Deadlock
+**STATUS**: FIXED
+**FILE**: `dash_pages/_vikram_callback.py`, `dash_app_v2.py`
+**SYMPTOM**: On mobile, the Vikram panel snaps shut immediately after opening. On desktop, Vikram hangs on "thinking..." forever during peak Gemini load times.
+**ROOT CAUSE**: Two root causes. 1) Mobile panel had a conflicting `clientside_callback` that fought the server-side callback for control of the `style` prop, resulting in the server resetting it. 2) The Gemini dynamic probe had no outer wall-clock timeout and the API client had a 90s timeout. When 503s were hit, the backend hung silently.
+**FIX**: 
+1. Deleted the `clientside_callback` entirely from `dash_app_v2.py` and routed the mobile nav button `n_clicks` into the main server-side `vikram_panel_visibility` callback.
+2. Slashed `genai.Client` timeout to 25s.
+3. Added a hard 28s `time.monotonic()` limit to `_probe_dynamic_fallback()`.
+**FAILED ATTEMPTS**: None. Fixed on first pass with surgical implementation plan.
+**AI PROCESS**: Used `DEMONCORE:DEEP_AUDIT` to statically analyze the callback execution chain and spot the race conditions.
