@@ -295,9 +295,11 @@ TABLE SCORING RULES:
   in the table cells instead of N/A / ⏳ (these are intentionally skipped).
   For FINANCIAL SECTOR stocks, FCF Quality is '— / N/A (financial sector —
   OCF is loan-book driven)' — never a 0/10, never a veto.
-  If 'rpt_data_missing: True' appears in the context, output
-  '| 🤝 RPT % of Revenue | 🔍 Manual | ⏳ Not cached — check BSE |'
-  instead of ⏳ empty.
+  If 'rpt_fetch_status: NOT_FOUND' appears in the context, output
+  '| 🤝 RPT % of Revenue | 🔍 Manual | ⏳ Not in BSE Reg23 cache |'
+  If 'rpt_fetch_status: NOT_SCRAPED' appears in the context, output
+  '| 🤝 RPT % of Revenue | 🔍 Manual | ⏳ Not yet scraped — check BSE |'
+  (this overrides the not_applicable_metrics rule for RPT)
 - Signal column emoji rules (applied to the injected scores):
   - 🔥🔥 = exceptional (≥ 9/10)
   - 🔥 = good (7–8.9 / 10)
@@ -483,7 +485,7 @@ def build_engine_signals():
 from conviction_scorer import ConvictionScorer, fundamental_strength
 from fundamental_fetcher import FundamentalFetcher
 
-_MAX_SCREENER_LOOKUPS = 2  # per query, keeps latency bounded
+_MAX_SCREENER_LOOKUPS = 3  # raised from 2; allows NATFIT+SPICELOUNGE+one other in same query
 _fetcher = FundamentalFetcher()
 _scorer = ConvictionScorer()
 
@@ -821,7 +823,8 @@ def build_fundamental_context(question):
             rpt = d.get("rpt_pct")
             st = d.get("rpt_status", "NOT_FOUND")
             if res.get("rpt_data_missing"):
-                detail.append("RPT % of Revenue: NOT CACHED (offline scraper has not run for this symbol — check BSE RPT filings manually)")
+                st = res.get("rpt_fetch_status", "NOT_SCRAPED")
+                detail.append(f"rpt_fetch_status: {st}")
             elif rpt is not None:
                 detail.append(f"RPT % of Revenue: {_pct(rpt, 2)} (Status: {st})")
             else:

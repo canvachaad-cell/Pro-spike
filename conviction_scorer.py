@@ -211,9 +211,11 @@ class ConvictionScorer:
             
             # Check for Unverified Vetoes (missing data)
             unv = []
-            if fund.get("rpt_status", "NOT_FOUND") == "NOT_FOUND" or fund.get("rpt_pct") is None:
+            rpt_status_lc = fund.get("rpt_status", "NOT_SCRAPED")
+            if rpt_status_lc in ("NOT_FOUND", "NOT_SCRAPED") or fund.get("rpt_pct") is None:
                 base["not_applicable_metrics"].append("rpt_pct")
                 base["rpt_data_missing"] = True
+                base["rpt_fetch_status"] = rpt_status_lc
             if fund.get("pledge_direction") is None:
                 unv.append("Promoter pledge trend data missing")
             if fund.get("sector_type") != "financial" and fund.get("fcf_pat_ratio") is None:
@@ -242,11 +244,16 @@ class ConvictionScorer:
         unverified_veto_reasons = []
 
         # Veto 1: RPT %
-        rpt_status = fund.get("rpt_status", "NOT_FOUND")
+        rpt_status = fund.get("rpt_status", "NOT_SCRAPED")
         rpt_pct = fund.get("rpt_pct")
-        if rpt_status == "NOT_FOUND" or rpt_pct is None:
+        if rpt_status in ("NOT_FOUND", "NOT_SCRAPED") or rpt_pct is None:
+            # NOT_FOUND  → scraper ran and found nothing (Reg23 PDF absent on BSE)
+            # NOT_SCRAPED → symbol never ran through the offline scraper
+            # Both result in the metric being excluded from the score, but
+            # we flag them differently so Vikram can display ⏳ vs — N/A.
             base["not_applicable_metrics"].append("rpt_pct")
             base["rpt_data_missing"] = True
+            base["rpt_fetch_status"] = rpt_status
         elif rpt_pct > PROVISIONAL_RPT_VETO_PCT:
             veto_reasons.append(f"RPT % of Revenue exceeds veto threshold ({rpt_pct:.1f}% > {PROVISIONAL_RPT_VETO_PCT}%)")
 

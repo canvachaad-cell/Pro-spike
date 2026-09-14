@@ -73,6 +73,22 @@ def _quality_count(data):
     return sum(1 for k in QUALITY_KEYS if data.get(k) is not None)
 
 
+_ANNUAL_METRICS = (
+    "fcf_pat_ratio", "op_lev_ratio",
+    "interest_coverage_trend", "roice_pct",
+)
+
+def _is_financially_hollow(data):
+    """Returns True when all four annual metrics are missing.
+    
+    This catches BSE-only small-caps whose consolidated page returns
+    shareholding data (satisfying MIN_QUALITY_KEYS) but completely
+    omits the cash flow, P&L, and balance sheet annual tables.
+    """
+    if not data or data.get("error"):
+        return True
+    return all(data.get(k) is None for k in _ANNUAL_METRICS)
+
 # A result below this is a HOLLOW page (screener occasionally serves a page
 # with no financial tables) — must never be cached and must be reported as
 # incomplete so the caller falls back to search instead of ⏳-forever.
@@ -102,8 +118,9 @@ class FundamentalFetcher:
             # Hollow cache entry (old bug) — purge and refetch
             self._purge_cache(symbol)
         data = self._fetch_live(symbol)
-        if _quality_count(data) < MIN_QUALITY_KEYS:
-            # hollow consolidated page -> try standalone
+        if _quality_count(data) < MIN_QUALITY_KEYS or _is_financially_hollow(data):
+            # hollow consolidated page OR consolidated has holdings but no financials
+            # (common for BSE-only small-caps filing standalone accounts only)
             standalone = self._fetch_live(symbol, standalone=True)
             if _quality_count(standalone) > _quality_count(data):
                 data = standalone

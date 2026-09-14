@@ -52,11 +52,11 @@ class RPTFetcher:
             except Exception as e:
                 logger.warning(f"Error reading RPT cache for {symbol}: {e}")
 
-        # 2. No live scraping at query time - relies purely on the offline scraper cache
-        
-        # Explicit NOT_FOUND return when filing data is not available in the cache
+        # 2. No live scraping at query time - relies purely on the offline scraper cache.
+        # Use NOT_SCRAPED (not NOT_FOUND) to distinguish "we never ran the scraper
+        # for this symbol" from "we scraped and definitively found nothing".
         return {
-            "status": "NOT_FOUND",
+            "status": "NOT_SCRAPED",
             "rpt_amount_cr": None,
             "rpt_pct": None,
             "filing_type": None
