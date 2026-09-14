@@ -3,7 +3,16 @@ services:
     name: trading-dashboard
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn dash_app_v2:server
+    startCommand: >-
+      gunicorn dash_app_v2:server
+      --worker-class gevent
+      --workers 1
+      --worker-connections 100
+      --timeout 120
+      --keep-alive 5
+      --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.3
+      - key: RENDER
+        value: "1"

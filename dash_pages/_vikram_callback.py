@@ -992,9 +992,11 @@ def _ensure_configured():
     except ImportError as e:
         return f"google-genai import failed: {e}"
     try:
-        # 25s per-request HTTP timeout — fast enough to feel responsive, long
-        # enough for Vikram's typical 8-15s complex query latency on Gemini flash.
-        _client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=25_000))
+        # On Render, cap at 15s — gevent will yield during the HTTP wait, so
+        # tighter timeout means faster failure and faster fallback to the probe.
+        # On localhost 25s is fine since Werkzeug handles concurrent requests.
+        _gemini_http_timeout = 15_000 if os.environ.get("RENDER") else 25_000
+        _client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=_gemini_http_timeout))
     except Exception as e:
         return f"Could not configure Gemini: {e}"
     return None
@@ -1075,7 +1077,10 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested):
     global _working_model, _working_search
     import time
 
-    PROBE_TOTAL_TIMEOUT = 28  # seconds — hard outer wall clock cap
+    # On Render, 28s is too long. The gevent worker serves heartbeats
+    # during the probe, but Render's load balancer has a 30s idle timeout.
+    # Cap the probe at 20s on Render to guarantee a clean error before LB kills the conn.
+    PROBE_TOTAL_TIMEOUT = 20 if os.environ.get("RENDER") else 28  # seconds — hard outer wall clock cap
 
     try:
         models = list(_client.models.list())
@@ -1219,7 +1224,11 @@ def ask_vikram(question, history):
                 last_err = e
                 err_str = str(e)
                 if "503" in err_str or "429" in err_str:
-                    time.sleep(2 ** attempt) # Exponential backoff: 1s, 2s, 4s
+                    # On Render (0.1 CPU), long sleeps starve gevent's event loop.
+                    # 0.5s intervals are enough to survive transient spikes without
+                    # blocking the worker for 6 seconds per retry.
+                    sleep_sec = 0.5 if os.environ.get("RENDER") else 2 ** attempt
+                    time.sleep(sleep_sec)
                     continue
                 else:
                     break
