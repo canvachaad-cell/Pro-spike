@@ -1106,6 +1106,41 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested):
 
 
 
+def _classify_query(question):
+    """Returns: 'stock_analysis' | 'portfolio_audit' | 'engine_audit' | 'general'"""
+    q = (question or "").upper()
+    symbols = extract_query_symbols(question)
+    if symbols:
+        return "stock_analysis"
+    audit_words = {"AUDIT", "ALPHA", "LEAK", "LEDGER", "ENGINE", "TRADE", "WIN RATE", "SL", "TP"}
+    if any(w in q for w in audit_words):
+        return "engine_audit"
+    portfolio_words = {"PORTFOLIO", "POSITIONS", "WATCHLIST", "HOLDING"}
+    if any(w in q for w in portfolio_words):
+        return "portfolio_audit"
+    return "general"
+
+def _should_force_search(question, fundamental_context):
+    context_has_fresh = (
+        "LIVE FUNDAMENTAL FETCH INCOMPLETE" not in fundamental_context
+        and "TIMED OUT" not in fundamental_context
+        and "no live fundamental fetch" not in fundamental_context
+    )
+    ALWAYS_SEARCH = re.compile(
+        r"\b(results?|quarter\w*|Q[1-4]|news|earnings|concall|announcement|latest|recent|today|this week|investor presentation)\b", re.I
+    )
+    if ALWAYS_SEARCH.search(question or ""):
+        return True
+    if context_has_fresh:
+        return False
+    return True
+
+def _safe_result(future, timeout, fallback):
+    try:
+        return future.result(timeout=timeout)
+    except Exception:
+        return fallback
+
 def ask_vikram(question, history):
     """Send system prompt + session history + question to Gemini with Google
     Search grounding. Falls back to no-tools if search fails on every model.
@@ -1117,16 +1152,35 @@ def ask_vikram(question, history):
     if err:
         return None, [], err
 
+    q_type = _classify_query(question)
+    
+    with _cf.ThreadPoolExecutor(max_workers=5) as pool:
+        f_port = pool.submit(build_portfolio_context) if q_type != "engine_audit" else None
+        f_sig  = pool.submit(build_engine_signals)
+        f_fund = pool.submit(_build_fundamental_context_safe, question) if q_type == "stock_analysis" else None
+        f_ledg = pool.submit(build_ledger_context) if q_type == "engine_audit" else None
+        
+        port_ctx = _safe_result(f_port, 3, "Portfolio data unavailable.") if f_port else "(Portfolio context skipped)"
+        sig_ctx  = _safe_result(f_sig, 3, "Engine signals unavailable.")
+        fund_ctx = _safe_result(f_fund, 9, "(LIVE FUNDAMENTAL FETCH TIMED OUT)") if f_fund else "(Fundamental fetch skipped)"
+        ledg_ctx = _safe_result(f_ledg, 4, "Ledger data unavailable.") if f_ledg else "(Ledger context skipped)"
+        risk_ctx = build_risk_architecture_context() if q_type in ("engine_audit", "portfolio_audit") else "(Risk architecture skipped)"
+
     system_prompt = (
         VIKRAM_SYSTEM_PROMPT
-        .replace("{PORTFOLIO_CONTEXT}", build_portfolio_context())
-        .replace("{ENGINE_SIGNALS}", build_engine_signals())
-        .replace("{FUNDAMENTAL_DATA}", _build_fundamental_context_safe(question))
-        .replace("{SIMULATION_LEDGER}", build_ledger_context())
-        .replace("{RISK_ARCHITECTURE}", build_risk_architecture_context())
+        .replace("{PORTFOLIO_CONTEXT}", port_ctx)
+        .replace("{ENGINE_SIGNALS}", sig_ctx)
+        .replace("{FUNDAMENTAL_DATA}", fund_ctx)
+        .replace("{SIMULATION_LEDGER}", ledg_ctx)
+        .replace("{RISK_ARCHITECTURE}", risk_ctx)
     )
     contents = _sanitize_contents(history, question)
-    if _SEARCH_TRIGGER.search(question or ""):
+    
+    search_requested = bool(_SEARCH_TRIGGER.search(question or ""))
+    if search_requested and q_type == "stock_analysis":
+        search_requested = _should_force_search(question, fund_ctx)
+        
+    if search_requested:
         contents[-1]["parts"][0]["text"] += (
             "\n\n[NOTE: use your Google Search tool to ground the figures for this "
             "question before answering — do not answer from memory.]"
@@ -1145,7 +1199,7 @@ def ask_vikram(question, history):
     import time
 
     last_err = None
-    search_was_requested = bool(_SEARCH_TRIGGER.search(question or ""))
+    search_was_requested = search_requested
     for model_name, use_search in attempts:
         for attempt in range(3):
             try:

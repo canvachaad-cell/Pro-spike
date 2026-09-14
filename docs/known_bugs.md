@@ -242,3 +242,17 @@
 3. Added a hard 28s `time.monotonic()` limit to `_probe_dynamic_fallback()`.
 **FAILED ATTEMPTS**: None. Fixed on first pass with surgical implementation plan.
 **AI PROCESS**: Used `DEMONCORE:DEEP_AUDIT` to statically analyze the callback execution chain and spot the race conditions.
+
+---
+
+## BUG-017 — Vikram AI Response Latency (~25s to ~8s)
+**STATUS**: FIXED
+**FILE**: `dash_pages/_vikram_callback.py`
+**SYMPTOM**: Vikram took 25+ seconds to answer even simple queries. The wait was entirely sequential, injecting unnecessary data.
+**ROOT CAUSE**: The `ask_vikram` callback built the prompt by executing 5 CSV/HTTP parsers synchronously. It injected the entire portfolio, all engine signals, the ledger, and the risk architecture into *every* prompt. It also forced a Google Search for every ticker via `_SEARCH_TRIGGER` even if `screener.in` just provided fresh fundamental data.
+**FIX**: 
+1. **Parallel Context**: Wrapped all context builders in a `ThreadPoolExecutor` so they run simultaneously (bound by the slowest, typically `screener.in`).
+2. **Smart Injection**: Added `_classify_query()` to detect if the user wants `stock_analysis`, `engine_audit`, etc., and skips injecting irrelevant large contexts like the simulation ledger.
+3. **Selective Search**: Added `_should_force_search()` to suppress the expensive Gemini Google Search grounding tool if the query doesn't explicitly ask for news/results AND we already have fresh fundamentals.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Developed `PLAN_DEEP` to identify the three major latency bottlenecks and refactored the prompt assembly without changing the output formatting.
