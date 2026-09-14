@@ -637,5 +637,50 @@
    "rpt_pct": null,
    "rpt_amount_cr": null
   }
+ },
+ "CONFIPET": {
+  "ts": 1789387326.8968914,
+  "data": {
+   "symbol": "CONFIPET",
+   "url": "https://www.screener.in/company/CONFIPET/consolidated/",
+   "name": "Confidence Petroleum India Ltd",
+   "market_cap_cr": 2964.0,
+   "price": 89.2,
+   "promoter_trend": "Sep 2023: 61.32% -> Dec 2023: 61.63% -> Mar 2024: 56.12% -> Jun 2024: 55.89% -> Sep 2024: 55.89% -> Dec 2024: 55.89% -> Mar 2025: 55.89% -> Jun 2025: 55.89% -> Sep 2025: 55.89% -> Dec 2025: 55.89% -> Mar 2026: 55.89% -> Jun 2026: 57.38%",
+   "promoter_holding": 57.38,
+   "dii_trend": "Sep 2023: 1.26% -> Dec 2023: 1.25% -> Mar 2024: 1.19% -> Jun 2024: 0.52% -> Sep 2024: 0.43% -> Dec 2024: 0.28% -> Mar 2025: 0.10% -> Jun 2025: 0.08% -> Sep 2025: 0.04% -> Dec 2025: 0.01% -> Mar 2026: 0.01% -> Jun 2026: 0.19%",
+   "dii_holding": 0.19,
+   "fii_trend": "Sep 2023: 2.23% -> Dec 2023: 2.13% -> Mar 2024: 2.08% -> Jun 2024: 1.94% -> Sep 2024: 2.04% -> Dec 2024: 2.40% -> Mar 2025: 2.71% -> Jun 2025: 1.00% -> Sep 2025: 0.97% -> Dec 2025: 0.69% -> Mar 2026: 0.48% -> Jun 2026: 0.81%",
+   "fii_holding": 0.81,
+   "pledge_trend": [
+    41.4
+   ],
+   "pledge_direction": "flat",
+   "quarterly_quarters": 13,
+   "revenue_ttm_cr": 6002.0,
+   "revenue_4q_growth": 0.7247126436781609,
+   "ebit_4q_growth": 0.22590361445783133,
+   "op_lev_ratio": 0.311714741599228,
+   "op_lev_inflecting": false,
+   "interest_coverage_trend": "improving",
+   "interest_coverage_recent": 5.12,
+   "ocf_3yr_cr": [
+    263.0,
+    10.0,
+    400.0
+   ],
+   "pat_3yr_cr": [
+    105.0,
+    91.0,
+    97.0
+   ],
+   "fcf_pat_ratio": 2.3,
+   "roice_pct": 13.6,
+   "borrowings_cr": 761.0,
+   "free_float_cr": 1263,
+   "rpt_status": "NOT_FOUND",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
  }
 }

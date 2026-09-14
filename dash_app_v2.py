@@ -8,7 +8,10 @@ app = Dash(
     use_pages=True,
     pages_folder="dash_pages",
     suppress_callback_exceptions=True,
-    meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"}],
+    meta_tags=[
+        {"name": "viewport", "content": "width=device-width, initial-scale=1"},
+        {"name": "description", "content": "Pro-spike: quantitative trading dashboard for NSE/BSE institutional accumulation, delivery volume signals, and portfolio analytics."}
+    ],
     external_scripts=[
         # NOTE: no forms plugin — it forces light-theme form resets (white input
         # backgrounds, default blue/purple focus rings) that fight the dark M3 theme.
@@ -19,6 +22,24 @@ app = Dash(
         "https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
     ]
 )
+
+app.index_string = '''<!DOCTYPE html>
+<html lang="en">
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>'''
 
 # Expose Flask server for gunicorn (Procfile: gunicorn dash_app_v2:server)
 server = app.server
@@ -39,6 +60,8 @@ sidebar_header = html.Div(
         ),
         html.Button(
             id="sidebar-toggle-btn",
+            title="Collapse sidebar",
+            **{"aria-label": "Collapse sidebar"},
             className="text-on-surface-variant hover:text-primary transition-colors active:scale-95",
             children=[DashIconify(icon="material-symbols:menu-open", width=24, height=24, id="sidebar-toggle-icon")]
         )
@@ -102,10 +125,14 @@ top_navbar = html.Header(
             className="flex items-center gap-md",
             children=[
                 html.Button(
+                    title="Notifications",
+                    **{"aria-label": "Notifications"},
                     className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors active:scale-95 duration-100 text-on-surface-variant",
                     children=[DashIconify(icon="material-symbols:notifications-outline", width=24, height=24)]
                 ),
                 html.Button(
+                    title="Settings",
+                    **{"aria-label": "Settings"},
                     className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors active:scale-95 duration-100 text-on-surface-variant",
                     children=[DashIconify(icon="material-symbols:settings-outline", width=24, height=24)]
                 ),
@@ -164,6 +191,8 @@ app.layout = html.Div(
                         ),
                         html.Button(
                             id="vikram-close",
+                            title="Close Vikram panel",
+                            **{"aria-label": "Close Vikram panel"},
                             className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors text-on-surface-variant",
                             children=[DashIconify(icon="material-symbols:close", width=20, height=20)]
                         )

@@ -198,3 +198,19 @@
 **ROOT CAUSE**: 1) `h-screen` compiles to `100vh`, which ignores mobile UI bars. 2) Hardcoded `max-w-[1200px]` trapped the desktop layout.
 **FIX**: Swapped `h-screen` for `h-[100dvh]` to enable Dynamic Viewport Height scaling. Expanded desktop container to `max-w-[1800px]`. Redesigned `.mobile-bottom-nav` into a floating, pill-shaped island (`border-radius: 32px`, `bottom: 16px`).
 **AI PROCESS**: Reviewed layout components directly. Wrote a Gemini-proof implementation plan specifying exact line replacements and guarding against accidental prop deletion. Verified syntax.
+
+---
+
+## BUG-014 — Lighthouse A11y & SEO Failures
+**STATUS**: FIXED
+**FILE**: `dash_app_v2.py`, `assets/style.css`
+**SYMPTOM**: Lighthouse mobile audit returns 62/100 Accessibility and 82/100 SEO.
+**ROOT CAUSE**: Viewport blocked zoom (`user-scalable=0`). Missing `lang="en"` on `<html>`. Missing `<meta name="description">`. Icon buttons lacked `aria-label`. Text contrast for `--text-muted` was 3.1:1.
+**FIX**: 
+1. Replaced `user-scalable=0` with `initial-scale=1` in `meta_tags`. 
+2. Overrode `app.index_string` to inject `<html lang="en">`. 
+3. Added `meta name="description"` to `meta_tags`. 
+4. Injected `**{"aria-label": "..."}` and `title="..."` into all `html.Button` components containing icons.
+5. Changed `--text-muted` to `#94a3b8` in `style.css` for WCAG AA compliance (5.3:1 contrast ratio).
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Used `multi_replace_file_content` to surgically insert attributes and template overrides without breaking Dash routing or callbacks.
