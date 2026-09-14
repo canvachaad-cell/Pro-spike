@@ -54,12 +54,40 @@ sidebar_footer = html.Div(
 )
 
 sidebar = html.Nav(
+    id="sidebar-el",
     style={"gridColumn": "1 / 2"},
     className="hidden md:flex flex-col py-lg px-sm gap-xs bg-surface-container-low/80 backdrop-blur-xl h-[calc(100vh-32px)] my-4 ml-4 rounded-2xl sticky left-0 top-4 border border-white/5 shadow-[0_0_40px_rgba(0,0,0,0.5)] z-40",
     children=[
         sidebar_header,
         html.Div(id="sidebar-nav-links", className="flex-1 flex flex-col gap-base"),
         sidebar_footer
+    ]
+)
+
+mobile_bottom_nav = html.Nav(
+    className="mobile-bottom-nav",
+    children=[
+        dcc.Link(
+            className="mobile-nav-item", id="nav-btn-dashboard", href="/",
+            children=[html.Span("leaderboard", className="material-symbols-outlined nav-icon"), html.Span("Dashboard")]
+        ),
+        dcc.Link(
+            className="mobile-nav-item", id="nav-btn-signals", href="/signals",
+            children=[html.Span("bolt", className="material-symbols-outlined nav-icon"), html.Span("Signals")]
+        ),
+        dcc.Link(
+            className="mobile-nav-item", id="nav-btn-watchlist", href="/watchlist",
+            children=[html.Span("bookmark", className="material-symbols-outlined nav-icon"), html.Span("Watchlist")]
+        ),
+        html.A(
+            id="mobile-vikram-tab",
+            className="mobile-nav-item", href="#",
+            children=[html.Span("smart_toy", className="material-symbols-outlined nav-icon"), html.Span("Vikram")]
+        ),
+        dcc.Link(
+            className="mobile-nav-item", id="nav-btn-more", href="/institutional-signals",
+            children=[html.Span("more_horiz", className="material-symbols-outlined nav-icon"), html.Span("More")]
+        )
     ]
 )
 
@@ -98,11 +126,11 @@ top_navbar = html.Header(
 
 app.layout = html.Div(
     id="main-layout",
-    style={"display": "grid", "gridTemplateColumns": "272px 1fr", "height": "100vh", "width": "100vw", "overflowX": "hidden", "transition": "grid-template-columns 0.3s ease"},
-    className="bg-background antialiased font-body-md text-on-background",
+    className="app-grid bg-background antialiased font-body-md text-on-background",
     children=[
         dcc.Store(id="sidebar-state", data={"collapsed": False}),
         sidebar,
+        mobile_bottom_nav,
         # Floating Command Bar — opens the Vikram AI panel
         html.Div(
             id="vikram-trigger",
@@ -122,7 +150,7 @@ app.layout = html.Div(
         # Vikram AI Analyst slide-in panel (right side, hidden by default)
         html.Aside(
             id="vikram-panel",
-            className="fixed top-0 right-0 h-screen w-[400px] max-w-[95vw] z-[100] flex flex-col bg-surface-container-low/95 backdrop-blur-2xl border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]",
+            className="fixed top-0 right-0 h-screen w-full md:w-[400px] z-[100] flex flex-col bg-surface-container-low/95 backdrop-blur-2xl border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]",
             style={"transform": "translateX(100%)", "transition": "transform 0.3s ease"},
             children=[
                 html.Div(
@@ -158,6 +186,7 @@ app.layout = html.Div(
                             id="vikram-input",
                             type="text",
                             placeholder="Ask about a stock or your positions...",
+                            style={"fontSize": "16px"},
                             className="flex-1 bg-transparent border border-outline-variant rounded-lg px-3 font-data-mono text-sm text-on-surface placeholder:text-outline focus:border-primary focus:ring-0 focus:outline-none outline-none appearance-none min-h-[44px]"
                         ),
                         html.Button(
@@ -178,7 +207,7 @@ app.layout = html.Div(
                 top_navbar,
                 html.Div(
                     style={"flex": "1", "overflowY": "auto"},
-                    className="p-margin-mobile md:p-margin-desktop pb-24",
+                    className="p-margin-mobile md:p-margin-desktop pb-24 page-content-mobile-pad",
                     children=[
                         html.Div(
                             className="max-w-[1200px] mx-auto w-full",
@@ -231,7 +260,7 @@ def update_nav(pathname, state):
     return items_html
 
 @app.callback(
-    Output("main-layout", "style"),
+    Output("main-layout", "className"),
     Output("sidebar-state", "data"),
     Output("sidebar-toggle-icon", "icon"),
     Output("sidebar-title-container", "style"),
@@ -243,15 +272,31 @@ def toggle_sidebar(n_clicks, state):
     collapsed = state.get("collapsed", False)
     new_collapsed = not collapsed
     
-    new_style = {"display": "grid", "gridTemplateColumns": "80px 1fr" if new_collapsed else "240px 1fr", "minHeight": "100vh", "transition": "grid-template-columns 0.3s ease"}
+    new_class = "app-grid sidebar-collapsed bg-background antialiased font-body-md text-on-background" if new_collapsed else "app-grid bg-background antialiased font-body-md text-on-background"
     new_icon = "material-symbols:menu" if new_collapsed else "material-symbols:menu-open"
     new_title_style = {"display": "none"} if new_collapsed else {}
     
-    return new_style, {"collapsed": new_collapsed}, new_icon, new_title_style
+    return new_class, {"collapsed": new_collapsed}, new_icon, new_title_style
+
+app.clientside_callback(
+    """
+    function(n_clicks) {
+        if (n_clicks) {
+            document.getElementById('vikram-panel').style.transform = 'translateX(0)';
+        }
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output("mobile-vikram-tab", "id"),
+    Input("mobile-vikram-tab", "n_clicks"),
+    prevent_initial_call=True
+)
 
 # Registers the Vikram AI Analyst chat callbacks (⌘K bar -> slide-in panel).
 # Underscore prefix keeps this module out of the Dash pages registry.
 import dash_pages._vikram_callback  # noqa: E402, F401
+
+server = app.server
 
 if __name__ == '__main__':
     app.run(debug=os.environ.get("DASH_DEBUG") == "1", host="0.0.0.0", port=int(os.environ.get("PORT", 8050)))

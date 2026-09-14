@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: trading-dashboard
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn dash_app_v2:server
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
