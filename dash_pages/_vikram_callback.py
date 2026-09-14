@@ -961,8 +961,8 @@ def _ensure_configured():
     try:
         from google import genai
         from google.genai import types as genai_types
-    except ImportError:
-        return "google-genai SDK is not installed. Run: venv\\Scripts\\pip install google-genai"
+    except ImportError as e:
+        return f"google-genai import failed: {e}"
     try:
         _client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=90_000))
     except Exception as e:
