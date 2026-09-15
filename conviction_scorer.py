@@ -103,18 +103,30 @@ def _gate_scores(fund):
         gate["interest_coverage"] = {"improving": 10, "stable": 4, "deteriorating": 2}.get(cov, 4)
 
     # 5. RoICE (6%)
-    roice = fund.get("roice_pct")
-    if roice is not None:
-        if roice > 30:
-            gate["roice"] = 10
-        elif roice >= 20:
-            gate["roice"] = 8
-        elif roice >= 10:
-            gate["roice"] = 6
-        elif roice >= 0:
-            gate["roice"] = 3
-        else:
-            gate["roice"] = 0
+    roice_delta = fund.get("roice_pct")
+    roce_abs = fund.get("roce_abs_pct")
+
+    def _score_delta(v):
+        if v > 30: return 10
+        if v >= 20: return 8
+        if v >= 10: return 6
+        if v >= 0: return 3
+        return 0
+
+    def _score_abs(v):
+        if v >= 25: return 10
+        if v >= 18: return 8
+        if v >= 12: return 6
+        if v >= 6: return 4
+        if v >= 0: return 2
+        return 0
+
+    if roice_delta is not None and roce_abs is not None:
+        gate["roice"] = round(0.6 * _score_delta(roice_delta) + 0.4 * _score_abs(roce_abs))
+    elif roice_delta is not None:
+        gate["roice"] = _score_delta(roice_delta)
+    elif roce_abs is not None:
+        gate["roice"] = _score_abs(roce_abs)
 
     # 6. FCF/PAT Divergence (3%)
     ratio = fund.get("fcf_pat_ratio")
@@ -141,7 +153,10 @@ def fundamental_strength(fund):
 
     # Check Veto metrics
     pledge = fund.get("pledge_trend") or []
-    if fund.get("pledge_direction") == "rising" and (pledge[-1] if pledge else 0) >= 0.5:
+    latest_pledge = pledge[-1] if pledge else None
+    if latest_pledge is not None and latest_pledge > 25.0:
+        veto_reasons.append(f"Promoter pledge {latest_pledge:.1f}% exceeds 25% threshold")
+    elif fund.get("pledge_direction") == "rising" and (latest_pledge or 0) >= 0.5:
         veto_reasons.append("Promoter pledge rising QoQ")
 
     ratio = fund.get("fcf_pat_ratio")
@@ -156,10 +171,19 @@ def fundamental_strength(fund):
         return {}, 0, "VETO", veto_reasons
 
     gate = _gate_scores(fund)
-    avail = [v for v in gate.values() if v is not None]
-    if len(avail) < 2:
+    resolved_weights = 0.0
+    weighted_score_sum = 0.0
+
+    for metric, w in METRIC_WEIGHTS_5.items():
+        val = gate.get(metric)
+        if val is not None:
+            resolved_weights += w
+            weighted_score_sum += val * w
+
+    if resolved_weights < 0.15:
         return gate, None, "INSUFFICIENT_DATA", []
-    score = round(sum(avail) / len(avail) * 10)
+
+    score = round((weighted_score_sum / resolved_weights) * 10)
     rating = "STRONG" if score >= 75 else ("MODERATE" if score >= 45 else "WEAK")
     return gate, score, rating, []
 
@@ -239,9 +263,19 @@ class ConvictionScorer:
                 base["display_badge"] = "⚠️ Large-cap signal — likely rebalancing noise; verify separately"
             return base
 
+        if fund.get("sector_type") == "financial":
+            base["rating"] = "NOT_SCORED_FINANCIAL_BIZ"
+            base["display_badge"] = "⚠️ Financial/Trading Business — Standard scorer not calibrated for this model. Manual review required."
+            base["score"] = None
+            return base
+
+        if fund.get("business_model_changed"):
+            base["multi_year_trend_warning"] = "LOW_CONFIDENCE — business model changed <5yr ago. Multi-year trend metrics (RoICE, FCF/PAT trend) straddle two unrelated businesses."
+
         # Veto & Unverified Veto Checks (Small & Mid Cap)
         veto_reasons = []
         unverified_veto_reasons = []
+        veto_checks_passed = []
 
         # Veto 1: RPT %
         rpt_status = fund.get("rpt_status", "NOT_SCRAPED")
@@ -256,14 +290,22 @@ class ConvictionScorer:
             base["rpt_fetch_status"] = rpt_status
         elif rpt_pct > PROVISIONAL_RPT_VETO_PCT:
             veto_reasons.append(f"RPT % of Revenue exceeds veto threshold ({rpt_pct:.1f}% > {PROVISIONAL_RPT_VETO_PCT}%)")
+        elif rpt_status == "OK":
+            veto_checks_passed.append("RPT")
 
         # Veto 2: Promoter Pledge
         pledge_dir = fund.get("pledge_direction")
         pledge = fund.get("pledge_trend") or []
         if pledge_dir is None:
             unverified_veto_reasons.append("Promoter pledge trend data missing")
-        elif pledge_dir == "rising" and (pledge[-1] if pledge else 0) >= 0.5:
-            veto_reasons.append(f"Promoter pledge rising QoQ ({pledge})")
+        else:
+            latest_pledge = pledge[-1] if pledge else None
+            if latest_pledge is not None and latest_pledge > 25.0:
+                veto_reasons.append(f"Promoter pledge {latest_pledge:.1f}% exceeds 25% threshold")
+            elif pledge_dir == "rising" and (latest_pledge or 0) >= 0.5:
+                veto_reasons.append(f"Promoter pledge rising QoQ ({pledge})")
+            else:
+                veto_checks_passed.append("Pledge")
 
         # Veto 3: FCF/PAT Divergence
         is_financial = fund.get("sector_type") == "financial"
@@ -274,6 +316,8 @@ class ConvictionScorer:
             unverified_veto_reasons.append("FCF/PAT ratio data missing")
         elif not math.isclose(ratio, 0) and (ratio > 3.0 or ratio < 1 / 3.0):
             veto_reasons.append(f"FCF/PAT 3yr cumulative divergence {ratio:.2f}x (outside [0.33, 3.0])")
+        else:
+            veto_checks_passed.append("FCF/PAT")
 
         # Handle hard Vetoes
         if veto_reasons:
@@ -343,11 +387,19 @@ class ConvictionScorer:
             badge = f"⚠️ {final_score} | Unverified — manual check required ({unverified_veto_reasons[0]})"
             rating = "UNVERIFIED_VETO"
         elif final_score >= 75:
-            rating = "HIGH_CONVICTION"
-            badge = f"⚡ {final_score} | ✅ Clean Pass ({base['data_completeness']['label']})"
+            if len(veto_checks_passed) >= 1:
+                rating = "HIGH_CONVICTION"
+                badge = f"⚡ {final_score} | ✅ Clean Pass ({base['data_completeness']['label']})"
+            else:
+                rating = "UNVERIFIED_VETO"
+                badge = f"⚠️ {final_score} | No veto checks resolved — manual review required"
         elif final_score >= 45:
-            rating = "MODERATE"
-            badge = f"✅ {final_score} | ({base['data_completeness']['label']})"
+            if len(veto_checks_passed) >= 1:
+                rating = "MODERATE"
+                badge = f"✅ {final_score} | ({base['data_completeness']['label']})"
+            else:
+                rating = "UNVERIFIED_VETO"
+                badge = f"⚠️ {final_score} | No veto checks resolved — manual review required"
         else:
             rating = "LOW"
             badge = f"⚠️ {final_score} | Weak fundamentals ({base['data_completeness']['label']})"

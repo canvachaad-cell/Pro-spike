@@ -715,6 +715,8 @@ def build_fundamental_context(question):
             d, res = {}, {"stock_class": "U", "veto": False, "score": None,
                           "rating": "FUNDAMENTALS_UNAVAILABLE", "display_badge": "❓ unavailable",
                           "veto_reasons": [], "boosters": [], "drags": []}
+        
+        gate = res.get("gate") or (fundamental_strength(d)[0] if not d.get("error") else {})
         # Numeric screener codes (e.g. 531126 for BSE-only listings): resolve
         # back to the engine's alphabetical symbol so the context, technical
         # trigger, and cache all use ONE identity.
@@ -817,8 +819,14 @@ def build_fundamental_context(question):
             detail.append(f"Operating leverage ratio: {d['op_lev_ratio']:.1f}x — INFLECTING: {d.get('op_lev_inflecting')}")
         if "interest_coverage_trend" in d:
             detail.append(f"Interest coverage: {d['interest_coverage_trend']} (recent avg {d.get('interest_coverage_recent', 'n/m')}x)")
-        if "roice_pct" in d:
-            detail.append(f"RoICE (3yr ΔEBIT/ΔCE): {_pct(d['roice_pct'], 1)}")
+        if "roice_pct" in d or "roce_abs_pct" in d:
+            roice_disp = []
+            if "roice_pct" in d:
+                roice_disp.append(f"Δ-trend (ΔEBIT/ΔCE): {_pct(d['roice_pct'], 1)}")
+            if "roce_abs_pct" in d:
+                roice_disp.append(f"Absolute ROCE: {_pct(d['roce_abs_pct'], 1)}")
+            gate_val = (gate.get("roice", "n/a") if isinstance(gate, dict) else "n/a")
+            detail.append(f"RoICE — {' | '.join(roice_disp)} | Blended score: {gate_val}/10")
         if "rpt_pct" in d or "rpt_status" in d:
             rpt = d.get("rpt_pct")
             st = d.get("rpt_status", "NOT_FOUND")
@@ -833,18 +841,23 @@ def build_fundamental_context(question):
             detail.append(f"Borrowings: ₹{d['borrowings_cr']:,.0f} Cr")
         if detail:
             lines.append("    " + "; ".join(detail))
-        verdict = [f"CONVICTION: {res.get('display_badge', 'n/a')} (rating {res.get('rating')}, score {res.get('score')})"]
+        if res.get("rating") == "NOT_SCORED_FINANCIAL_BIZ":
+            verdict = ["CONVICTION: THIS STOCK IS CLASSIFIED AS A FINANCIAL BUSINESS. YOU ARE FORBIDDEN FROM PRODUCING A CONVICTION SCORE. State explicitly: 'Conviction scoring not applicable — financial business model. Manual analysis required.'"]
+        else:
+            verdict = [f"CONVICTION: {res.get('display_badge', 'n/a')} (rating {res.get('rating')}, score {res.get('score')})"]
         na = res.get("not_applicable_metrics") or []
         if na:
             verdict.append(
                 "NOT APPLICABLE metrics (intentionally skipped for this stock — render these "
-                "rows as '— / N/A (not applicable)' in the table, NOT as missing data ⏳): "
+                "rows as '— / Not implemented (RPT dropped from this build)' in the table, NOT as missing data ⏳): "
                 + ", ".join(sorted(set(na)))
             )
         if res.get("boosters"):
             verdict.append("boosters: " + "; ".join(res["boosters"]))
         if res.get("drags"):
             verdict.append("drags: " + "; ".join(res["drags"]))
+        if res.get("multi_year_trend_warning"):
+            verdict.append("WARNING: " + res["multi_year_trend_warning"])
         if res.get("stock_class") == "L":
             fs = res.get("fundamental_score")
             fr = res.get("fundamental_rating")
@@ -855,15 +868,16 @@ def build_fundamental_context(question):
                 )
             else:
                 verdict.append("FUNDAMENTAL STRENGTH: insufficient data")
-            gate = res.get("gate") or {}
             if gate:
                 g = ", ".join(f"{k.replace('_', ' ').title()} {v}/10" for k, v in gate.items() if v is not None)
                 verdict.append(f"per-metric gate scores (use EXACTLY these in the table): {g}")
         else:
-            gate = fundamental_strength(d)[0] if not d.get("error") else {}
-            if gate:
-                g = ", ".join(f"{k.replace('_', ' ').title()} {v}/10" for k, v in gate.items() if v is not None)
-                verdict.append(f"per-metric gate scores (use EXACTLY these in the table): {g}")
+            if res.get("rating") == "NOT_SCORED_FINANCIAL_BIZ":
+                verdict.append("FINANCIAL SECTOR — gate score computation not applicable. Do NOT produce a conviction score for this stock.")
+            else:
+                if gate:
+                    g = ", ".join(f"{k.replace('_', ' ').title()} {v}/10" for k, v in gate.items() if v is not None)
+                    verdict.append(f"per-metric gate scores (use EXACTLY these in the table): {g}")
         lines.append("    " + " | ".join(verdict))
     return "\n".join(lines)
 

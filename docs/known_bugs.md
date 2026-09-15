@@ -280,3 +280,40 @@
 **FIX**: Abandoned `gevent` and switched to native Python OS threading. Updated `render.yaml` to use `--worker-class gthread` with `--threads 4`. This mimics localhost's behavior; even if the Gemini SDK blocks one thread, Gunicorn has 3 other real OS threads to answer incoming Dash heartbeats and keep the UI connection alive. *(Follow-up)*: Reverted the aggressive 15s API timeout (introduced in BUG-021) back to 25s, because the 15s timeout was forcing legitimate 16s Google Search grounded queries to timeout on Render, causing a waterfall of model retries that artificially delayed responses by 30 seconds.
 **FAILED ATTEMPTS**: Using `--worker-class gevent` (BUG-021) which falsely assumed all downstream API libraries would respect standard-library monkey-patching.
 **AI PROCESS**: Triggered `DEMONCORE: ROOT_CAUSE` to perform an evidence-only audit. Deduced that if the site is up but the UI hangs, the worker thread is deadlocking. Realized `gevent` is frequently incompatible with modern API SDKs and swapped to the `gthread` worker class to guarantee real OS thread separation.
+
+---
+
+## BUG-023 — Conviction Scorer Edge-Case Distortion (Pledge, CLEAR default, RoICE)
+**STATUS**: FIXED
+**FILE**: `conviction_scorer.py`
+**SYMPTOM**: Several edge cases bypassed logical checks: 1) High flat pledges (e.g. 32%) passed because veto only triggered on 'rising'. 2) The CLEAR badge defaulted on `score >= 75` even if no veto checks were actually run. 3) RoICE formula (`ΔEBIT/ΔCE`) produced absurd >150% scores for cyclical turnaround stocks like GREENPLY because the trend completely ignored the absolute ROCE level.
+**ROOT CAUSE**: Logic paths were too loose. Lack of absolute hard-veto boundaries on Pledge, default-allow bias on the final rating assignment, and single-dimension momentum formulas.
+**FIX**: 
+1. Added a hard >25% absolute threshold veto for pledge.
+2. Implemented a `veto_checks_passed` array; if no check passes, force `UNVERIFIED_VETO` despite high score.
+3. Added `roce_abs_pct` to `fundamental_fetcher.py` and blended it 60/40 with the delta-trend inside the scorer.
+**FAILED ATTEMPTS**: None. User drafted the fixes; AI implemented via strict `/fix_before_touch` gating.
+**AI PROCESS**: Reviewed user's diagnostic plan, confirmed code lines independently, executed via 3 batches with live ALGOQUANT/GREENPLY test verifications.
+
+---
+
+## BUG-024 — Conviction Scorer Blindly Ranks Financial Businesses
+**STATUS**: FIXED
+**FILE**: `conviction_scorer.py` & `fundamental_fetcher.py`
+**SYMPTOM**: Arbitrage firms like ALGOQUANT were being scored as if they were manufacturing firms, yielding absurd metrics.
+**ROOT CAUSE**: The `sector_type == "financial"` check in the scorer only skipped the FCF/PAT divergence block, but allowed the rest of the score to run.
+**FIX**: Added an early return `NOT_SCORED_FINANCIAL_BIZ` at the top of the `score()` method. Added a manual `MANUAL_SECTOR_OVERRIDES` dictionary in the fetcher to catch firms that don't use standard banking P&L labels. Also added a `BUSINESS_MODEL_CHANGED` override dict to flag companies that pivoted within 5 years.
+
+---
+
+## BUG-025 — ALGOQUANT Scoring 92 Despite BUG-024 Fix (Cache & Prompt Bypass)
+**STATUS**: FIXED
+**FILE**: undamental_fetcher.py, dash_pages/_vikram_callback.py
+**SYMPTOM**: ALGOQUANT (and other manual financial overrides) still received a 92 conviction score from Vikram, despite the NOT_SCORED_FINANCIAL_BIZ early return introduced in BUG-024.
+**ROOT CAUSE**: A three-layer bypass: 1) MANUAL_SECTOR_OVERRIDES was applied inside _fetch_live(), so any cache hits bypassed the override completely and sent raw data to the scorer. 2) Even when NOT_SCORED_FINANCIAL_BIZ was returned, _vikram_callback.py unconditionally called undamental_strength() and leaked precise gate scores (e.g., Op Lev 10/10) into the prompt context. 3) The CONVICTION prompt line used a soft advisory string which Gemini ignored, choosing to hallucinate a score using the leaked gate metrics. (Additionally fixed a dormant UnboundLocalError for gate caused by accessing it before assignment).
+**FIX**: 
+1. Abstracted overrides into _apply_overrides() and invoked it at every return boundary of etch(), ensuring it works on both cache-hits and live-fetches idempotently.
+2. Guarded the gate score injection block in _vikram_callback.py to skip undamental_strength() entirely if the stock is a financial business.
+3. Replaced the soft CONVICTION advisory with a hard LLM imperative ('YOU ARE FORBIDDEN FROM PRODUCING A CONVICTION SCORE').
+**FAILED ATTEMPTS**: The initial BUG-024 fix assumed the scorer's badge return would be respected by Gemini.
+**AI PROCESS**: Drafted a comprehensive ix_before_touch report, proving the cache bypass and the prompt leak mathematically. Modified both layers simultaneously to completely strip numeric scaffolding from Gemini's context window. Verified via automated mock script.

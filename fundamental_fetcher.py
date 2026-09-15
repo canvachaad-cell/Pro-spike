@@ -94,6 +94,18 @@ def _is_financially_hollow(data):
 # incomplete so the caller falls back to search instead of ⏳-forever.
 MIN_QUALITY_KEYS = 3
 
+MANUAL_SECTOR_OVERRIDES = {
+    "ALGOQUANT": "financial"  # Arbitrage/HFT trading firm, screener.in uses standard P&L labels
+}
+
+BUSINESS_MODEL_CHANGED = {
+    "ALGOQUANT": {
+        "prior_name": "Hindustan Everest Tools Limited",
+        "change_year": 2022,
+        "note": "Changed from hand tools manufacturer to arbitrage/HFT trading firm"
+    }
+}
+
 
 class FundamentalFetcher:
     def fetch(self, symbol):
@@ -114,7 +126,7 @@ class FundamentalFetcher:
         cached = self._load_cache(symbol)
         if cached is not None:
             if _quality_count(cached) >= MIN_QUALITY_KEYS:
-                return cached
+                return self._apply_overrides(symbol, cached)
             # Hollow cache entry (old bug) — purge and refetch
             self._purge_cache(symbol)
         data = self._fetch_live(symbol)
@@ -129,14 +141,14 @@ class FundamentalFetcher:
             if stale is not None and _quality_count(stale) >= MIN_QUALITY_KEYS:
                 stale = dict(stale)
                 stale["data_stale"] = True
-                return stale
+                return self._apply_overrides(symbol, stale)
             if stale is not None:
                 # hollow stale entry — purge so it never shadows future fetches
                 self._purge_cache(symbol)
             if "error" not in data:
                 data = dict(data)
                 data["error"] = "incomplete data from screener.in (financial tables missing from page)"
-            return data
+            return self._apply_overrides(symbol, data)
         if "error" not in data:
             revenue_cr = data.get("revenue_ttm_cr")
             rpt_info = RPTFetcher().fetch_rpt_data(symbol, revenue_cr=revenue_cr)
@@ -144,6 +156,23 @@ class FundamentalFetcher:
             data["rpt_pct"] = rpt_info.get("rpt_pct")
             data["rpt_amount_cr"] = rpt_info.get("rpt_amount_cr")
             self._save_cache(symbol, data)
+        return self._apply_overrides(symbol, data)
+
+    def _apply_overrides(self, symbol, data):
+        """Applies manual sector and business model overrides on cache-hit or live-fetch data."""
+        if not data or "error" in data:
+            return data
+            
+        sym = symbol.upper()
+        if sym in MANUAL_SECTOR_OVERRIDES:
+            data["sector_type"] = MANUAL_SECTOR_OVERRIDES[sym]
+            
+        if sym in BUSINESS_MODEL_CHANGED:
+            chg = BUSINESS_MODEL_CHANGED[sym]
+            data["business_model_changed"] = True
+            data["business_model_change_year"] = chg["change_year"]
+            data["business_model_change_note"] = chg["note"]
+            
         return data
 
     # ---- cache -----------------------------------------------------------
@@ -281,6 +310,7 @@ class FundamentalFetcher:
             # so FCF/PAT vetoes don't apply.
             if ah and any("Financing Profit" in k for k in adata.keys()):
                 out["sector_type"] = "financial"
+
             self._derive_free_float(out)
             return out
         except Exception as e:
@@ -469,6 +499,10 @@ class FundamentalFetcher:
             d_ce = ce[yrs[-1]] - ce[yrs[-4]]
             if d_ce and d_ce > 0 and d_ebit is not None:
                 out["roice_pct"] = round(d_ebit / d_ce * 100, 1)
+        if len(yrs) >= 1:
+            latest_ce = ce[yrs[-1]]
+            if latest_ce and latest_ce > 0 and ebit_a[yrs[-1]] is not None:
+                out["roce_abs_pct"] = round(ebit_a[yrs[-1]] / latest_ce * 100, 1)
         # borrowings snapshot for context
         if bor:
             y = sorted(bor)[-1]
