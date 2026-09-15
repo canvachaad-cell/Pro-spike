@@ -21,6 +21,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from rpt_fetcher import RPTFetcher
+from schema_contracts import validate
 
 CACHE_PATH = os.path.join("data", "fundamental_cache.json")
 CACHE_TTL_SECONDS = 24 * 3600
@@ -173,7 +174,7 @@ class FundamentalFetcher:
             data["business_model_change_year"] = chg["change_year"]
             data["business_model_change_note"] = chg["note"]
             
-        return data
+        return validate("fundamental_fetcher", data)
 
     # ---- cache -----------------------------------------------------------
 

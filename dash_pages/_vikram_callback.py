@@ -277,7 +277,7 @@ Format it EXACTLY like this (replace values with real data):
 | 📉 Promoter Pledge Trend | 7 / 10 | 🟢 |
 | 🏦 Interest Coverage | 5 / 10 | 🟢 |
 | 📊 RoICE | 8 / 10 | 🔥 |
-| 🚫 Veto Status | CLEAR | ✅ |
+[USE EXACT veto_status_table_row PROVIDED IN FUNDAMENTAL_DATA]
 
 **⚡ Overall Conviction: 74 / 100 — HIGH**
 **🎯 Mode B · Small-Cap · Trail above 20%, do not take fixed TP**
@@ -845,6 +845,11 @@ def build_fundamental_context(question):
             verdict = ["CONVICTION: THIS STOCK IS CLASSIFIED AS A FINANCIAL BUSINESS. YOU ARE FORBIDDEN FROM PRODUCING A CONVICTION SCORE. State explicitly: 'Conviction scoring not applicable — financial business model. Manual analysis required.'"]
         else:
             verdict = [f"CONVICTION: {res.get('display_badge', 'n/a')} (rating {res.get('rating')}, score {res.get('score')})"]
+        
+        vstr = res.get("veto_status_table_row")
+        if vstr:
+            verdict.append(f"veto_status_table_row (use EXACTLY this line for the Veto Status table entry): {vstr}")
+            
         na = res.get("not_applicable_metrics") or []
         if na:
             verdict.append(
@@ -985,12 +990,21 @@ _client = None
 _working_model = None
 _working_search = None
 
-# Verified live 2026-09-04: gemini-3.5-flash + gemini-flash-latest work;
-# 3.5-flash-lite intermittently 503s (high demand, kept as last fallback);
-# gemini-2.5-flash / 2.5-flash-lite are 404-retired for this key.
-# gemini-2.5-flash is 404-retired for this API key (confirmed 2026-09-04).
-# gemini-3.6-flash is the primary; 3.5-flash is the warm fallback.
-MODEL_CANDIDATES = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-lite-latest"]
+import json
+
+def load_runtime_config():
+    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "vikram_runtime.json")) as f:
+        return json.load(f)
+
+try:
+    RUNTIME_CONFIG = load_runtime_config()
+    # Backward compatibility with existing dynamic fallback logic:
+    # Pluck the string IDs out of the config for the candidate list
+    MODEL_CANDIDATES = [m["id"] for m in RUNTIME_CONFIG.get("model_candidates", [])]
+except Exception as e:
+    print(f"Warning: failed to load vikram_runtime.json: {e}")
+    MODEL_CANDIDATES = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-lite-latest"]
+    RUNTIME_CONFIG = {}
 
 
 def _ensure_configured():
@@ -1006,9 +1020,8 @@ def _ensure_configured():
     except ImportError as e:
         return f"google-genai import failed: {e}"
     try:
-        # 25s per-request HTTP timeout — fast enough to feel responsive, long
-        # enough for Vikram's typical 10-18s complex query latency on Gemini flash.
-        _client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=25_000))
+        api_timeout = RUNTIME_CONFIG.get("api_timeout_ms", 25000) / 1000.0
+        _client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=api_timeout))
     except Exception as e:
         return f"Could not configure Gemini: {e}"
     return None

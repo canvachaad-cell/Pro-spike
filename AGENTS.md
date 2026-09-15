@@ -22,8 +22,8 @@ All run inside `Pro-spike` root directory:
 
 - **GROUNDING & NO FABRICATION:** Answer ONLY from explicitly provided context. Say "NOT IN CONTEXT" when missing. Never invent APIs, function names, file paths, or config keys.
 - **DATA SCHEMA CLAUSE:** Forbidden from inventing or hallucinating CSV column names. Always consult `.agents/rules/DATA-SCHEMA.md` or physically read file headers before writing logic.
-- **HARD STOP — `fix_before_touch` REPORT REQUIRED:** Before writing ANY code or modifying ANY file, you MUST invoke the `fix_before_touch` skill AND output a full report to the user covering ALL 5 checklist items: (1) known_bugs.md check, (2) Doc Map review, (3) Blast Radius classification, (4) Hypothesis (Bug / Proof / Verification), (5) Permission request. No exceptions — not even for "trivial" CSS or config changes. Code written before this report is produced is a protocol violation.
-- **HARD STOP / PLAN FIRST:** Before making code edits or file modifications, output a numbered step-by-step plan and wait for explicit user approval. Show before/after diffs for all code changes.
+- **HARD STOP — `fix_before_touch` REPORT REQUIRED:** Before writing ANY code, modifying ANY file, or adding ANY automation (like git hooks), you MUST invoke the `fix_before_touch` skill AND output a full report covering ALL 5 checklist items: (1) known_bugs.md check, (2) Doc Map review, (3) Blast Radius classification, (4) Hypothesis (Bug / Proof / Verification), (5) Permission request. **No exceptions — not even for "trivial" CSS, config tweaks, or shell scripts.** Code written before this report is produced is a protocol violation.
+- **HARD STOP / DEEP_PLAN FIRST:** Before making ANY little change, you must check the blast radius by invoking `DEMONCORE: PLAN_DEEP`. Output a numbered step-by-step plan and wait for explicit user approval. Show before/after diffs for all code changes.
 - **HYPOTHESIS RULE:** Before any code edit, you must state: 
   (a) what you believe the bug is, 
   (b) which line/file proves it, and 

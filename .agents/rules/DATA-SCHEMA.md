@@ -30,3 +30,8 @@ description: "Loaded when the agent needs to know the shape of data files."
 If a file is not listed above, run a quick discovery first:
 - `Get-Content -Path file.csv -TotalCount 3` (PowerShell)
 - `print(df.head())` or `print(df.columns)` in Python scripts.
+
+## 3. Fundamental Data
+### `fundamental_fetcher.py` output format:
+- **JSON Payload Keys**: `symbol`, `url`, `name`, `market_cap_cr`, `price`, `promoter_trend`, `promoter_holding`, `dii_trend`, `dii_holding`, `fii_trend`, `fii_holding`, `pledge_trend`, `pledge_direction`, `pledge_note`, `quarterly_quarters`, `revenue_ttm_cr`, `revenue_4q_growth`, `ebit_4q_growth`, `op_lev_ratio`, `op_lev_inflecting`, `interest_coverage_trend`, `interest_coverage_recent`, `ocf_3yr_cr`, `pat_3yr_cr`, `fcf_pat_ratio`, `roice_pct`, `roce_abs_pct`, `borrowings_cr`, `free_float_cr`, `rpt_status`, `rpt_pct`, `rpt_amount_cr`
+- **Optional/Conditional Keys**: `sector_type`, `business_model_changed`, `business_model_change_year`, `business_model_change_note` (Added via MANUAL_SECTOR_OVERRIDES)

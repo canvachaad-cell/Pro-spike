@@ -1,0 +1,125 @@
+{
+  "SAKSOFT": {
+    "stock_class": "S",
+    "market_cap_cr": 1954.0,
+    "veto": false,
+    "unverified_veto": false,
+    "veto_reasons": [],
+    "score": 88,
+    "rating": "HIGH_CONVICTION",
+    "boosters": [
+      "Strong Operating Leverage (31% weight, +80/100)",
+      "Interest coverage improving (+15% weight)"
+    ],
+    "drags": [],
+    "display_badge": "\u26a1 88 | \u2705 Clean Pass (5-Metric Mode (5/5 metrics resolved))",
+    "data_completeness": {
+      "resolved_count": 5,
+      "total_count": 5,
+      "label": "5-Metric Mode (5/5 metrics resolved)"
+    },
+    "not_applicable_metrics": [
+      "rpt_pct"
+    ],
+    "rpt_data_missing": true,
+    "rpt_fetch_status": "NOT_SCRAPED"
+  },
+  "GREENPLY": {
+    "stock_class": "S",
+    "market_cap_cr": 3625.0,
+    "veto": false,
+    "unverified_veto": false,
+    "veto_reasons": [],
+    "score": 88,
+    "rating": "HIGH_CONVICTION",
+    "boosters": [
+      "Strong Operating Leverage (31% weight, +80/100)",
+      "Interest coverage improving (+15% weight)"
+    ],
+    "drags": [],
+    "display_badge": "\u26a1 88 | \u2705 Clean Pass (5-Metric Mode (5/5 metrics resolved))",
+    "data_completeness": {
+      "resolved_count": 5,
+      "total_count": 5,
+      "label": "5-Metric Mode (5/5 metrics resolved)"
+    },
+    "not_applicable_metrics": [
+      "rpt_pct"
+    ],
+    "rpt_data_missing": true,
+    "rpt_fetch_status": "NOT_SCRAPED"
+  },
+  "ALGOQUANT": {
+    "stock_class": "S",
+    "market_cap_cr": 1836.0,
+    "veto": false,
+    "unverified_veto": false,
+    "veto_reasons": [],
+    "score": null,
+    "rating": "NOT_SCORED_FINANCIAL_BIZ",
+    "boosters": [],
+    "drags": [],
+    "display_badge": "\u26a0\ufe0f Financial/Trading Business \u2014 Standard scorer not calibrated for this model. Manual review required.",
+    "data_completeness": {
+      "resolved_count": 0,
+      "total_count": 6,
+      "label": "0/6 metrics resolved"
+    },
+    "not_applicable_metrics": [],
+    "rpt_data_missing": false
+  },
+  "EMAMILTD": {
+    "stock_class": "M",
+    "market_cap_cr": 16281.0,
+    "veto": false,
+    "unverified_veto": false,
+    "veto_reasons": [],
+    "score": 58,
+    "rating": "MODERATE",
+    "boosters": [],
+    "drags": [
+      "Weak Operating Leverage (31% weight, -80/100)",
+      "Interest coverage deteriorating (-15% weight)"
+    ],
+    "display_badge": "\u2705 58 | (5-Metric Mode (5/5 metrics resolved))",
+    "data_completeness": {
+      "resolved_count": 5,
+      "total_count": 5,
+      "label": "5-Metric Mode (5/5 metrics resolved)"
+    },
+    "not_applicable_metrics": [
+      "rpt_pct"
+    ],
+    "rpt_data_missing": true,
+    "rpt_fetch_status": "NOT_FOUND"
+  },
+  "HDFCBANK": {
+    "stock_class": "L",
+    "market_cap_cr": 1105197.0,
+    "veto": false,
+    "unverified_veto": false,
+    "veto_reasons": [],
+    "score": null,
+    "rating": "LARGE_CAP_DISCLAIMER",
+    "boosters": [],
+    "drags": [],
+    "display_badge": "\u26a0\ufe0f Large-cap (\u2265 \u20b920,000 Cr) \u00b7 Fundamentals 75/100 (STRONG) \u2014 rebalancing noise; verify separately",
+    "data_completeness": {
+      "resolved_count": 0,
+      "total_count": 6,
+      "label": "0/6 metrics resolved"
+    },
+    "not_applicable_metrics": [
+      "rpt_pct"
+    ],
+    "rpt_data_missing": true,
+    "rpt_fetch_status": "NOT_SCRAPED",
+    "fundamental_score": 75,
+    "fundamental_rating": "STRONG",
+    "gate": {
+      "pledge_trend": 9,
+      "interest_coverage": 10,
+      "roice": 0
+    }
+  }
+}

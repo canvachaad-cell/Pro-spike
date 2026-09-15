@@ -16,6 +16,30 @@ Veto metrics NEVER renormalize out — missing data produces UNVERIFIED_VETO.
 Score metrics renormalize over resolved metrics only with a Data Completeness Indicator.
 """
 import math
+from dataclasses import dataclass
+
+@dataclass
+class VetoResult:
+    status: str
+    reason: str
+
+def check_pledge_veto(pledge_pct: float, pledge_direction: str) -> VetoResult:
+    if pledge_pct is None or pledge_direction is None:
+        return VetoResult(status="UNVERIFIED", reason="Promoter pledge trend data missing")
+    if pledge_pct > 25:
+        return VetoResult(status="VETO_TRIGGERED", reason=f"Promoter pledge at {pledge_pct:.1f}% exceeds 25% threshold")
+    if pledge_direction == "rising" and pledge_pct >= 0.5:
+        return VetoResult(status="VETO_TRIGGERED", reason="Promoter pledge rising QoQ")
+    return VetoResult(status="CLEAR", reason=f"Pledge at {pledge_pct:.1f}%, within threshold")
+
+def check_fcf_veto(ratio: float, is_financial: bool) -> VetoResult:
+    if is_financial:
+        return VetoResult(status="CLEAR", reason="Financial sector (FCF not applicable)")
+    if ratio is None:
+        return VetoResult(status="UNVERIFIED", reason="FCF/PAT ratio data missing")
+    if not math.isclose(ratio, 0) and (ratio > 3.0 or ratio < 1 / 3.0):
+        return VetoResult(status="VETO_TRIGGERED", reason=f"FCF/PAT 3yr cumulative divergence {ratio:.2f}x (outside [0.33, 3.0])")
+    return VetoResult(status="CLEAR", reason=f"FCF/PAT ratio at {ratio:.2f}x, within threshold")
 
 PROVISIONAL_RPT_CAUTION_PCT = 10.0
 PROVISIONAL_RPT_VETO_PCT = 20.0
@@ -154,18 +178,15 @@ def fundamental_strength(fund):
     # Check Veto metrics
     pledge = fund.get("pledge_trend") or []
     latest_pledge = pledge[-1] if pledge else None
-    if latest_pledge is not None and latest_pledge > 25.0:
-        veto_reasons.append(f"Promoter pledge {latest_pledge:.1f}% exceeds 25% threshold")
-    elif fund.get("pledge_direction") == "rising" and (latest_pledge or 0) >= 0.5:
-        veto_reasons.append("Promoter pledge rising QoQ")
-
-    ratio = fund.get("fcf_pat_ratio")
-    if fund.get("sector_type") != "financial" and ratio is not None and not math.isclose(ratio, 0) and (ratio > 3.0 or ratio < 1 / 3.0):
-        veto_reasons.append(f"FCF/PAT 3yr cumulative divergence ({ratio:.2f}x)")
-
-    rpt_pct = fund.get("rpt_pct")
-    if fund.get("rpt_status") == "OK" and rpt_pct is not None and rpt_pct > PROVISIONAL_RPT_VETO_PCT:
-        veto_reasons.append(f"RPT % of Revenue exceeds veto threshold ({rpt_pct:.1f}% > {PROVISIONAL_RPT_VETO_PCT}%)")
+    pledge_res = check_pledge_veto(latest_pledge, fund.get("pledge_direction"))
+    
+    fcf_res = check_fcf_veto(fund.get("fcf_pat_ratio"), fund.get("sector_type") == "financial")
+    
+    active_vetos = [pledge_res, fcf_res]
+    
+    for v in active_vetos:
+        if v.status == "VETO_TRIGGERED":
+            veto_reasons.append(v.reason)
 
     if veto_reasons:
         return {}, 0, "VETO", veto_reasons
@@ -227,6 +248,7 @@ class ConvictionScorer:
             "data_completeness": {"resolved_count": 0, "total_count": 6, "label": "0/6 metrics resolved"},
             "not_applicable_metrics": [],
             "rpt_data_missing": False,
+            "veto_status_table_row": "| 🚫 Veto Status | ⏳ UNVERIFIED |",
         }
 
         # Large-cap disclaimer handling
@@ -261,12 +283,20 @@ class ConvictionScorer:
                 base["display_badge"] = f"⚠️ Large-cap (≥ ₹20,000 Cr) · Fundamentals {fs_score}/100 ({fs_rating}) — rebalancing noise; verify separately"
             else:
                 base["display_badge"] = "⚠️ Large-cap signal — likely rebalancing noise; verify separately"
+            if base["veto"]:
+                base["veto_status_table_row"] = "| 🚫 Veto Status | 🚫 VETO_TRIGGERED |"
+            elif base["unverified_veto"]:
+                base["veto_status_table_row"] = "| 🚫 Veto Status | ⏳ UNVERIFIED |"
+            else:
+                base["veto_status_table_row"] = "| 🚫 Veto Status | CLEAR | ✅ |"
+                
             return base
 
         if fund.get("sector_type") == "financial":
             base["rating"] = "NOT_SCORED_FINANCIAL_BIZ"
             base["display_badge"] = "⚠️ Financial/Trading Business — Standard scorer not calibrated for this model. Manual review required."
             base["score"] = None
+            base["veto_status_table_row"] = "| 🚫 Veto Status | CLEAR | ✅ |"
             return base
 
         if fund.get("business_model_changed"):
@@ -277,47 +307,34 @@ class ConvictionScorer:
         unverified_veto_reasons = []
         veto_checks_passed = []
 
-        # Veto 1: RPT %
+        # RPT Handling (Excluded from strict Veto State Machine, but still scored)
         rpt_status = fund.get("rpt_status", "NOT_SCRAPED")
         rpt_pct = fund.get("rpt_pct")
         if rpt_status in ("NOT_FOUND", "NOT_SCRAPED") or rpt_pct is None:
-            # NOT_FOUND  → scraper ran and found nothing (Reg23 PDF absent on BSE)
-            # NOT_SCRAPED → symbol never ran through the offline scraper
-            # Both result in the metric being excluded from the score, but
-            # we flag them differently so Vikram can display ⏳ vs — N/A.
             base["not_applicable_metrics"].append("rpt_pct")
             base["rpt_data_missing"] = True
             base["rpt_fetch_status"] = rpt_status
-        elif rpt_pct > PROVISIONAL_RPT_VETO_PCT:
-            veto_reasons.append(f"RPT % of Revenue exceeds veto threshold ({rpt_pct:.1f}% > {PROVISIONAL_RPT_VETO_PCT}%)")
-        elif rpt_status == "OK":
-            veto_checks_passed.append("RPT")
 
-        # Veto 2: Promoter Pledge
-        pledge_dir = fund.get("pledge_direction")
+        # Active Veto State Machine (Pledge, FCF)
         pledge = fund.get("pledge_trend") or []
-        if pledge_dir is None:
-            unverified_veto_reasons.append("Promoter pledge trend data missing")
-        else:
-            latest_pledge = pledge[-1] if pledge else None
-            if latest_pledge is not None and latest_pledge > 25.0:
-                veto_reasons.append(f"Promoter pledge {latest_pledge:.1f}% exceeds 25% threshold")
-            elif pledge_dir == "rising" and (latest_pledge or 0) >= 0.5:
-                veto_reasons.append(f"Promoter pledge rising QoQ ({pledge})")
-            else:
-                veto_checks_passed.append("Pledge")
-
-        # Veto 3: FCF/PAT Divergence
+        latest_pledge = pledge[-1] if pledge else None
+        pledge_res = check_pledge_veto(latest_pledge, fund.get("pledge_direction"))
+        
         is_financial = fund.get("sector_type") == "financial"
-        ratio = fund.get("fcf_pat_ratio")
         if is_financial:
             base["not_applicable_metrics"].append("fcf_quality")
-        elif ratio is None:
-            unverified_veto_reasons.append("FCF/PAT ratio data missing")
-        elif not math.isclose(ratio, 0) and (ratio > 3.0 or ratio < 1 / 3.0):
-            veto_reasons.append(f"FCF/PAT 3yr cumulative divergence {ratio:.2f}x (outside [0.33, 3.0])")
-        else:
-            veto_checks_passed.append("FCF/PAT")
+            
+        fcf_res = check_fcf_veto(fund.get("fcf_pat_ratio"), is_financial)
+        
+        active_vetos = [pledge_res, fcf_res]
+        
+        for v in active_vetos:
+            if v.status == "VETO_TRIGGERED":
+                veto_reasons.append(v.reason)
+            elif v.status == "UNVERIFIED":
+                unverified_veto_reasons.append(v.reason)
+            elif v.status == "CLEAR":
+                veto_checks_passed.append("CLEAR")
 
         # Handle hard Vetoes
         if veto_reasons:
@@ -326,6 +343,7 @@ class ConvictionScorer:
             base["score"] = 0
             base["rating"] = "VETO"
             base["display_badge"] = f"🚫 VETO: {veto_reasons[0]}"
+            base["veto_status_table_row"] = "| 🚫 Veto Status | 🚫 VETO_TRIGGERED |"
             return base
 
         # Handle Unverified Veto (missing mandatory veto metrics block clean pass)
@@ -333,6 +351,9 @@ class ConvictionScorer:
             base["unverified_veto"] = True
             base["veto_reasons"] = unverified_veto_reasons
             base["rating"] = "UNVERIFIED_VETO"
+            base["veto_status_table_row"] = "| 🚫 Veto Status | ⏳ UNVERIFIED |"
+        else:
+            base["veto_status_table_row"] = "| 🚫 Veto Status | CLEAR | ✅ |"
 
         # Calculate Score Metrics Renormalization
         gate = _gate_scores(fund)

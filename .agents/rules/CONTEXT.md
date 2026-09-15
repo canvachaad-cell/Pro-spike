@@ -4,16 +4,16 @@
 
 
 **Current Working Set (trading_dashboard):**
-- `trading_dashboard/docs\known_bugs.md`
+- `trading_dashboard/scratch\verify_veto.py`
 - `trading_dashboard/dash_pages\_vikram_callback.py`
-- `trading_dashboard/fundamental_fetcher.py`
-- `trading_dashboard/watchlist\active_watchlist.csv`
 - `trading_dashboard/conviction_scorer.py`
-- `trading_dashboard/test-results\.last-run.json`
-- `trading_dashboard/dash_pages\institutional_signals.py`
-- `trading_dashboard/tests\ui_audit_inst_signals.spec.js`
-- `trading_dashboard/rpt_fetcher.py`
-- `trading_dashboard/dash_app_v2.py`
+- `trading_dashboard/config\vikram_runtime.json`
+- `trading_dashboard/scripts\vikram_canary.py`
+- `trading_dashboard/scratch\rpt_diagnose.py`
+- `trading_dashboard/scratch\rpt_unit_check.py`
+- `trading_dashboard/scratch\rpt_pdf_experiment.py`
+- `trading_dashboard/AGENTS.md`
+- `trading_dashboard/scratch\last_session.md`
 
 **Constraints for Today:**
 - Do NOT hallucinate variables or schemas. Use Dynamic Schema Discovery.

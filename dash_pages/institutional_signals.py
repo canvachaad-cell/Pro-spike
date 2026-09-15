@@ -31,6 +31,9 @@ TAB_STYLE = {
     "fontWeight": "600",
     "fontSize": "13px",
     "letterSpacing": "0.02em",
+    "minHeight": "44px",
+    "display": "flex",
+    "alignItems": "center",
 }
 TAB_STYLE_SELECTED = {
     **TAB_STYLE,
@@ -87,10 +90,18 @@ def _template(columns, wide=None):
 
 def _grid_table(columns, rows, min_width=760, wide=None):
     style = {"gridTemplateColumns": _template(columns, wide)}
+    
+    header_cells = []
+    for i, c in enumerate(columns):
+        if i == 0:
+            header_cells.append(html.Div(c, className="sticky left-0 z-30 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 py-3 -my-3"))
+        else:
+            header_cells.append(html.Div(c))
+            
     header = html.Div(
-        className="grid gap-2 px-4 py-3 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words",
+        className="grid gap-2 px-4 py-3 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words sticky top-0 z-20 bg-[#0a0a0a]",
         style=style,
-        children=[html.Div(c) for c in columns],
+        children=header_cells,
     )
     inner_wrapper = html.Div(
         style={"minWidth": f"{min_width}px"},
@@ -106,6 +117,8 @@ def _grid_table(columns, rows, min_width=760, wide=None):
 
 def _grid_row(cells, tpl, row_class=""):
     style = {"gridTemplateColumns": tpl}
+    if cells:
+        cells[0] = html.Div(cells[0], className="sticky left-0 z-10 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 py-3 -my-3")
     return html.Div(
         className=f"grid gap-2 px-4 py-3 items-center font-data-md text-sm border-b border-outline-variant/40 hover:bg-white/5 transition-colors break-words {row_class}",
         style=style,
@@ -672,7 +685,7 @@ def _tab_flexgate2():
             className="glass-panel rounded-2xl p-4 mt-6 mb-2 font-body-md",
             style={"borderLeft": "3px solid #e74c3c"},
             children=[
-                html.Div("🤖 FlexGate 2.0 (ML Engine)", className="font-headline-sm text-[#e74c3c] font-semibold mb-1"),
+                html.Div("🤖 FlexGate 2.0 (ML Engine)", className="font-headline-sm text-[#ffb4ab] font-semibold mb-1"),
                 html.P("These signals survived the ML Heuristic Bouncer (ATR > 3.5%) and scored ≥ 60% on the Random Forest engine.", className="text-on-surface-variant text-sm mb-0"),
             ],
         ),

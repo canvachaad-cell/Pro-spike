@@ -9,6 +9,8 @@ from config import Config
 import warnings
 warnings.filterwarnings('ignore')
 
+from schema_contracts import validate
+
 def ensure_cols(df, col_defaults):
     """Helper to ensure required columns exist in a dataframe."""
     for col, default_val in col_defaults.items():
@@ -151,6 +153,10 @@ class BSEDownloaderWorking:
                     if os.path.exists(zip_path): os.remove(zip_path)
                     for t in txts:
                         if os.path.exists(t): os.remove(t)
+                        
+                    # Phase 4 wiring: Validate schema strictly
+                    df["DATE"] = df["DATE"].astype("int64") # Ensure type is int64 per schema
+                    df = validate("bse_delivery", df)
                         
                     return df, True
         except Exception as e:

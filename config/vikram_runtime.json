@@ -1,0 +1,20 @@
+{
+    "model_candidates": [
+        {
+            "id": "gemini-1.5-pro-latest",
+            "provider": "google",
+            "search_grounding_enabled": true
+        },
+        {
+            "id": "gemini-1.5-flash-latest",
+            "provider": "google",
+            "search_grounding_enabled": false
+        }
+    ],
+    "api_timeout_ms": 25000,
+    "probe_timeout_s": 10,
+    "worker_counts": {
+        "local": 4,
+        "render": 2
+    }
+}

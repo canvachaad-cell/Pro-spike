@@ -317,3 +317,14 @@
 3. Replaced the soft CONVICTION advisory with a hard LLM imperative ('YOU ARE FORBIDDEN FROM PRODUCING A CONVICTION SCORE').
 **FAILED ATTEMPTS**: The initial BUG-024 fix assumed the scorer's badge return would be respected by Gemini.
 **AI PROCESS**: Drafted a comprehensive ix_before_touch report, proving the cache bypass and the prompt leak mathematically. Modified both layers simultaneously to completely strip numeric scaffolding from Gemini's context window. Verified via automated mock script.
+
+---
+
+## BUG-026 — Vikram 'Infinite Thinking' Deadlock (7-Hour Timeout Bug)
+**STATUS**: FIXED
+**FILE**: dash_pages/_vikram_callback.py
+**SYMPTOM**: Vikram randomly got stuck in an 'infinite thinking' loop (spinning loader UI) that never resolved, effectively killing the Dash ThreadPool worker for that session until a manual restart.
+**ROOT CAUSE**: The genai.Client was configured with 	imeout=25_000. In older SDKs, this meant 25,000 milliseconds (25 seconds). In the new google-genai SDK, it means 25,000 *seconds* (almost 7 hours). If Google's API had a transient connection hang, the Python thread blocked for 7 hours instead of cleanly throwing a TimeoutException and falling back to the next model in _probe_dynamic_fallback.
+**FIX**: Changed 	imeout=25_000 to 	imeout=25.
+**FAILED ATTEMPTS**: The user suspected a previous signal/ALGOQUANT fix had broken the callback flow, but it was purely a pre-existing configuration hazard waiting for a network stall.
+**AI PROCESS**: Activated DEEP_AUDIT. Proved undamental_strength was NOT crashing on empty inputs. Discovered the time unit mismatch via SDK testing and applied the precise one-line configuration patch.
