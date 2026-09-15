@@ -37,10 +37,10 @@ class NSEDownloaderFixed:
                 os.makedirs(Config.NSE_RAW_DIR, exist_ok=True)
                 df.to_csv(out, index=False)
                 return df, True, {"rows": len(df)}
-        except:
-            pass
+        except Exception as e:
+            return None, False, f"Exception: {str(e)}"
         
-        return None, False, "Failed"
+        return None, False, f"Failed: HTTP {r.status_code}" if 'r' in locals() else "Failed"
     
     def download_nse_delivery(self, date):
         url = f"https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{date.strftime('%d%m%Y')}.csv"
@@ -59,10 +59,10 @@ class NSEDownloaderFixed:
                 os.makedirs(Config.NSE_RAW_DIR, exist_ok=True)
                 df.to_csv(out, index=False)
                 return df, True, {"rows": len(df)}
-        except:
-            pass
+        except Exception as e:
+            return None, False, f"Exception: {str(e)}"
         
-        return None, False, "Failed"
+        return None, False, f"Failed: HTTP {r.status_code}" if 'r' in locals() else "Failed"
     
     def download_all_with_progressive(self, date=None):
         if date is None:

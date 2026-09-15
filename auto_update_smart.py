@@ -248,7 +248,7 @@ if start_date <= end_date:
             msg += f"    BSE Bhav: {'✅' if ok_bse else '❌'}\n"
             msg += f"    BSE Deliv: {'✅' if bse_deliv_ok else '❌'}"
             print(msg)
-            if ok_bhav and ok_bse: # Count as success if we at least got the price files
+            if ok_bhav and ok_deliv and ok_bse and bse_deliv_ok: # Strictly enforce all 4 feeds to prevent NaN corruption
                 downloaded += 1
         else:
             print("❌ All downloads failed")
