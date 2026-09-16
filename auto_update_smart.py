@@ -740,16 +740,16 @@ try:
     # Freshness Check
     import pandas as pd
     import os
-    if os.path.exists("data/combined_dashboard_live.csv") and os.path.exists("data/active_signals_ranked.csv"):
+    if os.path.exists("data/combined_dashboard_live.csv") and os.path.exists("data/signal_scores_today.csv"):
         try:
             live_df = pd.read_csv("data/combined_dashboard_live.csv")
-            sig_df = pd.read_csv("data/active_signals_ranked.csv")
+            sig_df = pd.read_csv("data/signal_scores_today.csv")
             live_max = str(live_df['DATE'].max())
             sig_max = str(sig_df['DATE'].max())
             if live_max != sig_max:
-                print(f"🚨 FRESHNESS WARNING: active_signals_ranked.csv is stale! (Live: {live_max}, Signals: {sig_max})")
+                print(f"🚨 FRESHNESS WARNING: signal_scores_today.csv is stale! (Live: {live_max}, Signals: {sig_max})")
                 with open(METRICS_LOG, "a", encoding="utf-8") as f:
-                    f.write(f"\n[FRESHNESS WARNING] active_signals_ranked.csv is stale! (Live: {live_max}, Signals: {sig_max})\n")
+                    f.write(f"\n[FRESHNESS WARNING] signal_scores_today.csv is stale! (Live: {live_max}, Signals: {sig_max})\n")
         except Exception as e:
             print(f"Could not perform freshness check: {e}")
             
