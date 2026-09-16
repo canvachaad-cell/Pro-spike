@@ -1358,15 +1358,17 @@ def _loader_bubble():
 
 @dash.callback(
     Output("vikram-panel", "style"),
+    Output("vikram-backdrop", "className"),
     Input("vikram-trigger", "n_clicks"),
     Input("vikram-close", "n_clicks"),
     Input("mobile-vikram-tab", "n_clicks"),
+    Input("vikram-backdrop", "n_clicks"),
     prevent_initial_call=True,
 )
-def vikram_panel_visibility(trigger_clicks, close_clicks, mobile_clicks):
-    if dash.ctx.triggered_id == "vikram-close":
-        return PANEL_HIDDEN_STYLE
-    return PANEL_SHOWN_STYLE
+def vikram_panel_visibility(trigger_clicks, close_clicks, mobile_clicks, backdrop_clicks):
+    if dash.ctx.triggered_id in ("vikram-close", "vikram-backdrop"):
+        return PANEL_HIDDEN_STYLE, ""
+    return PANEL_SHOWN_STYLE, "open"
 
 
 @dash.callback(

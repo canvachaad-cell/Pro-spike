@@ -647,3 +647,55 @@ details.glass-panel .accordion-content {
     text-decoration: none;
     border-bottom: 1px dotted var(--accent-emerald);
 }
+
+
+/* ============================================================
+   VIKRAM MOBILE BOTTOM-SHEET (BUG-032)
+   Desktop keeps the inline translateX right-slide from the
+   callback; below 768px the !important rules redirect the motion
+   to a vertical bottom sheet. Do NOT remove without re-planning.
+   ============================================================ */
+#vikram-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 998;
+    background: rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+#vikram-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (max-width: 767px) {
+    #vikram-panel {
+        transform: translateY(100%) !important;
+        border-radius: 24px 24px 0 0;
+        border-left: none;
+        border-right: none;
+    }
+    #vikram-backdrop.open ~ #vikram-panel {
+        transform: translateY(0) !important;
+    }
+}
+
+
+/* ============================================================
+   INSTITUTIONAL MOBILE TABLES (BUG-034)
+   Right-edge fade affordance for horizontally scrolling data tables.
+   ============================================================ */
+@media (max-width: 767px) {
+    .table-edge-fade::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 30px;
+        background: linear-gradient(to right, transparent, rgba(10, 10, 10, 0.9));
+        pointer-events: none;
+        z-index: 25;
+    }
+}

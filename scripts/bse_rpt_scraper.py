@@ -28,12 +28,16 @@ def init_cache():
             return json.load(f)
     return {}
 
-RptResult = namedtuple("RptResult", ["status", "rpt_amount_cr", "rpt_pct", "filing_type", "flags"])
+RptResult = namedtuple("RptResult", ["status", "rpt_amount_cr", "rpt_pct", "filing_type", "flags", "unit_source", "rescaled"])
 
 UNIT_TO_CR = {"lakh": 0.01, "crore": 1.0, "million": 0.1, "thousand": 0.00001, "rupees": 0.0000001}
 BACKSTOP_ORDER = ("crore", "lakh", "million")
 
-ROUNDING_FIELD_RE = re.compile(r"rounding\s+(?:off\s+)?(?:to\s+the\s+nearest\s+)?(lakhs?|crores?|millions?|thousands?)", re.IGNORECASE)
+ROUNDING_FIELD_RE = re.compile(
+    r"level of rounding.{0,150}?\b(lakhs?|lacs?|crores?|millions?|thousands?)\b"
+    r"|rounding\s+(?:off\s+)?(?:to\s+the\s+nearest\s+)?(lakhs?|lacs?|crores?|millions?|thousands?)\b",
+    re.IGNORECASE | re.DOTALL,
+)
 PARENS_UNIT_RE = re.compile(r"\(\s*(?:in\s+)?(?:Rs\.?|₹)\s*(?:in\s+)?(lakhs?|crores?|millions?)\s*\)", re.IGNORECASE)
 EMBEDDED_TOTAL_RE = re.compile(r"Total\s+(?:value\s+)?of\s+transactions?\s*.*?([\d,]+\.\d+)", re.IGNORECASE)
 
@@ -53,12 +57,27 @@ def resolve_unit(path, raw_value, mcap_cr=None, unit_hint=None):
     full = _all_text(path)
     
     # Priority 1: explicit declaration
-    m = ROUNDING_FIELD_RE.search(full) or PARENS_UNIT_RE.search(full)
-    if m or unit_hint:
-        unit = (m.group(1) if m else unit_hint).lower().rstrip("s")
+    m = ROUNDING_FIELD_RE.search(full)
+    m2 = PARENS_UNIT_RE.search(full)
+    
+    if m or m2 or unit_hint:
+        unit = None
+        if m:
+            unit = m.group(1) or m.group(2)
+        if not unit and m2:
+            unit = m2.group(1)
+        if not unit:
+            unit = unit_hint
+            
+        unit = unit.lower().rstrip("s")
         if unit not in UNIT_TO_CR:
             unit = "rupees" if unit == "rupee" else "crore"
-        return raw_value * UNIT_TO_CR.get(unit, 1.0), f"explicit:{unit}", False, []
+            
+        flags = []
+        if mcap_cr and raw_value * UNIT_TO_CR.get(unit, 1.0) > 2.0 * mcap_cr:
+            flags.append("EXPLICIT_UNIT_SUSPECT")
+            
+        return raw_value * UNIT_TO_CR.get(unit, 1.0), f"explicit:{unit}", False, flags
         
     # Priority 2: magnitude backstop
     flags = []
@@ -78,10 +97,8 @@ def extract_rpt_v2(pdf_path, market_cap_cr=None):
     full_text = _all_text(pdf_path)
     
     # Stage 0: PREFLIGHT
-    if "Non-applicability of Related Party Disclosure" in full_text or "not applicable" in full_text.lower():
-        return RptResult("EXEMPT", None, None, "BSE_PDF_EXEMPT", [])
     if "ytrap detaler" in full_text.lower():
-        return RptResult("UNPARSABLE", None, None, None, ["REVERSED_TEXT"])
+        return RptResult("UNPARSABLE", None, None, None, ["REVERSED_TEXT"], None, False)
         
     # Stage 1 & 2: SEBI standard table & SME fallback
     total_val = 0.0
@@ -131,15 +148,17 @@ def extract_rpt_v2(pdf_path, market_cap_cr=None):
             found_table = True
             
     if not found_table:
-        return RptResult("NOT_FOUND", None, None, None, ["NO_TABLE"])
+        if "Non-applicability of Related Party Disclosure" in full_text or "not applicable" in full_text.lower():
+            return RptResult("EXEMPT", None, None, "BSE_PDF_EXEMPT", [], None, False)
+        return RptResult("UNPARSABLE", None, None, None, ["NO_TABLE"], None, False)
         
     # Stage 4: UNIT RESOLUTION
     resolved_val, resolution_method, rescaled, flags = resolve_unit(pdf_path, total_val, market_cap_cr, unit_hint)
     
     if "UNKNOWN" in resolution_method or "UNRESOLVED" in resolution_method:
-        return RptResult("NOT_FOUND", None, None, None, flags)
+        return RptResult("NOT_FOUND", None, None, None, flags, resolution_method, rescaled)
         
-    return RptResult("OK", resolved_val, None, "BSE_PDF", flags)
+    return RptResult("OK", resolved_val, None, "BSE_PDF", flags, resolution_method, rescaled)
 
 def main():
     os.makedirs(PDF_DIR, exist_ok=True)
@@ -195,7 +214,7 @@ def main():
         print(f"[{ticker}] Fetching Scrip {scrip} from {from_date_str} to {to_date_str} via API...")
         
         try:
-            pdf_filename = None
+            candidates = []
             for pageno in range(1, 6):
                 url = f"https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w?pageno={pageno}&strCat=-1&strPrevDate={from_date_str}&strScrip={scrip}&strSearch=P&strToDate={to_date_str}&strType=C"
                 r = requests.get(url, headers=headers, timeout=10)
@@ -212,10 +231,13 @@ def main():
                     headline = str(item.get('HEADLINE', ''))
                     if 'Related Party' in subject or 'Related Party' in headline:
                         pdf_filename = item.get('ATTACHMENTNAME')
+                        date_str = item.get('NEWS_DT', item.get('DT_TM', ''))
                         if pdf_filename:
-                            break
-                if pdf_filename:
-                    break
+                            candidates.append((date_str, pdf_filename))
+                            
+            pdf_filename = None
+            if candidates:
+                pdf_filename = max(candidates, key=lambda c: c[0])[1]
                     
             new_result = None
             if pdf_filename:
@@ -250,16 +272,18 @@ def main():
                                 "rpt_amount_cr": round(rpt_obj.rpt_amount_cr, 2),
                                 "rpt_pct": rpt_pct,
                                 "filing_type": "BSE_PDF",
-                                "flags": "|".join(rpt_obj.flags)
+                                "flags": "|".join(rpt_obj.flags),
+                                "unit_source": rpt_obj.unit_source,
+                                "rescaled": rpt_obj.rescaled
                             }
                         else:
-                            new_result = {"status": "NOT_FOUND", "rpt_amount_cr": None, "rpt_pct": None, "filing_type": None, "flags": "NO_REVENUE"}
+                            new_result = {"status": "NOT_FOUND", "rpt_amount_cr": None, "rpt_pct": None, "filing_type": None, "flags": "NO_REVENUE", "unit_source": None, "rescaled": False}
                     elif rpt_obj.status == "EXEMPT":
-                        new_result = {"status": "EXEMPT", "rpt_amount_cr": None, "rpt_pct": None, "filing_type": "BSE_PDF_EXEMPT", "flags": ""}
+                        new_result = {"status": "EXEMPT", "rpt_amount_cr": None, "rpt_pct": None, "filing_type": "BSE_PDF_EXEMPT", "flags": "", "unit_source": None, "rescaled": False}
                     else:
-                        new_result = {"status": "NOT_FOUND", "rpt_amount_cr": None, "rpt_pct": None, "filing_type": None, "flags": "|".join(rpt_obj.flags)}
+                        new_result = {"status": rpt_obj.status, "rpt_amount_cr": None, "rpt_pct": None, "filing_type": None, "flags": "|".join(rpt_obj.flags), "unit_source": getattr(rpt_obj, 'unit_source', None), "rescaled": getattr(rpt_obj, 'rescaled', False)}
             else:
-                new_result = {"status": "NOT_FOUND", "rpt_amount_cr": None, "rpt_pct": None, "filing_type": None, "flags": "NO_FILING"}
+                new_result = {"status": "NOT_FOUND", "rpt_amount_cr": None, "rpt_pct": None, "filing_type": None, "flags": "NO_FILING", "unit_source": None, "rescaled": False}
                 
             old_result = rpt_cache.get(ticker, {})
             delta_rows.append({
@@ -268,7 +292,9 @@ def main():
                 "old_amount": old_result.get("rpt_amount_cr"),
                 "new_status": new_result.get("status") if new_result else "ERROR",
                 "new_amount": new_result.get("rpt_amount_cr") if new_result else None,
-                "flags": new_result.get("flags", "") if new_result else ""
+                "flags": new_result.get("flags", "") if new_result else "",
+                "unit_source": new_result.get("unit_source", "") if new_result else "",
+                "rescaled": new_result.get("rescaled", False) if new_result else False
             })
             
         except Exception as e:

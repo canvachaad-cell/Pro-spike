@@ -185,12 +185,19 @@ app.layout = html.Div(
                 )
             ]
         ),
-        # Vikram AI Analyst slide-in panel (right side, hidden by default)
+        # Vikram backdrop - dims the page and intercepts taps while the panel is open (BUG-032)
+        html.Div(
+            id="vikram-backdrop",
+            **{"aria-hidden": "true"},
+        ),
+        # Vikram AI Analyst slide-in panel (right sheet desktop / bottom sheet mobile)
         html.Aside(
             id="vikram-panel",
-            className="fixed top-0 right-0 h-[100dvh] w-full md:w-[400px] z-[999] flex flex-col bg-surface-container-low/95 backdrop-blur-2xl border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]",
+            className="fixed top-0 right-0 h-[100dvh] w-full md:w-[400px] z-[999] flex flex-col bg-surface-container-low/95 backdrop-blur-2xl border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)] max-md:top-auto max-md:bottom-0 max-md:left-0 max-md:h-[75dvh] max-md:rounded-t-2xl max-md:border-x-0 max-md:border-t",
             style={"transform": "translateX(100%)", "transition": "transform 0.3s ease"},
             children=[
+                # Drag handle - mobile bottom-sheet affordance (hidden on md+)
+                html.Div(className="md:hidden w-10 h-1 rounded-full bg-white/20 mx-auto mt-2 flex-shrink-0"),
                 html.Div(
                     className="flex items-center justify-between px-4 py-3 border-b border-outline-variant",
                     children=[
@@ -220,7 +227,7 @@ app.layout = html.Div(
                     ]
                 ),
                 html.Div(
-                    className="flex gap-2 p-3 border-t border-outline-variant",
+                    className="flex gap-2 p-3 border-t border-outline-variant max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom))]",
                     children=[
                         dcc.Input(
                             id="vikram-input",

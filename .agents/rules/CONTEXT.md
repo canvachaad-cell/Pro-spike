@@ -4,16 +4,16 @@
 
 
 **Current Working Set (trading_dashboard):**
+- `trading_dashboard/test-results\.last-run.json`
+- `trading_dashboard/docs\known_bugs.md`
+- `trading_dashboard/dash_pages\institutional_signals.py`
+- `trading_dashboard/tests\ui_audit_inst_signals.spec.js`
+- `trading_dashboard/scratch\pw_verify.config.js`
+- `trading_dashboard/tests\vikram_panel.spec.js`
+- `trading_dashboard/scripts\bse_rpt_scraper.py`
+- `trading_dashboard/dash_pages\_vikram_callback.py`
 - `trading_dashboard/dash_app_v2.py`
 - `trading_dashboard/.uimax-reviews.json`
-- `trading_dashboard/dash_pages\institutional_signals.py`
-- `trading_dashboard/docs\known_bugs.md`
-- `trading_dashboard/auto_update_smart.py`
-- `trading_dashboard/nse_downloader_fixed_nov2025.py`
-- `trading_dashboard/test-results\.last-run.json`
-- `trading_dashboard/scratch\parse_lh.py`
-- `trading_dashboard/scratch\lighthouse_report.report.json`
-- `trading_dashboard/scratch\verify_veto.py`
 
 **Constraints for Today:**
 - Do NOT hallucinate variables or schemas. Use Dynamic Schema Discovery.

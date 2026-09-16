@@ -64,6 +64,12 @@ def load_csv(path):
         return None
 
 
+def _get_count(path):
+    df = load_csv(path)
+    if df is None:
+        return ""
+    return f" · {len(df)}"
+
 def _empty_panel(msg):
     return html.Div(msg, className="glass-panel rounded-xl p-6 font-body-md text-outline text-center")
 
@@ -97,12 +103,12 @@ def _grid_table(columns, rows, min_width=760, wide=None):
     header_cells = []
     for i, c in enumerate(columns):
         if i == 0:
-            header_cells.append(html.Div(c, className="sticky left-0 z-30 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 py-3 -my-3"))
+            header_cells.append(html.Div(c, className="sticky left-0 z-30 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 max-md:pl-3 py-3 max-md:py-2 -my-3 shadow-[8px_0_12px_-8px_rgba(0,0,0,0.55)]"))
         else:
             header_cells.append(html.Div(c))
             
     header = html.Div(
-        className="grid gap-2 px-4 py-3 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words sticky top-0 z-20 bg-[#0a0a0a]",
+        className="grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words sticky top-0 z-20 bg-[#0a0a0a]",
         style=style,
         children=header_cells,
     )
@@ -111,7 +117,7 @@ def _grid_table(columns, rows, min_width=760, wide=None):
         children=[header] + rows,
     )
     return html.Div(
-        className="glass-panel rounded-2xl overflow-x-auto",
+        className="glass-panel rounded-2xl overflow-x-auto table-edge-fade relative",
         tabIndex="0",
         **{"aria-label": "Data table"},
         children=[inner_wrapper],
@@ -121,9 +127,9 @@ def _grid_table(columns, rows, min_width=760, wide=None):
 def _grid_row(cells, tpl, row_class=""):
     style = {"gridTemplateColumns": tpl}
     if cells:
-        cells[0] = html.Div(cells[0], className="sticky left-0 z-10 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 py-3 -my-3")
+        cells[0] = html.Div(cells[0], className="sticky left-0 z-10 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 max-md:pl-3 py-3 max-md:py-2 -my-3 shadow-[8px_0_12px_-8px_rgba(0,0,0,0.55)]")
     return html.Div(
-        className=f"grid gap-2 px-4 py-3 items-center font-data-md text-sm border-b border-outline-variant/40 hover:bg-white/5 transition-colors break-words {row_class}",
+        className=f"grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 items-center font-data-md text-sm border-b border-outline-variant/40 hover:bg-white/5 transition-colors break-words {row_class}",
         style=style,
         children=cells,
     )
@@ -627,12 +633,12 @@ def velocity_simulation(ledger_csv, risk_pct, ai_threshold=None, title="₹10L V
                 tabIndex="0",
                 **{"aria-label": "Simulation ledger data table"},
                 children=[
-                    html.Summary("📝 View Trade-by-Trade Simulation Ledger", className="px-4 py-3 font-label-caps text-on-surface-variant uppercase tracking-wider text-xs cursor-pointer select-none"),
+                    html.Summary("📝 View Trade-by-Trade Simulation Ledger", className="px-4 py-3 font-label-caps text-on-surface-variant uppercase tracking-wider text-xs cursor-pointer select-none outline-none"),
                     html.Div(
                         style={"minWidth": "950px"},
                         children=[
                             html.Div(
-                                className="grid gap-2 px-4 py-3 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words",
+                                className="grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words",
                                 style={"gridTemplateColumns": sim_tpl},
                                 children=[html.Div(c) for c in sim_cols],
                             )
@@ -642,11 +648,17 @@ def velocity_simulation(ledger_csv, risk_pct, ai_threshold=None, title="₹10L V
             )
         )
 
-    return html.Div(
+    return html.Details(
+        className="glass-panel rounded-2xl mt-6 font-body-md",
         children=[
-            html.Div(title, className="font-label-sm text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mt-6 mb-1"),
-            tiles,
-        ] + ledger_section
+            html.Summary(f"📊 {title}", className="px-4 py-3 font-label-caps text-on-surface-variant uppercase tracking-wider text-xs cursor-pointer select-none outline-none"),
+            html.Div(
+                className="px-4 pb-4 border-t border-white/10 pt-2",
+                children=[
+                    tiles,
+                ] + ledger_section
+            )
+        ]
     )
 
 
@@ -669,12 +681,12 @@ def _tab_alpha():
 
 def _tab_flexgate():
     return [
-        html.Div(
-            className="glass-panel rounded-2xl p-4 mt-6 mb-2 font-body-md",
+        html.Details(
+            className="glass-panel rounded-2xl mt-6 mb-2 font-body-md",
             style={"borderLeft": "3px solid #8ea2ff"},
             children=[
-                html.Div("🔭 Path B: Base-Loading (FlexGate)", className="font-headline-sm text-[#8ea2ff] font-semibold mb-1"),
-                html.P("These signals survived the ICT Box anomalies (exactly 2 alerts in 10 days). Trend-Following Notice: No Fixed Profit Target. Use the Chandelier Exit.", className="text-on-surface-variant text-sm mb-0"),
+                html.Summary("ℹ️ About Path B: Base-Loading (FlexGate)", className="px-4 py-3 font-headline-sm text-[#8ea2ff] font-semibold cursor-pointer select-none outline-none"),
+                html.P("These signals survived the ICT Box anomalies (exactly 2 alerts in 10 days). Trend-Following Notice: No Fixed Profit Target. Use the Chandelier Exit.", className="text-on-surface-variant text-sm px-4 pb-4 mb-0 border-t border-white/10 pt-3"),
             ],
         ),
         flexgate_table(FLEXGATE_FILE, "Run calculate_active_signals.py to generate the FlexGate Watchlist.", "⚠️ No stocks passed the strict FlexGate logic today."),
@@ -684,12 +696,12 @@ def _tab_flexgate():
 
 def _tab_flexgate2():
     return [
-        html.Div(
-            className="glass-panel rounded-2xl p-4 mt-6 mb-2 font-body-md",
+        html.Details(
+            className="glass-panel rounded-2xl mt-6 mb-2 font-body-md",
             style={"borderLeft": "3px solid #e74c3c"},
             children=[
-                html.Div("🤖 FlexGate 2.0 (ML Engine)", className="font-headline-sm text-[#ffb4ab] font-semibold mb-1"),
-                html.P("These signals survived the ML Heuristic Bouncer (ATR > 3.5%) and scored ≥ 60% on the Random Forest engine.", className="text-on-surface-variant text-sm mb-0"),
+                html.Summary("ℹ️ About FlexGate 2.0 (ML Engine)", className="px-4 py-3 font-headline-sm text-[#ffb4ab] font-semibold cursor-pointer select-none outline-none"),
+                html.P("These signals survived the ML Heuristic Bouncer (ATR > 3.5%) and scored ≥ 60% on the Random Forest engine.", className="text-on-surface-variant text-sm px-4 pb-4 mb-0 border-t border-white/10 pt-3"),
             ],
         ),
         flexgate_table(FLEXGATE2_FILE, "Run flexgate_2_scanner.py to generate the FlexGate 2.0 Watchlist.", "⚠️ No stocks passed the strict FlexGate 2.0 ML logic today."),
@@ -718,8 +730,13 @@ def render_engine_tab(tab_value):
 
 
 def layout():
+    legacy_count = _get_count(LEGACY_FILE)
+    alpha_count = _get_count(ALPHA_FILE)
+    flexgate_count = _get_count(FLEXGATE_FILE)
+    flexgate2_count = _get_count(FLEXGATE2_FILE)
+
     return html.Div(
-        className="px-4 md:px-6 pt-6 pb-32 w-full flex flex-col gap-4",
+        className="px-4 md:px-6 pt-6 pb-32 w-full flex flex-col gap-4 relative",
         children=[
             html.Section(
                 className="flex flex-col gap-1",
@@ -728,30 +745,38 @@ def layout():
                     html.P("Multi-Strategy Execution Engine — high-conviction data signals for professional trading.", className="font-body-md text-on-surface-variant"),
                 ],
             ),
-            html.Div(
-                className="glass-panel rounded-2xl p-4 font-body-md text-on-surface-variant",
+            html.Details(
+                className="glass-panel rounded-2xl font-body-md text-on-surface-variant",
                 children=[
-                    "This dual-engine system isolates distinct institutional profiles: ",
-                    html.Strong("High-Velocity Alpha Markups (Path A)", className="text-on-surface"),
-                    " and ",
-                    html.Strong("Quiet Base-Loading Breakouts (Path B)", className="text-on-surface"),
-                    ".",
+                    html.Summary("ℹ️ Path A: High-Velocity Alpha Markups · Path B: Quiet Base-Loading Breakouts", className="px-4 py-3 font-label-caps text-on-surface-variant uppercase tracking-wider text-[11px] cursor-pointer select-none outline-none"),
+                    html.Div(
+                        className="px-4 pb-4 border-t border-white/10 pt-3",
+                        children=[
+                            "This dual-engine system isolates distinct institutional profiles: ",
+                            html.Strong("High-Velocity Alpha Markups (Path A)", className="text-on-surface"),
+                            " and ",
+                            html.Strong("Quiet Base-Loading Breakouts (Path B)", className="text-on-surface"),
+                            ".",
+                        ]
+                    )
                 ],
             ),
             html.Div(
-                className="w-full overflow-x-auto hide-scrollbar touch-pan-x mb-2",
+                className="w-full overflow-x-auto hide-scrollbar touch-pan-x mb-2 sticky top-0 z-20 bg-[#0a0a0a]/90 backdrop-blur-xl py-2",
+                tabIndex="0",
+                **{"aria-label": "Engine selection tabs"},
                 children=[
                     dcc.Tabs(
                         id="engine-tabs",
                         value="legacy",
                         parent_className="w-full",
-                        className="flex flex-row overflow-x-auto hide-scrollbar touch-pan-x gap-2 pb-2",
+                        className="flex flex-row gap-2 pb-2",
                         parent_style={"borderBottom": "none", "backgroundColor": "transparent"},
                         children=[
-                            dcc.Tab(label="🔬 Legacy Screener", value="legacy", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
-                            dcc.Tab(label="🏆 SBIA Alpha Engine (High-Velocity)", value="alpha", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
-                            dcc.Tab(label="🔭 SBIA FlexGate Engine (Base-Loading)", value="flexgate", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
-                            dcc.Tab(label="🤖 FlexGate 2.0 (ML Engine)", value="flexgate2", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
+                            dcc.Tab(label=f"🔬 Legacy{legacy_count}", value="legacy", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
+                            dcc.Tab(label=f"🏆 SBIA Alpha{alpha_count}", value="alpha", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
+                            dcc.Tab(label=f"🔭 FlexGate{flexgate_count}", value="flexgate", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
+                            dcc.Tab(label=f"🤖 FlexGate 2.0{flexgate2_count}", value="flexgate2", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
                         ],
                     )
                 ]

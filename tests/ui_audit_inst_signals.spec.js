@@ -9,9 +9,9 @@ test.describe('Automated UI/UX and Accessibility Audit - Mobile Inst Signals', (
     await page.waitForTimeout(1500); // Wait for initial render and callbacks
 
     const tabs = [
-      { name: 'Legacy Screener', text: 'Legacy Screener' },
-      { name: 'SBIA Alpha Engine', text: 'SBIA Alpha Engine' },
-      { name: 'SBIA FlexGate Engine', text: 'SBIA FlexGate Engine' },
+      { name: 'Legacy', text: 'Legacy' },
+      { name: 'SBIA Alpha', text: 'SBIA Alpha' },
+      { name: 'FlexGate', text: 'FlexGate' },
       { name: 'FlexGate 2.0', text: 'FlexGate 2.0' }
     ];
 
@@ -19,11 +19,13 @@ test.describe('Automated UI/UX and Accessibility Audit - Mobile Inst Signals', (
 
     for (const tab of tabs) {
       console.log(`\n--- Auditing Tab: ${tab.name} ---`);
-      
-      // Click the tab if it's not the first one
-      if (tab.name !== 'Legacy Screener') {
-        // Dash tabs usually contain the text
-        await page.locator(`text=${tab.text}`).click();
+
+      // Click the tab if it's not the first one.
+      // NOTE (BUG-033 follow-up): dcc.Tabs renders labels as divs with class
+      // "tab" and NO ARIA role, so getByRole('tab') matches nothing. Locate
+      // by class + text instead.
+      if (tab.name !== 'Legacy') {
+        await page.locator('#engine-tabs .tab', { hasText: tab.text }).first().click();
         await page.waitForTimeout(2000); // let the dash callback finish rendering
       }
 

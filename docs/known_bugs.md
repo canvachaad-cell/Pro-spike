@@ -351,19 +351,6 @@
 **FAILED ATTEMPTS**: None.
 **AI PROCESS**: Utilized `uxtools-ui-audit` UX heuristics. Gated edits behind `/fix_before_touch` and `DEEP_PLAN` to evaluate blast radius before execution.
 
-## BUG-028 — Mobile UX Wayfinding & Accessibility (ui-audit)
-**STATUS**: FIXED
-**FILE**: `dash_app_v2.py`, `assets/style.css`
-**SYMPTOM**: On mobile devices, the top navigation header was completely hidden, preventing access to settings/notifications and removing context (page title). The Vikram bottom nav tab was an inaccessible div, and the "Trade Now" primary action was hidden inside the desktop sidebar.
-**ROOT CAUSE**: `top_navbar` used `hidden md:flex`. `#mobile-vikram-tab` lacked semantic button ARIA roles. "Trade Now" CTA was scoped to the sidebar footer without a mobile equivalent.
-**FIX**: 
-1. Replaced `hidden md:flex` with `flex` on `top_navbar` and adjusted padding.
-2. Appended `role="button"`, `tabIndex="0"`, and `aria-label` to the Vikram mobile tab.
-3. Added a Floating Action Button (FAB) for "Trade Now" specifically on mobile (`md:hidden fixed bottom-[90px]`).
-4. Increased mobile nav label font-size to 11px.
-**FAILED ATTEMPTS**: None.
-**AI PROCESS**: Utilized `uxtools-ui-audit` UX heuristics. Gated edits behind `/fix_before_touch` and `DEEP_PLAN` to evaluate blast radius before execution.
-
 ## BUG-029 — RPT Scraper Blind to New Filings (Hardcoded Date Window)
 **STATUS**: OPEN (PR-1 Merged, PR-3 pending)
 **FILE**: `scripts/bse_rpt_scraper.py`
@@ -396,3 +383,30 @@
 3. Removed deprecated `-latest` models from the static fallback list to prevent guaranteed `404 NOT_FOUND` immediate failures.
 **FAILED ATTEMPTS**: Earlier fixes assumed it was thread exhaustion or API outage, missing the millisecond unit discrepancy in the SDK.
 **AI PROCESS**: Utilized `fix_before_touch` to verify the schema for `HttpOptions` and proved the unit was milliseconds. Validated fix using isolated CLI script.
+
+## BUG-032 - Vikram Panel Fully Occludes Mobile Viewport (No Backdrop / No Tap-Out)
+**STATUS**: FIXED
+**FILE**: `dash_app_v2.py` (shell), `dash_pages/_vikram_callback.py` (vikram_panel_visibility callback), `assets/style.css` (appended BUG-032 block)
+**SYMPTOM**: On mobile, opening Vikram (bottom-nav tab) slid in a full-screen `w-full h-[100dvh]` overlay with no backdrop and no tap-outside-to-close; the underlying page was completely hidden and the only exit was the small close button.
+**ROOT CAUSE**: `#vikram-panel` was fixed top-right `w-full md:w-[400px]`; `vikram_panel_visibility` wrote only the panel inline `transform` and had no backdrop element or mobile-specific presentation.
+**FIX**: 1) Added `#vikram-backdrop` (z-998, rgba(0,0,0,0.55), opacity/pointer-events via CSS) emitted directly BEFORE the panel so the sibling selector `#vikram-backdrop.open ~ #vikram-panel` can drive the mobile transform. 2) Extended the callback to 2 Outputs (panel style + backdrop className) and 4 Inputs (backdrop n_clicks treated as close). 3) Below 768px, `!important` media rules redirect the panel into a 75dvh bottom sheet (translateY motion, rounded top, drag handle, safe-area padded input row); desktop keeps the 400px right-slide. 4) Added regression spec `tests/vikram_panel.spec.js` (Pixel 5 + Desktop Chrome).
+**FAILED ATTEMPTS**: None (CSS-state-class full refactor considered and rejected as too invasive; !important override documented instead).
+**AI PROCESS**: fix_before_touch protocol, blast radius LOCAL. Honored BUG-012 (z-order), BUG-013 (dvh), BUG-015 (trigger hidden md:flex), BUG-028 deliberate revert (no top-nav/FAB re-add). Verified: py_compile OK; pytest 20 passed (system Python 9.1.1 - venv has no pytest, used interpreter fallback); Playwright on live :8060 instance 2 passed / 2 project-skips (mobile sheet geometry + backdrop tap-close; desktop 400px slide preserved).
+
+## BUG-033 - Institutional Signals Page Clutter (Tabs, Explainers, Navigation)
+**STATUS**: FIXED
+**FILE**: `dash_pages/institutional_signals.py` (layout, tab builders), `tests/ui_audit_inst_signals.spec.js`
+**SYMPTOM**: Page felt cluttered: verbose 4-tab labels blew out mobile widths, intro/methodology panels and sim tiles were always open, and engine switching required scrolling back to top.
+**ROOT CAUSE**: Design debt - four heavy peers stacked above the fold with no progressive disclosure; tab bar not sticky.
+**FIX**: Implemented by Gemini Antigravity agent from the approved PLAN_DEEP plan, then verified and corrected by GLM: short labels + live count badges via `_get_count` (renders `Legacy - 41`, `SBIA Alpha - 7`, `FlexGate - 9`, `FlexGate 2.0 - 8`); intro explainer, per-engine methodology notes and the full Velocity Simulation (tiles + ledger) collapsed into native `<details>` accordions; sticky tab bar (`sticky top-0 z-20 bg-[#0a0a0a]/90 backdrop-blur-xl`) with inner `overflow-x-auto` stripped and scroll ownership moved to the aria-labelled wrapper (axe scrollable-region-focusable compliance).
+**FAILED ATTEMPTS**: 1) Gemini spec used `getByRole('tab')` - probe proved dcc.Tabs emits NO ARIA tab roles (roleTabCount=0, class-tab count=4), causing 30s locator timeouts on both projects; fixed with `page.locator('#engine-tabs .tab', { hasText })`. 2) `_get_count` rendered a fake `- 0` badge when the ledger CSV was missing entirely; fixed to omit the badge (missing file must not masquerade as zero signals).
+**AI PROCESS**: Concurrent-agent reconciliation: both agents worked from the same approved PLAN_DEEP. GLM detected the collision via anchor drift forensics, stood down its duplicate edits, then ran the empirical verification bar on the merged state (py_compile, pytest 20 passed, live :8060 probe, axe-core 4 tabs x 2 projects = ZERO violations).
+
+## BUG-034 - Mobile Data Tables Were a Degraded Desktop View
+**STATUS**: FIXED
+**FILE**: `dash_pages/institutional_signals.py` (_grid_table/_grid_row), `assets/style.css` (BUG-034 block)
+**SYMPTOM**: Dense CSS-grid tables on mobile had no depth cue on the pinned SYMBOL column, no visual hint of horizontal scrollability, and desktop row padding wasted screen height.
+**ROOT CAUSE**: Sticky first column used flat opaque bg with no separation shadow; no scroll affordance; single padding scale for all viewports.
+**FIX**: Implemented by Gemini Antigravity agent, verified by GLM: sticky first column gained `shadow-[8px_0_12px_-8px_rgba(0,0,0,0.55)]` inset edge; `.table-edge-fade::after` right-edge gradient overlay (mobile-only media query, z-25, pointer-events none) attached to table wrappers; `max-md:py-2 max-md:px-3` density compression preserving desktop spacing. Desktop untouched.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Same concurrent verification as BUG-033; axe-core zero violations, live probe confirmed 4 tab badges and 200 OK on /institutional-signals.
