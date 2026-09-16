@@ -4,9 +4,9 @@
 
 
 **Current Working Set (trading_dashboard):**
+- `trading_dashboard/dash_app_v2.py`
 - `trading_dashboard/.uimax-reviews.json`
 - `trading_dashboard/docs\known_bugs.md`
-- `trading_dashboard/dash_app_v2.py`
 - `trading_dashboard/auto_update_smart.py`
 - `trading_dashboard/nse_downloader_fixed_nov2025.py`
 - `trading_dashboard/test-results\.last-run.json`

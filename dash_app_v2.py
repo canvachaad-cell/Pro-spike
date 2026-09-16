@@ -28,6 +28,10 @@ app.index_string = '''<!DOCTYPE html>
     <head>
         {%metas%}
         <title>{%title%}</title>
+        <link rel="canonical" href="https://prospike.com">
+        <meta property="og:description" content="Pro-spike: quantitative trading dashboard for NSE/BSE institutional accumulation, delivery volume signals, and portfolio analytics.">
+        <meta property="og:title" content="Pro Spike">
+        <meta property="og:type" content="website">
         {%favicon%}
         {%css%}
     </head>
@@ -54,7 +58,7 @@ sidebar_header = html.Div(
         html.Div(
             id="sidebar-title-container",
             children=[
-                html.H1("Pro Spike", className="font-headline-sm text-headline-sm text-primary", style={"margin": 0}),
+                html.Div("Pro Spike", className="font-headline-sm text-headline-sm text-primary", style={"margin": 0}),
                 html.P("Institutional Grade", className="font-label-caps text-label-caps text-outline whitespace-nowrap", style={"margin": 0})
             ]
         ),
@@ -166,7 +170,7 @@ app.layout = html.Div(
         html.Button(
             "Trade",
             id="mobile-trade-fab",
-            className="md:hidden fixed bottom-[90px] right-4 z-50 bg-primary text-on-primary font-label-caps text-label-caps rounded-xl px-5 py-3 shadow-[0_4px_20px_rgba(174,198,255,0.4)] hover:bg-primary-fixed active:scale-95 transition-all"
+            className="md:hidden fixed bottom-24 right-4 z-50 bg-primary text-on-primary font-label-caps text-label-caps rounded-xl px-5 py-3 shadow-[0_4px_20px_rgba(174,198,255,0.4)] hover:bg-primary-fixed active:scale-95 transition-all"
         ),
         # Floating Command Bar — opens the Vikram AI panel
         html.Div(
