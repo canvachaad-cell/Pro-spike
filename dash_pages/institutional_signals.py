@@ -4,7 +4,7 @@ import pandas as pd
 import os
 from functools import lru_cache
 
-dash.register_page(__name__, path='/institutional-signals', name='Institutional Signals', title='Pro Spike - Institutional Signals')
+dash.register_page(__name__, path='/institutional-signals', name='Institutional Signals', title='Pro Spike - Institutional Signals', description='Multi-Strategy Execution Engine — high-conviction data signals for professional trading.')
 
 LEGACY_FILE = os.path.join("data", "legacy_watchlist.csv")
 ALPHA_FILE = os.path.join("data", "sbia_alpha_watchlist.csv")
@@ -26,7 +26,7 @@ TAB_STYLE = {
     "borderRadius": "12px",
     "padding": "10px 16px",
     "marginRight": "8px",
-    "marginBottom": "8px",
+    "marginBottom": "0",
     "color": "var(--text-secondary)",
     "fontWeight": "600",
     "fontSize": "13px",
@@ -34,6 +34,9 @@ TAB_STYLE = {
     "minHeight": "44px",
     "display": "flex",
     "alignItems": "center",
+    "whiteSpace": "nowrap",
+    "flex": "0 0 auto",
+    "width": "auto",
 }
 TAB_STYLE_SELECTED = {
     **TAB_STYLE,
@@ -741,7 +744,8 @@ def layout():
                     dcc.Tabs(
                         id="engine-tabs",
                         value="legacy",
-                        parent_className="w-full min-w-max flex",
+                        parent_className="w-full",
+                        className="flex flex-row overflow-x-auto hide-scrollbar touch-pan-x gap-2 pb-2",
                         parent_style={"borderBottom": "none", "backgroundColor": "transparent"},
                         children=[
                             dcc.Tab(label="🔬 Legacy Screener", value="legacy", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
