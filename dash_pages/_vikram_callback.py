@@ -1021,9 +1021,10 @@ def _ensure_configured():
     except ImportError as e:
         return f"google-genai import failed: {e}"
     try:
-        api_timeout = RUNTIME_CONFIG.get("api_timeout_ms", 25000) / 1000.0
+        api_timeout = int(RUNTIME_CONFIG.get("api_timeout_ms", 25000))
         _client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=api_timeout))
-        _probe_client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=4.0))
+        # The Google API backend strictly enforces a minimum deadline of 10s (10000ms).
+        _probe_client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=10000))
     except Exception as e:
         return f"Could not configure Gemini: {e}"
     return None
@@ -1049,16 +1050,18 @@ def _sanitize_contents(history, question):
     return contents
 
 
-def _generate(model_name, system_prompt, contents, use_search):
+def _generate(model_name, system_prompt, contents, use_search, client=None):
     """One generate_content attempt. Returns (text, sources) or raises."""
     from google.genai import types as genai_types
+    if client is None:
+        client = _client
 
     tools = [genai_types.Tool(google_search=genai_types.GoogleSearch())] if use_search else None
     config = genai_types.GenerateContentConfig(
         system_instruction=system_prompt,
         tools=tools,
     )
-    resp = _client.models.generate_content(model=model_name, contents=contents, config=config)
+    resp = client.models.generate_content(model=model_name, contents=contents, config=config)
     text = (resp.text or "").strip()
     if not text:
         raise RuntimeError("empty response")
@@ -1118,7 +1121,7 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested):
         ]
     except Exception:
         # DEEP_AUDIT FIX: API congested. Do not abort. Fallback to emergency known-models list.
-        model_names = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-flash-lite-latest"]
+        model_names = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
 
     probe_start = time.monotonic()
 
@@ -1129,20 +1132,12 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested):
             if time.monotonic() - probe_start > PROBE_TOTAL_TIMEOUT:
                 return None, None, f"Dynamic probe timed out after {PROBE_TOTAL_TIMEOUT}s — all models were too slow."
             try:
-                from google.genai import types as genai_types
-                tools = [genai_types.Tool(google_search=genai_types.GoogleSearch())] if use_search else None
-                config = genai_types.GenerateContentConfig(
-                    system_instruction=system_prompt,
-                    tools=tools,
-                )
-                resp = _probe_client.models.generate_content(model=name, contents=contents, config=config)
-                text = (resp.text or "").strip()
-                if not text:
-                    continue
+                text, sources = _generate(name, system_prompt, contents, use_search, client=_probe_client)
                 _working_model = name
                 _working_search = use_search
                 return text, sources, None
             except Exception as e:
+                print(f"[PROBE ERROR] model {name} failed: {repr(e)}")
                 if "503" in str(e) or "429" in str(e):
                     time.sleep(1)
     return None, None, "All dynamically probed models (with and without search) returned errors."

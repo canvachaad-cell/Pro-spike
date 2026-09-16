@@ -384,3 +384,15 @@
 3. Added an emergency fallback in `_probe_dynamic_fallback`. If `models.list()` fails (even with 4s timeout), it catches the exception and falls back to a hardcoded emergency list (`gemini-1.5-flash`, `gemini-2.0-flash`, `gemini-flash-lite-latest`) to continue the probe instead of aborting.
 **FAILED ATTEMPTS**: The initial dynamic probe was completely blind to network deadlocks (BUG-016 and BUG-026 didn't fix the underlying connection hang). 
 **AI PROCESS**: Utilized `DEEP_AUDIT` protocol to map the thread-exhaustion destructive risk, resulting in a dual-client separation architecture.
+
+## BUG-031 — Vikram 25-Millisecond Timeout Bug
+**STATUS**: FIXED
+**FILE**: `dash_pages/_vikram_callback.py`
+**SYMPTOM**: Vikram dynamic probe models instantly threw `ConnectTimeout('timed out')` making it appear as if all Google API endpoints were offline.
+**ROOT CAUSE**: The `google-genai` `HttpOptions.timeout` expects the timeout in **milliseconds**, not seconds. In BUG-026, the 25000ms config was divided by 1000, passing `25.0` to the client. This set the client timeout to 25 milliseconds, which instantly aborted all TCP handshakes. The probe client was set to `4.0`, giving it a 4-millisecond timeout. Furthermore, the Google API backend explicitly rejects any deadline under 10 seconds (`400 INVALID_ARGUMENT`).
+**FIX**: 
+1. Removed `/ 1000.0` from the static timeout parsing.
+2. Updated `_probe_client` timeout from `4.0` (4ms) to `10000` (10s) to satisfy the API minimum deadline constraint.
+3. Removed deprecated `-latest` models from the static fallback list to prevent guaranteed `404 NOT_FOUND` immediate failures.
+**FAILED ATTEMPTS**: Earlier fixes assumed it was thread exhaustion or API outage, missing the millisecond unit discrepancy in the SDK.
+**AI PROCESS**: Utilized `fix_before_touch` to verify the schema for `HttpOptions` and proved the unit was milliseconds. Validated fix using isolated CLI script.
