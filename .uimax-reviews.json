@@ -1,0 +1,169 @@
+{
+  "version": 1,
+  "reviews": [
+    {
+      "id": "e512d3ee-b484-40f4-b397-c2de140acfed",
+      "timestamp": "2026-09-16T03:15:09.942Z",
+      "url": "http://127.0.0.1:8050",
+      "codeDir": "c:\\Users\\fawaz\\Desktop\\trading_dashboard",
+      "duration": 13861,
+      "scores": {
+        "lighthouse": {
+          "performance": null,
+          "accessibility": null,
+          "bestPractices": null,
+          "seo": null
+        },
+        "accessibilityViolations": 0,
+        "codeIssues": {
+          "total": 243,
+          "bySeverity": {
+            "critical": 0,
+            "high": 76,
+            "medium": 68,
+            "low": 99
+          }
+        },
+        "performanceMetrics": {
+          "fcp": 4700,
+          "lcp": 4700,
+          "cls": 0,
+          "tbt": 0
+        }
+      },
+      "findings": {
+        "total": 243,
+        "bySeverity": {
+          "critical": 0,
+          "high": 76,
+          "medium": 68,
+          "low": 99
+        },
+        "byCategory": {
+          "code-quality": 138,
+          "accessibility": 20,
+          "design": 65,
+          "performance": 5,
+          "ux": 15
+        },
+        "topFindings": [
+          {
+            "rule": "empty-catch",
+            "severity": "high",
+            "message": "Empty catch block swallows errors silently",
+            "file": "venv\\Lib\\site-packages\\dash_iconify\\async-DashIconify.js",
+            "line": 1
+          },
+          {
+            "rule": "empty-catch",
+            "severity": "high",
+            "message": "Empty catch block swallows errors silently",
+            "file": "venv\\Lib\\site-packages\\dash_iconify\\async-DashIconify.js",
+            "line": 1
+          },
+          {
+            "rule": "empty-catch",
+            "severity": "high",
+            "message": "Empty catch block swallows errors silently",
+            "file": "venv\\Lib\\site-packages\\dash_iconify\\async-DashIconify.js",
+            "line": 1
+          },
+          {
+            "rule": "empty-catch",
+            "severity": "high",
+            "message": "Empty catch block swallows errors silently",
+            "file": "venv\\Lib\\site-packages\\dash_iconify\\async-DashIconify.js",
+            "line": 1
+          },
+          {
+            "rule": "empty-catch",
+            "severity": "high",
+            "message": "Empty catch block swallows errors silently",
+            "file": "venv\\Lib\\site-packages\\dash_iconify\\async-DashIconify.js",
+            "line": 1
+          },
+          {
+            "rule": "large-file",
+            "severity": "high",
+            "message": "File has 817 lines (recommended max: 400)",
+            "file": "venv\\Lib\\site-packages\\dash\\extract-meta.js"
+          },
+          {
+            "rule": "deep-nesting",
+            "severity": "high",
+            "message": "Deep nesting detected (14 levels)",
+            "file": "venv\\Lib\\site-packages\\dash\\extract-meta.js",
+            "line": 270
+          },
+          {
+            "rule": "deep-nesting",
+            "severity": "high",
+            "message": "Deep nesting detected (16 levels)",
+            "file": "venv\\share\\jupyter\\nbextensions\\dash\\main.js",
+            "line": 24
+          },
+          {
+            "rule": "deep-nesting",
+            "severity": "high",
+            "message": "Deep nesting detected (16 levels)",
+            "file": "venv\\Lib\\site-packages\\dash\\nbextension\\main.js",
+            "line": 24
+          },
+          {
+            "rule": "empty-catch",
+            "severity": "high",
+            "message": "Empty catch block swallows errors silently",
+            "file": "venv\\Lib\\site-packages\\dash\\deps\\react@18.3.1.js",
+            "line": 2001
+          }
+        ]
+      },
+      "filesAnalyzed": 127,
+      "filesWithIssues": [
+        "assets\\style.css",
+        "assets\\tailwind_config.js",
+        "bse_page.html",
+        "venv\\Lib\\site-packages\\altair\\jupyter\\js\\index.js",
+        "venv\\Lib\\site-packages\\dash\\dash-renderer\\build\\dash-ws-worker.js",
+        "venv\\Lib\\site-packages\\dash\\dash_table\\async-export.js",
+        "venv\\Lib\\site-packages\\dash\\dash_table\\async-highlight.js",
+        "venv\\Lib\\site-packages\\dash\\dash_table\\async-table.js",
+        "venv\\Lib\\site-packages\\dash\\dash_table\\bundle.js",
+        "venv\\Lib\\site-packages\\dash\\dash_table\\demo.js",
+        "venv\\Lib\\site-packages\\dash\\dash_table\\index.html",
+        "venv\\Lib\\site-packages\\dash\\dcc\\async-graph.js",
+        "venv\\Lib\\site-packages\\dash\\dcc\\async-markdown.js",
+        "venv\\Lib\\site-packages\\dash\\dcc\\async-upload.js",
+        "venv\\Lib\\site-packages\\dash\\dcc\\dash_core_components-shared.js",
+        "venv\\Lib\\site-packages\\dash\\dcc\\dash_core_components.js",
+        "venv\\Lib\\site-packages\\dash\\deps\\prop-types@15.8.1.js",
+        "venv\\Lib\\site-packages\\dash\\deps\\react@16.14.0.js",
+        "venv\\Lib\\site-packages\\dash\\deps\\react@18.2.0.js",
+        "venv\\Lib\\site-packages\\dash\\deps\\react@18.3.1.js",
+        "venv\\Lib\\site-packages\\dash\\extract-meta.js",
+        "venv\\Lib\\site-packages\\dash\\nbextension\\main.js",
+        "venv\\Lib\\site-packages\\dash_iconify\\async-DashIconify.js",
+        "venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\getAttribute.js",
+        "venv\\Lib\\site-packages\\sklearn\\utils\\_repr_html\\estimator.css",
+        "venv\\Lib\\site-packages\\sklearn\\utils\\_repr_html\\estimator.js",
+        "venv\\Lib\\site-packages\\sklearn\\utils\\_repr_html\\params.css",
+        "venv\\Lib\\site-packages\\streamlit\\static\\index.html",
+        "venv\\Lib\\site-packages\\streamlit\\static\\static\\css\\1164.46c3674e.chunk.css",
+        "venv\\Lib\\site-packages\\streamlit\\static\\static\\css\\43.b42f5471.chunk.css",
+        "venv\\Lib\\site-packages\\streamlit\\static\\static\\css\\7898.4bdc00a1.chunk.css",
+        "venv\\Lib\\site-packages\\streamlit\\static\\static\\css\\main.77d1c464.css",
+        "venv\\Lib\\site-packages\\streamlit\\static\\static\\js\\1164.4a8b4256.chunk.js",
+        "venv\\Lib\\site-packages\\streamlit\\static\\static\\js\\5117.a242f22e.chunk.js",
+        "venv\\Lib\\site-packages\\streamlit\\static\\static\\js\\5791.b5d6ff04.chunk.js",
+        "venv\\Lib\\site-packages\\streamlit\\static\\static\\js\\7673.e016f6f7.chunk.js",
+        "venv\\Lib\\site-packages\\streamlit\\static\\static\\js\\9336.7efa8bb1.chunk.js",
+        "venv\\Lib\\site-packages\\urllib3\\contrib\\emscripten\\emscripten_fetch_worker.js",
+        "venv\\Lib\\site-packages\\werkzeug\\debug\\shared\\debugger.js",
+        "venv\\Lib\\site-packages\\werkzeug\\debug\\shared\\style.css",
+        "venv\\share\\jupyter\\nbextensions\\dash\\main.js"
+      ],
+      "status": "completed",
+      "summary": "Found 243 issues (76 high, 68 medium, 99 low)"
+    }
+  ]
+}

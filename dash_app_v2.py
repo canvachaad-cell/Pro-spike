@@ -104,6 +104,9 @@ mobile_bottom_nav = html.Nav(
         ),
         html.Div(
             id="mobile-vikram-tab",
+            role="button",
+            tabIndex="0",
+            **{"aria-label": "Open Vikram AI"},
             className="mobile-nav-item cursor-pointer",
             children=[html.Span("smart_toy", className="material-symbols-outlined nav-icon"), html.Span("Vikram")]
         ),
@@ -116,7 +119,7 @@ mobile_bottom_nav = html.Nav(
 
 top_navbar = html.Header(
     style={"width": "100%", "flexShrink": "0"},
-    className="hidden md:flex justify-between items-center px-margin-desktop sticky top-0 z-50 bg-surface/80 backdrop-blur-xl h-16 border-b border-outline-variant shadow-sm",
+    className="flex justify-between items-center px-4 md:px-margin-desktop sticky top-0 z-50 bg-surface/80 backdrop-blur-xl h-16 border-b border-outline-variant shadow-sm",
     children=[
         # Search/AI entry point is the floating Vikram bar (bottom center);
         # this spacer keeps the right-hand icons pushed right.
@@ -159,6 +162,12 @@ app.layout = html.Div(
         dcc.Store(id="sidebar-state", data={"collapsed": False}),
         sidebar,
         mobile_bottom_nav,
+        # Mobile FAB for Trade Now (hidden on desktop)
+        html.Button(
+            "Trade",
+            id="mobile-trade-fab",
+            className="md:hidden fixed bottom-[90px] right-4 z-50 bg-primary text-on-primary font-label-caps text-label-caps rounded-xl px-5 py-3 shadow-[0_4px_20px_rgba(174,198,255,0.4)] hover:bg-primary-fixed active:scale-95 transition-all"
+        ),
         # Floating Command Bar — opens the Vikram AI panel
         html.Div(
             id="vikram-trigger",

@@ -328,3 +328,25 @@
 **FIX**: Changed 	imeout=25_000 to 	imeout=25.
 **FAILED ATTEMPTS**: The user suspected a previous signal/ALGOQUANT fix had broken the callback flow, but it was purely a pre-existing configuration hazard waiting for a network stall.
 **AI PROCESS**: Activated DEEP_AUDIT. Proved undamental_strength was NOT crashing on empty inputs. Discovered the time unit mismatch via SDK testing and applied the precise one-line configuration patch.
+
+## BUG-027 — Silent NSE Delivery Failure Corrupts Data Ledger with NaNs
+**STATUS**: FIXED
+**FILE**: nse_downloader_fixed_nov2025.py, auto_update_smart.py
+**SYMPTOM**: NSE delivery data failed to download, but the script falsely reported success (ignoring the delivery failure) and proceeded to merge today's price data with empty delivery data. This permanently corrupted the master dataset with NaN delivery percentages.
+**ROOT CAUSE**: 1) The downloader wrapped the HTTP request in a silent 	ry: ... except: pass which swallowed 404 errors (NSE delays). 2) uto_update_smart.py deliberately ignored ok_deliv in its success condition (if ok_bhav and ok_bse:).
+**FIX**: Replaced the silent pass with explicit error logging in the downloader. Changed the auto_update condition to strictly enforce all 4 feeds (if ok_bhav and ok_deliv and ok_bse and bse_deliv_ok:), ensuring partial data is never ingested.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Traced the failure waterfall using DEEP_AUDIT. Identified that ingesting partial data breaks the core invariant of the pipeline.
+
+## BUG-028 — Mobile UX Wayfinding & Accessibility (ui-audit)
+**STATUS**: FIXED
+**FILE**: `dash_app_v2.py`, `assets/style.css`
+**SYMPTOM**: On mobile devices, the top navigation header was completely hidden, preventing access to settings/notifications and removing context (page title). The Vikram bottom nav tab was an inaccessible div, and the "Trade Now" primary action was hidden inside the desktop sidebar.
+**ROOT CAUSE**: `top_navbar` used `hidden md:flex`. `#mobile-vikram-tab` lacked semantic button ARIA roles. "Trade Now" CTA was scoped to the sidebar footer without a mobile equivalent.
+**FIX**: 
+1. Replaced `hidden md:flex` with `flex` on `top_navbar` and adjusted padding.
+2. Appended `role="button"`, `tabIndex="0"`, and `aria-label` to the Vikram mobile tab.
+3. Added a Floating Action Button (FAB) for "Trade Now" specifically on mobile (`md:hidden fixed bottom-[90px]`).
+4. Increased mobile nav label font-size to 11px.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Utilized `uxtools-ui-audit` UX heuristics. Gated edits behind `/fix_before_touch` and `DEEP_PLAN` to evaluate blast radius before execution.

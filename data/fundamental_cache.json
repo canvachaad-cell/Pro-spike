@@ -528,5 +528,96 @@
    "rpt_pct": null,
    "rpt_amount_cr": null
   }
+ },
+ "JHACC": {
+  "ts": 1789484242.8516397,
+  "data": {
+   "symbol": "JHACC",
+   "url": "https://www.screener.in/company/531550/consolidated/",
+   "name": "Jhaveri Credits & Capital Ltd",
+   "market_cap_cr": 216.0,
+   "price": 195.0,
+   "promoter_trend": "Sep 2023: 74.25% -> Dec 2023: 74.25% -> Mar 2024: 53.00% -> Jun 2024: 53.04% -> Sep 2024: 53.03% -> Dec 2024: 53.03% -> Mar 2025: 53.19% -> Jun 2025: 53.25% -> Sep 2025: 50.45% -> Dec 2025: 50.76% -> Mar 2026: 50.91% -> Jun 2026: 64.40%",
+   "promoter_holding": 64.4,
+   "dii_trend": "Sep 2023: 0.00% -> Dec 2023: 0.00% -> Mar 2024: 0.78% -> Jun 2024: 0.78% -> Sep 2024: 0.78% -> Dec 2024: 0.78% -> Mar 2025: 0.00% -> Jun 2025: 0.00% -> Sep 2025: 0.00% -> Dec 2025: 0.00% -> Mar 2026: 0.00% -> Jun 2026: 0.00%",
+   "dii_holding": 0.0,
+   "fii_trend": "Sep 2023: 0.00% -> Dec 2023: 0.00% -> Mar 2024: 3.51% -> Jun 2024: 3.51% -> Sep 2024: 3.51% -> Dec 2024: 3.61% -> Mar 2025: 4.40% -> Jun 2025: 4.40% -> Sep 2025: 4.17% -> Dec 2025: 4.17% -> Mar 2026: 4.17% -> Jun 2026: 3.56%",
+   "fii_holding": 3.56,
+   "pledge_trend": [
+    0.0
+   ],
+   "pledge_direction": "flat",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "quarterly_quarters": 5,
+   "revenue_ttm_cr": 88.53,
+   "op_lev_data_note": "limited_history_5q",
+   "revenue_4q_growth": 0.694354066985646,
+   "ebit_4q_growth": -1.2582116788321167,
+   "op_lev_ratio": -1.8120606455065627,
+   "op_lev_inflecting": false,
+   "interest_coverage_data_note": "limited_history_5q",
+   "interest_coverage_trend": "deteriorating",
+   "interest_coverage_recent": -16.64,
+   "ocf_3yr_cr": [
+    -0.0,
+    -5.0
+   ],
+   "pat_3yr_cr": [
+    3.0,
+    2.0
+   ],
+   "fcf_pat_ratio": -1.0,
+   "roce_abs_pct": -2.3,
+   "borrowings_cr": 10.0,
+   "free_float_cr": 77,
+   "rpt_status": "NOT_SCRAPED",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
+ },
+ "VENTIVE": {
+  "ts": 1789484244.4898822,
+  "data": {
+   "symbol": "VENTIVE",
+   "url": "https://www.screener.in/company/VENTIVE/consolidated/",
+   "name": "Ventive Hospitality Ltd",
+   "market_cap_cr": 13168.0,
+   "price": 563.0,
+   "promoter_trend": "Dec 2024: 88.99% -> Mar 2025: 88.99% -> Jun 2025: 88.99% -> Sep 2025: 88.99% -> Dec 2025: 88.99% -> Mar 2026: 88.99% -> Jun 2026: 88.99%",
+   "promoter_holding": 88.99,
+   "dii_trend": "Dec 2024: 3.78% -> Mar 2025: 5.41% -> Jun 2025: 5.24% -> Sep 2025: 5.24% -> Dec 2025: 5.23% -> Mar 2026: 5.16% -> Jun 2026: 5.21%",
+   "dii_holding": 5.21,
+   "fii_trend": "Dec 2024: 3.31% -> Mar 2025: 2.92% -> Jun 2025: 2.68% -> Sep 2025: 1.66% -> Dec 2025: 1.56% -> Mar 2026: 1.43% -> Jun 2026: 1.20%",
+   "fii_holding": 1.2,
+   "pledge_trend": [
+    36.4
+   ],
+   "pledge_direction": "flat",
+   "quarterly_quarters": 11,
+   "revenue_ttm_cr": 2497.0,
+   "revenue_4q_growth": 0.25037556334501754,
+   "ebit_4q_growth": 0.21807909604519773,
+   "op_lev_ratio": 0.8710079096045197,
+   "op_lev_inflecting": false,
+   "interest_coverage_trend": "improving",
+   "interest_coverage_recent": 4.88,
+   "ocf_3yr_cr": [
+    265.0,
+    677.0,
+    950.0
+   ],
+   "pat_3yr_cr": [
+    166.0,
+    165.0,
+    502.0
+   ],
+   "fcf_pat_ratio": 2.27,
+   "roce_abs_pct": 13.5,
+   "borrowings_cr": 2574.0,
+   "free_float_cr": 1450,
+   "rpt_status": "NOT_SCRAPED",
+   "rpt_pct": null,
+   "rpt_amount_cr": null
+  }
  }
 }
