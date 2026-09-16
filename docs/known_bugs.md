@@ -350,3 +350,37 @@
 4. Increased mobile nav label font-size to 11px.
 **FAILED ATTEMPTS**: None.
 **AI PROCESS**: Utilized `uxtools-ui-audit` UX heuristics. Gated edits behind `/fix_before_touch` and `DEEP_PLAN` to evaluate blast radius before execution.
+
+## BUG-028 — Mobile UX Wayfinding & Accessibility (ui-audit)
+**STATUS**: FIXED
+**FILE**: `dash_app_v2.py`, `assets/style.css`
+**SYMPTOM**: On mobile devices, the top navigation header was completely hidden, preventing access to settings/notifications and removing context (page title). The Vikram bottom nav tab was an inaccessible div, and the "Trade Now" primary action was hidden inside the desktop sidebar.
+**ROOT CAUSE**: `top_navbar` used `hidden md:flex`. `#mobile-vikram-tab` lacked semantic button ARIA roles. "Trade Now" CTA was scoped to the sidebar footer without a mobile equivalent.
+**FIX**: 
+1. Replaced `hidden md:flex` with `flex` on `top_navbar` and adjusted padding.
+2. Appended `role="button"`, `tabIndex="0"`, and `aria-label` to the Vikram mobile tab.
+3. Added a Floating Action Button (FAB) for "Trade Now" specifically on mobile (`md:hidden fixed bottom-[90px]`).
+4. Increased mobile nav label font-size to 11px.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Utilized `uxtools-ui-audit` UX heuristics. Gated edits behind `/fix_before_touch` and `DEEP_PLAN` to evaluate blast radius before execution.
+
+## BUG-029 — RPT Scraper Blind to New Filings (Hardcoded Date Window)
+**STATUS**: OPEN (PR-1 Merged, PR-3 pending)
+**FILE**: `scripts/bse_rpt_scraper.py`
+**SYMPTOM**: The BSE scraper misses newly filed Related Party Transactions after June 2024.
+**ROOT CAUSE**: The date window for the BSE API call is hardcoded to `from_date_str='20230630'` / `to_date_str='20240630'`. This renders the pipeline blind to ~18 months of filings regardless of how good the extractor gets.
+**FIX**: Pinned as PR-3 target. For now (PR-1), a runtime `[WARNING]` has been added to log on every scraper run if the current date is outside the configured window.
+**FAILED ATTEMPTS**: None yet.
+**AI PROCESS**: Followed the RPT Scraper Hardening Implementation Plan v2 to ensure this technical debt is surfaced with a runtime warning and a logged issue rather than silently failing.
+
+## BUG-030 — Vikram Dynamic Probe Network Deadlock
+**STATUS**: FIXED
+**FILE**: `dash_pages/_vikram_callback.py`
+**SYMPTOM**: User experienced `Dynamic probe failed to list models. | Last static err: The read operation timed out`. The Dashboard thread silently hung for 150+ seconds before aborting.
+**ROOT CAUSE**: The `google-genai` client was globally configured with a 25s timeout. When the Google API clustered failed, the static loop tried ~6 models (150 seconds of hanging). Then `_probe_dynamic_fallback` tried to call `models.list()`, which hung for *another* 25 seconds before throwing a TimeoutError, terminating the probe prematurely. This waterfall of timeouts caused Render to assassinate the Gunicorn worker thread at 120s, resulting in a 502 Bad Gateway if multiple users connected.
+**FIX**: 
+1. Implemented a `Circuit Breaker` in the static loop. If the exception is a `TimeoutError` or "timed out", it immediately `break`s the loop rather than waiting 25s per model.
+2. Created a dedicated `_probe_client` with a strict `timeout=4.0s` for the dynamic probe.
+3. Added an emergency fallback in `_probe_dynamic_fallback`. If `models.list()` fails (even with 4s timeout), it catches the exception and falls back to a hardcoded emergency list (`gemini-1.5-flash`, `gemini-2.0-flash`, `gemini-flash-lite-latest`) to continue the probe instead of aborting.
+**FAILED ATTEMPTS**: The initial dynamic probe was completely blind to network deadlocks (BUG-016 and BUG-026 didn't fix the underlying connection hang). 
+**AI PROCESS**: Utilized `DEEP_AUDIT` protocol to map the thread-exhaustion destructive risk, resulting in a dual-client separation architecture.

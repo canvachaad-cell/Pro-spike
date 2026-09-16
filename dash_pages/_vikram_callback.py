@@ -987,6 +987,7 @@ def build_risk_architecture_context():
 # ---------------------------------------------------------------------------
 
 _client = None
+_probe_client = None
 _working_model = None
 _working_search = None
 
@@ -1008,8 +1009,8 @@ except Exception as e:
 
 
 def _ensure_configured():
-    global _client
-    if _client is not None:
+    global _client, _probe_client
+    if _client is not None and _probe_client is not None:
         return None
     key = _get_api_key()
     if not key:
@@ -1022,6 +1023,7 @@ def _ensure_configured():
     try:
         api_timeout = RUNTIME_CONFIG.get("api_timeout_ms", 25000) / 1000.0
         _client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=api_timeout))
+        _probe_client = genai.Client(api_key=key, http_options=genai_types.HttpOptions(timeout=4.0))
     except Exception as e:
         return f"Could not configure Gemini: {e}"
     return None
@@ -1106,7 +1108,7 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested):
     PROBE_TOTAL_TIMEOUT = 28  # seconds
 
     try:
-        models = list(_client.models.list())
+        models = list(_probe_client.models.list())
         model_names = [
             m.name.replace("models/", "") for m in models
             if "flash" in m.name
@@ -1115,7 +1117,8 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested):
             and "audio" not in m.name
         ]
     except Exception:
-        return None, None, "Dynamic probe failed to list models."
+        # DEEP_AUDIT FIX: API congested. Do not abort. Fallback to emergency known-models list.
+        model_names = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-flash-lite-latest"]
 
     probe_start = time.monotonic()
 
@@ -1126,7 +1129,16 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested):
             if time.monotonic() - probe_start > PROBE_TOTAL_TIMEOUT:
                 return None, None, f"Dynamic probe timed out after {PROBE_TOTAL_TIMEOUT}s — all models were too slow."
             try:
-                text, sources = _generate(name, system_prompt, contents, use_search)
+                from google.genai import types as genai_types
+                tools = [genai_types.Tool(google_search=genai_types.GoogleSearch())] if use_search else None
+                config = genai_types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    tools=tools,
+                )
+                resp = _probe_client.models.generate_content(model=name, contents=contents, config=config)
+                text = (resp.text or "").strip()
+                if not text:
+                    continue
                 _working_model = name
                 _working_search = use_search
                 return text, sources, None
@@ -1253,8 +1265,14 @@ def ask_vikram(question, history):
                     sleep_sec = 0.5 if os.environ.get("RENDER") else 2 ** attempt
                     time.sleep(sleep_sec)
                     continue
+                elif "timed out" in err_str.lower() or isinstance(e, TimeoutError):
+                    # DEEP_AUDIT CIRCUIT BREAKER: TCP Timeout. Do not loop. Abort static loop immediately.
+                    break
                 else:
                     break
+        
+        if last_err and ("timed out" in str(last_err).lower() or isinstance(last_err, TimeoutError)):
+            break
     
     # If we exhausted the static list and everything failed, trigger dynamic probe
     # (whether due to 503, 429, 404, or empty responses from deprecated models)
