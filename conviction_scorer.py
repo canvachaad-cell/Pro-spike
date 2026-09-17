@@ -358,6 +358,7 @@ class ConvictionScorer:
             base["rating"] = "VETO"
             base["display_badge"] = f"🚫 VETO: {veto_reasons[0]}"
             base["veto_status_table_row"] = "| 🚫 Veto Status | 🚫 VETO_TRIGGERED | 🚫 |"
+            base["gate"] = _gate_scores(fund)
             return base
 
         # Handle Unverified Veto (missing mandatory veto metrics block clean pass)

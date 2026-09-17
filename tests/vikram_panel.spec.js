@@ -1,4 +1,4 @@
-﻿const { test, expect } = require('@playwright/test');
+const { test, expect } = require('@playwright/test');
 
 test.describe('BUG-032 Vikram mobile bottom-sheet + backdrop', () => {
   test('mobile: bottom-sheet geometry, backdrop open/close', async ({ page }) => {
@@ -54,6 +54,32 @@ test.describe('BUG-032 Vikram mobile bottom-sheet + backdrop', () => {
     expect(Math.abs(box.x - (vw - 400))).toBeLessThan(5);
 
     await page.locator('#vikram-close').click();
+    await page.waitForTimeout(1200);
+    box = await panel.boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(vw - 2);
+  });
+
+  test('desktop: Cmd+K / Ctrl+K keyboard shortcut opens panel and Escape closes it', async ({ page }) => {
+    const vw = page.viewportSize().width;
+    test.skip(vw < 768, 'desktop-only assertions');
+
+    await page.goto('/');
+    await page.waitForSelector('#main-layout', { state: 'visible' });
+    await page.waitForTimeout(1000);
+
+    const panel = page.locator('#vikram-panel');
+    let box = await panel.boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(vw - 2);
+
+    // Press Control+k (or Meta+k)
+    await page.keyboard.press('Control+k');
+    await page.waitForTimeout(1200);
+    box = await panel.boundingBox();
+    expect(box.width).toBe(400);
+    expect(Math.abs(box.x - (vw - 400))).toBeLessThan(5);
+
+    // Press Escape to dismiss
+    await page.keyboard.press('Escape');
     await page.waitForTimeout(1200);
     box = await panel.boundingBox();
     expect(box.x).toBeGreaterThanOrEqual(vw - 2);

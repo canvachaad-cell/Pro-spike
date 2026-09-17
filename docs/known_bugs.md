@@ -463,3 +463,26 @@
 9. Added `sys.stdout.reconfigure(encoding='utf-8')` to `test_vikram.py`.
 **FAILED ATTEMPTS**: None.
 **AI PROCESS**: Triggered `DEMONCORE: DEEP_AUDIT` and mapped the blast radius under `DEMONCORE: PLAN_DEEP`. Verified via `scripts/vikram_canary.py` (all models passing), `pytest tests/` (38/38 passed), Playwright panel tests (`vikram_panel.spec.js` passed), and empirical `HDFCBANK` live query.
+
+
+---
+
+## BUG-037 — Vikram Fundamental Quality Gate Fallback on None-Valued Metrics (`TypeError`) & Veto Gate Score Omission
+**STATUS**: FIXED
+**FILE**: `dash_pages/_vikram_callback.py`, `conviction_scorer.py`, `tests/audit_vikram_stlnetwork.spec.js`
+**SYMPTOM**: Vikram queries for stocks with missing or uncalculated metrics (e.g. `STLNETWORK` missing operating leverage calculation) showed loading hourglasses (`⏳ / 10 ⏳`) across all Fundamental Quality Gate rows, stated that live fundamental data feeds timed out, hung for up to 34 seconds in search grounding 429 loops, and gave an erroneous conviction score (e.g. 73 / 100 — HIGH instead of 0 / 100 — VETO).
+**ROOT CAUSE**:
+1. In `dash_pages/_vikram_callback.py` line 814, the metric guard checked dictionary membership (`if "op_lev_ratio" in d:`). When `FundamentalFetcher` initialized contract keys to `None`, `"op_lev_ratio" in d` evaluated to `True`.
+2. Evaluating `f"{d['op_lev_ratio']:.1f}"` with `None` raised `TypeError: unsupported format string passed to NoneType.__format__`. Similar hazards existed for `revenue_4q_growth * 100`, `ebit_4q_growth * 100`, and `borrowings_cr`.
+3. The uncaught `TypeError` terminated `build_fundamental_context`, causing `_safe_result(f_fund, 9, "(LIVE FUNDAMENTAL FETCH TIMED OUT)")` to fallback to the timeout string.
+4. Receiving the timeout string, Gemini was forced into an exhaustive Google Search grounding loop, hit 429 quota exhaustion, hallucinated that live balance sheets were inaccessible, rendered `⏳` placeholders, and copied the 73% AI probability from engine signals as an overall conviction score.
+5. In `conviction_scorer.py`, hard veto returns omitted `base["gate"] = _gate_scores(fund)`, leaving the prompt without per-metric gate scores even when fundamentals were scored.
+6. In `_vikram_callback.py`, `attempts` hardcoded `(m, True)` for candidates even when search was not requested, forcing queries through 429 search loops.
+**FIX**:
+1. Replaced `if "<key>" in d:` with explicit `if d.get("<key>") is not None:` guards for `op_lev_ratio`, `revenue_4q_growth`, `ebit_4q_growth`, `borrowings_cr`, `promoter_trend`, `dii_trend`, `fii_trend`, `pledge_trend`, `fcf_pat_ratio`, `interest_coverage_trend`, and `roice_pct` / `roce_abs_pct`.
+2. Attached `base["gate"] = _gate_scores(fund)` in `conviction_scorer.py` on hard veto branches so metrics like Pledge (9/10), Interest (2/10), and RoICE (2/10) populate the scorecard table.
+3. Updated `VIKRAM_SYSTEM_PROMPT` with strict negative constraints prohibiting the model from using engine AI probabilities as conviction scores and enforcing the `0 / 100 — VETO` line.
+4. Optimized candidate attempts routing: only attempt Google Search when `search_requested` is `True`, enabling 3-second data responses.
+5. Created end-to-end automated Playwright audit test `tests/audit_vikram_stlnetwork.spec.js` asserting panel rendering, query execution, veto trigger enforcement, and verified live balance sheet data without timeouts.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Followed `fix_before_touch` protocol. Isolated blast radius to `dash_pages/_vikram_callback.py` and `conviction_scorer.py`. Formulated hypothesis, tested `build_fundamental_context` in unit Python sandbox, executed full `pytest tests/` suite (38/38 passing), and audited live localhost:8050 with Playwright (`tests/vikram_panel.spec.js` and `tests/audit_vikram_stlnetwork.spec.js` both 100% passing).

@@ -2045,5 +2045,99 @@
    "url": "https://www.screener.in/company/ADANIENT/consolidated/",
    "revenue_ttm_cr": 111432.0
   }
+ },
+ "STLNETWORK": {
+  "ts": 1789654219.6612122,
+  "data": {
+   "pledge_direction": "flat",
+   "interest_coverage_trend": "deteriorating",
+   "interest_coverage_recent": 0.35,
+   "symbol": "STLNETWORK",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "market_cap_cr": 1999.0,
+   "revenue_ttm_cr": 945.0,
+   "borrowings_cr": 934.0,
+   "ocf_3yr_cr": [
+    392.0,
+    -176.0,
+    -111.0
+   ],
+   "pledge_trend": [
+    0.0
+   ],
+   "roice_pct": null,
+   "roce_abs_pct": 2.2,
+   "rpt_status": "NOT_SCRAPED",
+   "rpt_amount_cr": null,
+   "promoter_holding": 44.14,
+   "name": "STL Networks Ltd",
+   "pat_3yr_cr": [
+    7.0,
+    -32.0,
+    -99.0
+   ],
+   "url": "https://www.screener.in/company/STLNETWORK/consolidated/",
+   "price": 40.9,
+   "fii_trend": "Jun 2025: 7.19% -> Sep 2025: 1.59% -> Dec 2025: 0.89% -> Mar 2026: 0.70% -> Jun 2026: 1.11%",
+   "free_float_cr": 1117,
+   "quarterly_quarters": 9,
+   "promoter_trend": "Jun 2025: 44.16% -> Sep 2025: 44.16% -> Dec 2025: 44.16% -> Mar 2026: 44.15% -> Jun 2026: 44.14%",
+   "ebit_4q_growth": -0.25,
+   "rpt_pct": null,
+   "revenue_4q_growth": -0.06988188976377953,
+   "op_lev_ratio": null,
+   "fcf_pat_ratio": -0.85,
+   "fii_holding": 1.11,
+   "dii_trend": "Jun 2025: 11.56% -> Sep 2025: 10.10% -> Dec 2025: 7.35% -> Mar 2026: 6.17% -> Jun 2026: 3.27%",
+   "op_lev_inflecting": null,
+   "dii_holding": 3.27
+  }
+ },
+ "STL": {
+  "ts": 1789654662.5275538,
+  "data": {
+   "promoter_trend": "Jun 2025: 44.16% -> Sep 2025: 44.16% -> Dec 2025: 44.16% -> Mar 2026: 44.15% -> Jun 2026: 44.14%",
+   "ocf_3yr_cr": [
+    392.0,
+    -176.0,
+    -111.0
+   ],
+   "price": 40.9,
+   "free_float_cr": 1117,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "pat_3yr_cr": [
+    7.0,
+    -32.0,
+    -99.0
+   ],
+   "fcf_pat_ratio": -0.85,
+   "dii_trend": "Jun 2025: 11.56% -> Sep 2025: 10.10% -> Dec 2025: 7.35% -> Mar 2026: 6.17% -> Jun 2026: 3.27%",
+   "ebit_4q_growth": -0.25,
+   "interest_coverage_recent": 0.35,
+   "pledge_trend": [
+    0.0
+   ],
+   "promoter_holding": 44.14,
+   "revenue_ttm_cr": 945.0,
+   "pledge_direction": "flat",
+   "dii_holding": 3.27,
+   "interest_coverage_trend": "deteriorating",
+   "fii_trend": "Jun 2025: 7.19% -> Sep 2025: 1.59% -> Dec 2025: 0.89% -> Mar 2026: 0.70% -> Jun 2026: 1.11%",
+   "url": "https://www.screener.in/company/STLNETWORK/consolidated/",
+   "op_lev_inflecting": null,
+   "roce_abs_pct": 2.2,
+   "revenue_4q_growth": -0.06988188976377953,
+   "fii_holding": 1.11,
+   "rpt_pct": null,
+   "op_lev_ratio": null,
+   "borrowings_cr": 934.0,
+   "market_cap_cr": 1999.0,
+   "roice_pct": null,
+   "quarterly_quarters": 9,
+   "name": "STL Networks Ltd",
+   "rpt_amount_cr": null,
+   "rpt_status": "NOT_SCRAPED",
+   "symbol": "STL"
+  }
  }
 }

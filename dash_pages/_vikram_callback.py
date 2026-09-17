@@ -312,8 +312,13 @@ TABLE SCORING RULES:
   If UNVERIFIED_VETO is active, show:
   ⚠️ UNVERIFIED_VETO — [reason]
 - The Overall Conviction score and rating come directly from the injected
-  CONVICTION SCORE, not from re-computing
-- Class S / M verdict line: **⚡ Overall Conviction: [score] / 100 — [rating]**
+  CONVICTION SCORE, not from re-computing. NEVER use the AI Win Probability
+  or AI Score from TODAY'S ENGINE SIGNALS as the Conviction Score! If no
+  CONVICTION SCORE was injected in FUNDAMENTAL DATA, output:
+  **⚡ Overall Conviction: ⏳ / 100 — PENDING MANUAL VERIFICATION**
+- If a VETO is active, the conviction line MUST read: **⚡ Overall Conviction: 0 / 100 — VETO**
+  followed by **🚫 HARD STOP · VETO TRIGGERED · Do not enter** (never suggest trailing or entering a vetoed stock).
+- Class S / M verdict line (when clean): **⚡ Overall Conviction: [score] / 100 — [rating]**
   plus the class/sizing line (S: momentum-sized, trail; M: hybrid — quality
   gates + momentum sizing)
 - Class L verdict lines (use the injected FUNDAMENTAL STRENGTH number, do
@@ -794,33 +799,33 @@ def build_fundamental_context(question):
                 f"delivery turnover {tech['deliv_turnover']}, avg trade worth {tech['atw']}, "
                 f"30d trigger count {tech['trigger_count']}"
             )
-        if "promoter_trend" in d:
+        if d.get("promoter_trend") is not None:
             detail.append(f"Promoter trend: {d['promoter_trend']}")
-        if "dii_trend" in d:
+        if d.get("dii_trend") is not None:
             detail.append(f"DII trend: {d['dii_trend']}")
-        if "fii_trend" in d:
+        if d.get("fii_trend") is not None:
             detail.append(f"FII trend: {d['fii_trend']}")
-        if "pledge_trend" in d:
+        if d.get("pledge_trend") is not None:
             note = d.get("pledge_note", "")
             detail.append(f"Pledge trend (4Q): {d['pledge_trend']} — direction {d.get('pledge_direction', '?')}{f' ({note})' if note else ''}")
-        if "fcf_pat_ratio" in d and d.get("sector_type") != "financial":
+        if d.get("fcf_pat_ratio") is not None and d.get("sector_type") != "financial":
             detail.append(f"OCF/PAT 3yr cumulative: {d['fcf_pat_ratio']}x (OCF 3yr {d.get('ocf_3yr_cr')} ₹Cr vs PAT 3yr {d.get('pat_3yr_cr')} ₹Cr)")
-        elif d.get("sector_type") == "financial" and "fcf_pat_ratio" in d:
+        elif d.get("sector_type") == "financial" and d.get("fcf_pat_ratio") is not None:
             detail.append(f"OCF/PAT (FINANCIAL SECTOR — informational only, loan-book driven, do not score/veto): {d['fcf_pat_ratio']}x (OCF 3yr {d.get('ocf_3yr_cr')} ₹Cr vs PAT 3yr {d.get('pat_3yr_cr')} ₹Cr)")
-        if "revenue_4q_growth" in d:
+        if d.get("revenue_4q_growth") is not None:
             detail.append(f"Revenue growth (4Q YoY): {_pct(d['revenue_4q_growth'] * 100, 1)}")
-        if "ebit_4q_growth" in d:
+        if d.get("ebit_4q_growth") is not None:
             detail.append(f"EBIT growth (4Q YoY): {_pct(d['ebit_4q_growth'] * 100, 1)}")
-        if "op_lev_ratio" in d:
+        if d.get("op_lev_ratio") is not None:
             detail.append(f"Operating leverage ratio: {d['op_lev_ratio']:.1f}x — INFLECTING: {d.get('op_lev_inflecting')}")
-        if "interest_coverage_trend" in d:
+        if d.get("interest_coverage_trend") is not None:
             detail.append(f"Interest coverage: {d['interest_coverage_trend']} (recent avg {d.get('interest_coverage_recent', 'n/m')}x)")
-        if "roice_pct" in d or "roce_abs_pct" in d:
-            roice_disp = []
-            if "roice_pct" in d:
-                roice_disp.append(f"Δ-trend (ΔEBIT/ΔCE): {_pct(d['roice_pct'], 1)}")
-            if "roce_abs_pct" in d:
-                roice_disp.append(f"Absolute ROCE: {_pct(d['roce_abs_pct'], 1)}")
+        roice_disp = []
+        if d.get("roice_pct") is not None:
+            roice_disp.append(f"Δ-trend (ΔEBIT/ΔCE): {_pct(d['roice_pct'], 1)}")
+        if d.get("roce_abs_pct") is not None:
+            roice_disp.append(f"Absolute ROCE: {_pct(d['roce_abs_pct'], 1)}")
+        if roice_disp:
             gate_val = (gate.get("roice", "n/a") if isinstance(gate, dict) else "n/a")
             detail.append(f"RoICE — {' | '.join(roice_disp)} | Blended score: {gate_val}/10")
         if "rpt_pct" in d or "rpt_status" in d:
@@ -833,7 +838,7 @@ def build_fundamental_context(question):
                 detail.append(f"RPT % of Revenue: {_pct(rpt, 2)} (Status: {st})")
             else:
                 detail.append(f"RPT % of Revenue: NOT_FOUND (Status: {st})")
-        if "borrowings_cr" in d:
+        if d.get("borrowings_cr") is not None:
             detail.append(f"Borrowings: ₹{d['borrowings_cr']:,.0f} Cr")
         if detail:
             lines.append("    " + "; ".join(detail))
@@ -1180,7 +1185,10 @@ def _should_force_search(question, fundamental_context):
 def _safe_result(future, timeout, fallback):
     try:
         return future.result(timeout=timeout)
-    except Exception:
+    except _cf.TimeoutError:
+        return fallback
+    except Exception as e:
+        print(f"[VIKRAM ERROR] Context builder failed with unexpected error: {repr(e)}")
         return fallback
 
 def ask_vikram(question, history):
@@ -1239,13 +1247,16 @@ def ask_vikram(question, history):
 
     attempts = []
     if _working_model:
-        attempts.append((_working_model, _working_search))
+        model_search = _working_search if search_requested else False
+        attempts.append((_working_model, model_search))
+    if search_requested:
+        for m in MODEL_CANDIDATES:
+            if not any(m == a[0] and a[1] is True for a in attempts):
+                attempts.append((m, True))
+    # Direct data generation without search (fast path)
     for m in MODEL_CANDIDATES:
-        if not any(m == a[0] for a in attempts):
-            attempts.append((m, True))
-    # Last resort: any model without search
-    for m in MODEL_CANDIDATES:
-        attempts.append((m, False))
+        if not any(m == a[0] and a[1] is False for a in attempts):
+            attempts.append((m, False))
 
     import time
 
@@ -1392,6 +1403,8 @@ def vikram_panel_visibility(trigger_clicks, close_clicks, mobile_clicks, backdro
     Output("vikram-input", "value"),
     Output("vikram-chat", "children", allow_duplicate=True),
     Output("vikram-pending", "data"),
+    Output("vikram-input", "disabled"),
+    Output("vikram-send", "disabled"),
     Input("vikram-send", "n_clicks"),
     Input("vikram-input", "n_submit"),
     State("vikram-input", "value"),
@@ -1399,35 +1412,34 @@ def vikram_panel_visibility(trigger_clicks, close_clicks, mobile_clicks, backdro
     prevent_initial_call=True,
 )
 def ack_message(n_clicks, n_submit, question, history):
-    """Instant ack: clear the input, show the user bubble + animated loader.
-
-    The slow Gemini work happens in resolve_message, triggered by the
-    pending-question store. This returns in milliseconds so the UI feels
-    immediate.
+    """Instant ack: clear the input, show the user bubble + animated loader,
+    and disable input/button while the query is resolving.
     """
     question = (question or "").strip()
     if not question:
-        return no_update, no_update, no_update
+        return no_update, no_update, no_update, no_update, no_update
     history = history or []
     chat = render_chat(history)
     chat.append(html.Div(question, className=_USER_BUBBLE))
     chat.append(_loader_bubble())
     pending = {"q": question, "n": time.time()}
-    return "", chat, pending
+    return "", chat, pending, True, True
 
 
 @dash.callback(
     Output("vikram-chat", "children", allow_duplicate=True),
     Output("vikram-history", "data"),
+    Output("vikram-input", "disabled"),
+    Output("vikram-send", "disabled"),
     Input("vikram-pending", "data"),
     State("vikram-history", "data"),
     prevent_initial_call=True,
 )
 def resolve_message(pending, history):
     """Slow half: run the Gemini query (screener fetch + Google Search) and
-    replace the loader with Vikram's answer."""
+    replace the loader with Vikram's answer, then re-enable the input."""
     if not pending or not pending.get("q"):
-        return no_update, no_update
+        return no_update, no_update, False, False
     question = pending["q"]
     history = history or []
     reply, sources, err = ask_vikram(question, history)
@@ -1438,4 +1450,4 @@ def resolve_message(pending, history):
         {"role": "user", "text": question},
         {"role": "model", "text": reply, "sources": sources},
     ])[-MAX_HISTORY:]
-    return render_chat(new_history), new_history
+    return render_chat(new_history), new_history, False, False

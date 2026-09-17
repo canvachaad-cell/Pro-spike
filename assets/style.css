@@ -699,3 +699,20 @@ details.glass-panel .accordion-content {
         z-index: 25;
     }
 }
+
+/* ============================================================
+   VIKRAM INPUT & SEND BUTTON — disabled / thinking states
+   ============================================================ */
+#vikram-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+#vikram-send:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+    transform: none;
+}
+
