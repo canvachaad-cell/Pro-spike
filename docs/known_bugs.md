@@ -436,3 +436,30 @@
 6. Added automated regression tests in `tests/test_schema_contracts.py` covering key backfilling and zero-promoter shareholding parsing.
 **FAILED ATTEMPTS**: None. Full pre-flight root-cause hypothesis accurately isolated both the omission drift and the table-matching failure.
 **AI PROCESS**: Executed under `DEMONCORE: PLAN_DEEP` with explicit PR-4 implementation plan approval. Verified via `python -m py_compile`, `pytest tests/` (38 passed in 0.90s), empirical `PAYTM` live scrape, RPT cache commit, and end-to-end `ConvictionScorer` veto verification.
+
+---
+
+## BUG-036 — Vikram AI 404-Model Waterfall, ThreadPool Deadlock, and Search 429 Cascades
+**STATUS**: FIXED
+**FILE**: `config/vikram_runtime.json`, `dash_pages/_vikram_callback.py`, `conviction_scorer.py`, `scripts/vikram_canary.py`, `test_vikram.py`
+**SYMPTOM**: Vikram queries suffered persistent 3–6s latency delays or hung for 28+ seconds during search-grounding rate-limits. Canary monitoring showed 100% false-failure rates (`403 Forbidden`). Test scripts crashed on Windows with `charmap codec can't encode character '📊'`. Markdown scorecard tables rendered with broken columns.
+**ROOT CAUSE**:
+1. **Dead Static Candidate Models**: `config/vikram_runtime.json` specified `gemini-1.5-pro-latest` and `gemini-1.5-flash-latest`, both deprecated and returning `404 NOT_FOUND` on the API endpoint, forcing every query through a waterfall of failing retries into dynamic probing.
+2. **ThreadPoolExecutor Context Manager Deadlock**: Wrapping futures with `with _cf.ThreadPoolExecutor(...)` invoked `shutdown(wait=True)` on exit, blocking the calling thread until background I/O completed even when `fut.result(timeout=8)` timed out.
+3. **429 Search Quota Cascades**: When Google Search grounding hit free-tier quota limits (`429 RESOURCE_EXHAUSTED`), the retry loop slept up to 28 seconds across retries and models instead of immediately disabling search and generating from data.
+4. **Unsynchronized Cache Writes**: Lines 746-756 in `_vikram_callback.py` directly opened `data/fundamental_cache.json` in `"w"` mode without acquiring `_fetcher._lock` or using atomic replacement.
+5. **Missing Canary Environment & Headers**: `scripts/vikram_canary.py` did not parse `.env` and embedded the API key in the URL query string (`?key=`), triggering 403 errors and leaking keys in URL logs.
+6. **Windows Console Charset**: `test_vikram.py` attempted to print Unicode emojis (`📊`) to Windows stdout (`cp1252`), triggering `UnicodeEncodeError`.
+7. **Malformed Table Rows**: `veto_status_table_row` emitted 2 columns instead of 3, breaking Markdown table formatting.
+**FIX**:
+1. Replaced dead candidate models in `config/vikram_runtime.json` with active modern endpoints: `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-flash-lite-latest`.
+2. Updated emergency fallback list in `_probe_dynamic_fallback()` to active modern models.
+3. Replaced `with ThreadPoolExecutor` with explicit `try ... finally: pool.shutdown(wait=False)` in `_build_fundamental_context_safe` and `ask_vikram`, guaranteeing strict wall-clock timeouts.
+4. Added an immediate search-drop circuit breaker (`skip_search_due_to_quota = True`) upon hitting 429 during search grounding, serving answers from data in <2s instead of hanging for 28s.
+5. Delegated symbol disambiguation cache writes to `_fetcher._save_cache()` (guarded by lock and atomic replacement) and hoisted file read outside the candidate loop.
+6. Added 15-minute TTL to `_known_symbols()` and `@lru_cache(maxsize=128)` to `extract_query_symbols()`.
+7. Harmonized `veto_status_table_row` across all branches to a standard 3-column Markdown row.
+8. Updated `scripts/vikram_canary.py` with `.env` parsing and `x-goog-api-key` header authentication.
+9. Added `sys.stdout.reconfigure(encoding='utf-8')` to `test_vikram.py`.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Triggered `DEMONCORE: DEEP_AUDIT` and mapped the blast radius under `DEMONCORE: PLAN_DEEP`. Verified via `scripts/vikram_canary.py` (all models passing), `pytest tests/` (38/38 passed), Playwright panel tests (`vikram_panel.spec.js` passed), and empirical `HDFCBANK` live query.

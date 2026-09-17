@@ -368,51 +368,51 @@
   }
  },
  "HDFCBANK": {
-  "ts": 1789468026.2730927,
+  "ts": 1789652938.282394,
   "data": {
-   "symbol": "HDFCBANK",
-   "url": "https://www.screener.in/company/HDFCBANK/consolidated/",
-   "name": "HDFC Bank Ltd",
-   "market_cap_cr": 1105197.0,
-   "price": 717.0,
-   "promoter_trend": "Mar 2017: 26.00% -> Mar 2018: 25.60% -> Mar 2019: 26.50% -> Mar 2020: 26.14% -> Mar 2021: 25.97% -> Mar 2022: 25.78% -> Mar 2023: 25.59% -> Mar 2024: 0.00% -> Mar 2025: 0.00% -> Mar 2026: 0.00% -> Jun 2026: 0.00%",
-   "promoter_holding": 0.0,
-   "dii_trend": "Mar 2017: 12.94% -> Mar 2018: 14.97% -> Mar 2019: 16.41% -> Mar 2020: 21.74% -> Mar 2021: 20.99% -> Mar 2022: 24.55% -> Mar 2023: 28.09% -> Mar 2024: 33.33% -> Mar 2025: 35.68% -> Mar 2026: 40.14% -> Jun 2026: 41.75%",
-   "dii_holding": 41.75,
-   "fii_trend": "Mar 2017: 42.13% -> Mar 2018: 40.43% -> Mar 2019: 38.71% -> Mar 2020: 36.68% -> Mar 2021: 39.79% -> Mar 2022: 35.62% -> Mar 2023: 32.24% -> Mar 2024: 47.83% -> Mar 2025: 48.30% -> Mar 2026: 44.05% -> Jun 2026: 41.82%",
-   "fii_holding": 41.82,
-   "pledge_trend": [
-    0.0
-   ],
+   "price": 713.0,
    "pledge_direction": "flat",
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "quarterly_quarters": 13,
+   "borrowings_cr": 588485.0,
+   "roice_pct": -11.2,
    "revenue_ttm_cr": 351818.0,
-   "revenue_4q_growth": 0.028127401787879938,
-   "interest_coverage_trend": "improving",
-   "interest_coverage_recent": -0.19,
-   "ocf_3yr_cr": [
-    19069.0,
-    127242.0,
-    113506.0
-   ],
+   "ebit_4q_growth": null,
+   "op_lev_inflecting": null,
    "pat_3yr_cr": [
     65446.0,
     73440.0,
     79219.0
    ],
-   "fcf_pat_ratio": 1.19,
-   "roice_pct": -11.2,
-   "roce_abs_pct": -3.4,
-   "borrowings_cr": 588485.0,
-   "sector_type": "financial",
-   "free_float_cr": 1105197,
    "rpt_status": "NOT_SCRAPED",
-   "rpt_pct": null,
-   "rpt_amount_cr": null,
-   "ebit_4q_growth": null,
+   "fii_trend": "Sep 2023: 52.13% -> Dec 2023: 52.31% -> Mar 2024: 47.83% -> Jun 2024: 47.17% -> Sep 2024: 48.02% -> Dec 2024: 49.21% -> Mar 2025: 48.30% -> Jun 2025: 48.84% -> Sep 2025: 48.38% -> Dec 2025: 47.67% -> Mar 2026: 44.05% -> Jun 2026: 41.82%",
+   "pledge_trend": [
+    0.0
+   ],
+   "promoter_holding": 0.0,
+   "url": "https://www.screener.in/company/HDFCBANK/consolidated/",
+   "free_float_cr": 1097662,
+   "interest_coverage_recent": -0.19,
+   "quarterly_quarters": 13,
+   "promoter_trend": "0.0% (Professionally Managed / No Promoters)",
    "op_lev_ratio": null,
-   "op_lev_inflecting": null
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "dii_trend": "Sep 2023: 30.39% -> Dec 2023: 30.54% -> Mar 2024: 33.33% -> Jun 2024: 35.20% -> Sep 2024: 35.05% -> Dec 2024: 34.37% -> Mar 2025: 35.68% -> Jun 2025: 35.77% -> Sep 2025: 36.07% -> Dec 2025: 37.00% -> Mar 2026: 40.14% -> Jun 2026: 41.75%",
+   "dii_holding": 41.75,
+   "ocf_3yr_cr": [
+    19069.0,
+    127242.0,
+    113506.0
+   ],
+   "interest_coverage_trend": "improving",
+   "roce_abs_pct": -3.4,
+   "fii_holding": 41.82,
+   "market_cap_cr": 1097662.0,
+   "name": "HDFC Bank Ltd",
+   "rpt_amount_cr": null,
+   "revenue_4q_growth": 0.028127401787879938,
+   "rpt_pct": null,
+   "fcf_pat_ratio": 1.19,
+   "symbol": "HDFCBANK",
+   "sector_type": "financial"
   }
  },
  "TCS": {

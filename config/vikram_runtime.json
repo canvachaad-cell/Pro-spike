@@ -1,12 +1,17 @@
 {
     "model_candidates": [
         {
-            "id": "gemini-1.5-pro-latest",
+            "id": "gemini-3.6-flash",
             "provider": "google",
             "search_grounding_enabled": true
         },
         {
-            "id": "gemini-1.5-flash-latest",
+            "id": "gemini-3.5-flash",
+            "provider": "google",
+            "search_grounding_enabled": false
+        },
+        {
+            "id": "gemini-flash-lite-latest",
             "provider": "google",
             "search_grounding_enabled": false
         }
