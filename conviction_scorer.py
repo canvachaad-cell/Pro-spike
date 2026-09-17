@@ -93,7 +93,9 @@ def _gate_scores(fund):
     # 2. RPT % of Revenue (26%)
     rpt_pct = fund.get("rpt_pct")
     rpt_status = fund.get("rpt_status")
-    if rpt_status == "OK" and rpt_pct is not None:
+    if rpt_status == "EXEMPT":
+        gate["rpt_pct"] = 10
+    elif rpt_status == "OK" and rpt_pct is not None:
         if rpt_pct > PROVISIONAL_RPT_VETO_PCT:
             gate["rpt_pct"] = 0
         elif rpt_pct > PROVISIONAL_RPT_CAUTION_PCT:
@@ -188,6 +190,10 @@ def fundamental_strength(fund):
         if v.status == "VETO_TRIGGERED":
             veto_reasons.append(v.reason)
 
+    rpt_pct = fund.get("rpt_pct")
+    if fund.get("rpt_status") == "OK" and rpt_pct is not None and rpt_pct > PROVISIONAL_RPT_VETO_PCT:
+        veto_reasons.append(f"RPT % of Revenue exceeds veto threshold ({rpt_pct:.1f}% > {PROVISIONAL_RPT_VETO_PCT}%)")
+
     if veto_reasons:
         return {}, 0, "VETO", veto_reasons
 
@@ -258,7 +264,10 @@ class ConvictionScorer:
             # Check for Unverified Vetoes (missing data)
             unv = []
             rpt_status_lc = fund.get("rpt_status", "NOT_SCRAPED")
-            if rpt_status_lc in ("NOT_FOUND", "NOT_SCRAPED") or fund.get("rpt_pct") is None:
+            if rpt_status_lc == "EXEMPT":
+                base["rpt_data_missing"] = False
+                base["rpt_fetch_status"] = "EXEMPT"
+            elif rpt_status_lc in ("NOT_FOUND", "NOT_SCRAPED") or fund.get("rpt_pct") is None:
                 base["not_applicable_metrics"].append("rpt_pct")
                 base["rpt_data_missing"] = True
                 base["rpt_fetch_status"] = rpt_status_lc
@@ -310,10 +319,15 @@ class ConvictionScorer:
         # RPT Handling (Excluded from strict Veto State Machine, but still scored)
         rpt_status = fund.get("rpt_status", "NOT_SCRAPED")
         rpt_pct = fund.get("rpt_pct")
-        if rpt_status in ("NOT_FOUND", "NOT_SCRAPED") or rpt_pct is None:
+        if rpt_status == "EXEMPT":
+            base["rpt_data_missing"] = False
+            base["rpt_fetch_status"] = "EXEMPT"
+        elif rpt_status in ("NOT_FOUND", "NOT_SCRAPED") or rpt_pct is None:
             base["not_applicable_metrics"].append("rpt_pct")
             base["rpt_data_missing"] = True
             base["rpt_fetch_status"] = rpt_status
+        elif rpt_status == "OK" and rpt_pct > PROVISIONAL_RPT_VETO_PCT:
+            veto_reasons.append(f"RPT % of Revenue exceeds veto threshold ({rpt_pct:.1f}% > {PROVISIONAL_RPT_VETO_PCT}%)")
 
         # Active Veto State Machine (Pledge, FCF)
         pledge = fund.get("pledge_trend") or []

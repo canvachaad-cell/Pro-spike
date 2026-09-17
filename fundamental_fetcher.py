@@ -21,7 +21,9 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from rpt_fetcher import RPTFetcher
-from schema_contracts import validate
+from schema_contracts import CONTRACTS, validate
+
+REQUIRED_FUNDAMENTAL_KEYS = CONTRACTS["fundamental_fetcher"]["keys"]
 
 CACHE_PATH = os.path.join("data", "fundamental_cache.json")
 CACHE_TTL_SECONDS = 24 * 3600
@@ -127,6 +129,14 @@ class FundamentalFetcher:
         cached = self._load_cache(symbol)
         if cached is not None:
             if _quality_count(cached) >= MIN_QUALITY_KEYS:
+                if cached.get("rpt_status") in ("NOT_FOUND", "NOT_SCRAPED", None):
+                    rpt_info = RPTFetcher().fetch_rpt_data(symbol, revenue_cr=cached.get("revenue_ttm_cr"))
+                    if rpt_info.get("status") in ("OK", "EXEMPT"):
+                        cached = dict(cached)
+                        cached["rpt_status"] = rpt_info.get("status")
+                        cached["rpt_pct"] = rpt_info.get("rpt_pct")
+                        cached["rpt_amount_cr"] = rpt_info.get("rpt_amount_cr")
+                        self._save_cache(symbol, cached)
                 return self._apply_overrides(symbol, cached)
             # Hollow cache entry (old bug) — purge and refetch
             self._purge_cache(symbol)
@@ -160,7 +170,8 @@ class FundamentalFetcher:
         return self._apply_overrides(symbol, data)
 
     def _apply_overrides(self, symbol, data):
-        """Applies manual sector and business model overrides on cache-hit or live-fetch data."""
+        """Applies manual sector and business model overrides on cache-hit or live-fetch data,
+        and ensures all 32 required contract keys are present."""
         if not data or "error" in data:
             return data
             
@@ -173,6 +184,11 @@ class FundamentalFetcher:
             data["business_model_changed"] = True
             data["business_model_change_year"] = chg["change_year"]
             data["business_model_change_note"] = chg["note"]
+
+        # Backfill any missing contract keys with None to strictly satisfy schema contract
+        for k in REQUIRED_FUNDAMENTAL_KEYS:
+            if k not in data:
+                data[k] = None
             
         return validate("fundamental_fetcher", data)
 
@@ -264,7 +280,9 @@ class FundamentalFetcher:
 
         try:
             soup = BeautifulSoup(r.text, "html.parser")
-            out = {"symbol": symbol, "url": url}
+            out = {k: None for k in REQUIRED_FUNDAMENTAL_KEYS}
+            out["symbol"] = symbol
+            out["url"] = url
             h1 = soup.select_one("h1")
             if h1:
                 out["name"] = h1.get_text(strip=True)
@@ -299,7 +317,7 @@ class FundamentalFetcher:
             ah, adata = pl_a if pl_a else (None, {})
             bh, bdata = self._find_table(parsed, ("Equity Capital", "Borrowing"), quarters=False)
             ch, cdata = self._find_table(parsed, ("Cash from Operating Activity",), quarters=False)
-            sh, sdata = self._find_table(parsed, ("Promoters", "DIIs"), quarters=True)
+            sh, sdata = self._find_table_multi(parsed, [["Promoters", "DIIs", "FIIs", "Public"]], quarters=True)
 
             self._extract_shareholding(out, sh, sdata)
             self._extract_pledge(out, parsed, r.text)
@@ -360,15 +378,21 @@ class FundamentalFetcher:
         if not headers:
             return
         quarters = [h for h in headers if re.search(r"(Sep|Dec|Mar|Jun)\s*20\d\d", h)]
+        has_promoter_row = False
         for row_key, key in (("Promoters", "promoter"), ("DIIs", "dii"), ("FIIs", "fii")):
             for k, vals in data.items():
                 if k == row_key:
+                    if key == "promoter":
+                        has_promoter_row = True
                     pairs = [f"{q.split()[0]} {q.split()[-1]}: {v}" for q, v in zip(quarters, vals)]
                     out[f"{key}_trend"] = " -> ".join(pairs)
                     nums = [_num(v) for v in vals if str(v).endswith("%")]
                     if nums:
                         out[f"{key}_holding"] = nums[-1]
                     break
+        if not has_promoter_row and headers:
+            out["promoter_holding"] = 0.0
+            out["promoter_trend"] = "0.0% (Professionally Managed / No Promoters)"
 
     def _extract_pledge(self, out, parsed, page_text):
         """Pledge % for the last 4 quarters (table when present, else text)."""
@@ -514,5 +538,8 @@ class FundamentalFetcher:
     def _derive_free_float(out):
         mcap = out.get("market_cap_cr")
         promo = out.get("promoter_holding")
-        if mcap is not None and promo is not None:
-            out["free_float_cr"] = round(mcap * (1 - promo / 100.0))
+        if mcap is not None:
+            if promo is not None:
+                out["free_float_cr"] = round(mcap * (1 - promo / 100.0))
+            else:
+                out["free_float_cr"] = round(mcap)

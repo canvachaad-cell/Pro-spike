@@ -14,7 +14,10 @@ All run inside `Pro-spike` root directory:
 - Syntax Check: `python -m py_compile <filepath>`
 - Verification Check: `python check_pipeline.py`
 - **Verification Bar:** Clean execution without python tracebacks + manual UI/data verification. Never claim a fix is complete without verifying it empirically.
-- **Git Push Rules:** This project has TWO remotes but **ONLY ONE should receive Dash code**. `origin` (fawaz2023/trading-dashboard) is a **SEPARATE, UNRELATED Streamlit project — NEVER push to it**. `prospike` (canvachaad-cell/Pro-spike) is the real Pro Spike Dash project. **When the user says "push git", you MUST run: `git push prospike main` ONLY.** Never push to `origin`.
+- **Git Push Rules:** This project tracks TWO remotes:
+  - `prospike` (`canvachaad-cell/Pro-spike`): Pro Spike Dash application repository.
+  - `origin` (`fawaz2023/trading-dashboard`): Live Streamlit dashboard repository.
+  - **Daily Data / Signal Updates:** When updating daily market data and signals, you MUST push to **BOTH** remotes (`git push prospike main` AND `git push origin main`) so that both the Dash and Streamlit live dashboards receive fresh data and signals every day.
 
 ## Hard Rules for the AI
 > [!IMPORTANT]

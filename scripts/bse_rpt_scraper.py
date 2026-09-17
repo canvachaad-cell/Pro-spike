@@ -7,7 +7,8 @@ import pdfplumber
 import requests
 import warnings
 from collections import namedtuple
-from datetime import datetime
+from datetime import datetime, timedelta
+import argparse
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -40,6 +41,35 @@ ROUNDING_FIELD_RE = re.compile(
 )
 PARENS_UNIT_RE = re.compile(r"\(\s*(?:in\s+)?(?:Rs\.?|₹)\s*(?:in\s+)?(lakhs?|crores?|millions?)\s*\)", re.IGNORECASE)
 EMBEDDED_TOTAL_RE = re.compile(r"Total\s+(?:value\s+)?of\s+transactions?\s*.*?([\d,]+\.\d+)", re.IGNORECASE)
+EXEMPTION_RE = re.compile(
+    r"(?:non-?applicab\w*|shall not apply|not required to (?:submit|disclose)).{0,200}?regulation\s+23"
+    r"|regulation\s+23.{0,200}?(?:non-?applicab\w*|shall not apply|not required to (?:submit|disclose))",
+    re.IGNORECASE | re.DOTALL,
+)
+RPT_ANNOUNCEMENT_RE = re.compile(
+    r"(?:related\s+party|reg(?:ulation)?\.?\s*23\s*\(9\)|rpt\b)",
+    re.IGNORECASE,
+)
+
+def generate_date_windows(start_date_str="20230101", end_date_str=None, chunk_days=350):
+    """Yields (from_date, to_date) strings in reverse chronological order.
+    
+    BSE API AnnSubCategoryGetData silently returns 0 results if the date
+    span exceeds ~366 days. Chunks <= 350 days ensure 100% API compliance.
+    """
+    if end_date_str is None:
+        end_date = datetime.now()
+    else:
+        end_date = datetime.strptime(end_date_str, "%Y%m%d")
+    start_date = datetime.strptime(start_date_str, "%Y%m%d")
+
+    windows = []
+    curr_end = end_date
+    while curr_end > start_date:
+        curr_start = max(start_date, curr_end - timedelta(days=chunk_days))
+        windows.append((curr_start.strftime("%Y%m%d"), curr_end.strftime("%Y%m%d")))
+        curr_end = curr_start - timedelta(days=1)
+    return windows
 
 def _all_text(pdf_path):
     text = []
@@ -105,38 +135,50 @@ def extract_rpt_v2(pdf_path, market_cap_cr=None):
     found_table = False
     col_aliases = ["Value of transaction during the reporting period", "Amount (Rs.)", "Value of Transaction"]
     unit_hint = None
+    active_target_col = None
     
     try:
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
                 table = page.extract_table()
-                if table:
-                    target_col = -1
+                if not table:
+                    continue
+
+                if active_target_col is None:
+                    # Find header in top 5 rows
                     for row_idx, row in enumerate(table[:5]):
                         for col_idx, cell in enumerate(row):
                             if cell:
                                 cell_text = str(cell).replace('\n', ' ').strip().lower()
                                 if any(alias.lower() in cell_text for alias in col_aliases):
-                                    target_col = col_idx
+                                    active_target_col = col_idx
                                     if "rs." in cell_text or "rupees" in cell_text:
                                         unit_hint = "rupees"
                                     break
-                        if target_col != -1:
+                        if active_target_col is not None:
                             break
-                    
-                    if target_col != -1:
+                    if active_target_col is not None:
                         found_table = True
-                        for row in table[3:]:
-                            if len(row) > target_col and row[target_col] is not None:
-                                val_str = str(row[target_col]).replace(',', '').strip()
-                                if val_str.startswith('(') and val_str.endswith(')'):
-                                    val_str = '-' + val_str[1:-1]
-                                val_str = re.sub(r'[^\d\.-]', '', val_str)
-                                try:
-                                    if val_str and val_str not in ('-', '.'):
-                                        total_val += abs(float(val_str))
-                                except ValueError:
-                                    pass
+                        data_rows = table[3:]
+                    else:
+                        data_rows = []
+                else:
+                    # Continuation table on subsequent pages (page 2, 3, etc.)
+                    first_cell = str(table[0][0] or '').lower() if len(table) > 0 and len(table[0]) > 0 else ''
+                    start_idx = 1 if any(h in first_cell for h in ('sr', 'no', 'name', 'details', 'nature')) else 0
+                    data_rows = table[start_idx:]
+
+                for row in data_rows:
+                    if len(row) > (active_target_col if active_target_col is not None else 0) and row[active_target_col] is not None:
+                        val_str = str(row[active_target_col]).replace(',', '').strip()
+                        if val_str.startswith('(') and val_str.endswith(')'):
+                            val_str = '-' + val_str[1:-1]
+                        val_str = re.sub(r'[^\d\.-]', '', val_str)
+                        try:
+                            if val_str and val_str not in ('-', '.'):
+                                total_val += abs(float(val_str))
+                        except ValueError:
+                            pass
     except Exception as e:
         print(f"Error parsing PDF: {e}")
         
@@ -148,7 +190,7 @@ def extract_rpt_v2(pdf_path, market_cap_cr=None):
             found_table = True
             
     if not found_table:
-        if "Non-applicability of Related Party Disclosure" in full_text or "not applicable" in full_text.lower():
+        if EXEMPTION_RE.search(full_text):
             return RptResult("EXEMPT", None, None, "BSE_PDF_EXEMPT", [], None, False)
         return RptResult("UNPARSABLE", None, None, None, ["NO_TABLE"], None, False)
         
@@ -177,6 +219,11 @@ def main():
     rpt_cache = init_cache()
     delta_rows = []
     
+    parser = argparse.ArgumentParser(description="BSE RPT Scraper & Delta Generator")
+    parser.add_argument("--commit-cache", action="store_true", help="Atomically commit verified delta rows to data/rpt_cache.json")
+    parser.add_argument("--ticker", type=str, default=None, help="Optional single ticker to scrape (e.g. PAGEIND)")
+    args = parser.parse_args()
+
     for idx, row in df.iterrows():
         ticker = row.get('ticker')
         if pd.isna(row.get('sector_type')) or pd.isna(row.get('bse_scrip')):
@@ -187,7 +234,12 @@ def main():
     targets = df[(df['sector_type'] != 'financial') & (~df['ticker'].isin(EXCLUDE_TICKERS)) & (df['bse_scrip'].notna())].copy()
     targets = targets.drop_duplicates(subset=['ticker'])
     
-    print(f"Target pool size: {len(targets)} unique non-financial corporate tickers.")
+    if args.ticker:
+        target_ticker = args.ticker.upper().strip()
+        targets = targets[targets['ticker'] == target_ticker]
+        print(f"Target pool filtered to single ticker: {target_ticker}")
+    else:
+        print(f"Target pool size: {len(targets)} unique non-financial corporate tickers.")
     
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -196,12 +248,9 @@ def main():
         'Referer': 'https://www.bseindia.com/'
     }
     
-    # PR-3 Pinned requirement: Runtime WARNING for date window blindness
-    from_date_str = '20230630'
-    to_date_str = '20240630'
-    current_date = datetime.now().strftime("%Y%m%d")
-    if current_date > to_date_str:
-        print(f"\n[WARNING] current date ({current_date}) is outside configured RPT window ({from_date_str} - {to_date_str}). Scraper is blind to new filings!\n")
+    windows = generate_date_windows("20230101")
+    if windows:
+        print(f"Generated {len(windows)} reverse-chronological search windows (<=350d each) spanning {windows[-1][0]} to {windows[0][1]}.")
     
     for idx, row in targets.iterrows():
         ticker = row['ticker']
@@ -211,32 +260,36 @@ def main():
             
         scrip = str(row['bse_scrip']).split('.')[0]
         
-        print(f"[{ticker}] Fetching Scrip {scrip} from {from_date_str} to {to_date_str} via API...")
+        print(f"[{ticker}] Fetching Scrip {scrip} across {len(windows)} windows via API...")
         
         try:
             candidates = []
-            for pageno in range(1, 6):
-                url = f"https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w?pageno={pageno}&strCat=-1&strPrevDate={from_date_str}&strScrip={scrip}&strSearch=P&strToDate={to_date_str}&strType=C"
-                r = requests.get(url, headers=headers, timeout=10)
-                if r.status_code != 200:
-                    break
+            for w_from, w_to in windows:
+                for pageno in range(1, 6):
+                    url = f"https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w?pageno={pageno}&strCat=-1&strPrevDate={w_from}&strScrip={scrip}&strSearch=P&strToDate={w_to}&strType=C"
+                    r = requests.get(url, headers=headers, timeout=10)
+                    if r.status_code != 200:
+                        break
+                        
+                    data = r.json()
+                    table = data.get('Table', [])
+                    if not table:
+                        break
                     
-                data = r.json()
-                table = data.get('Table', [])
-                if not table:
+                    for item in table:
+                        subject = str(item.get('NEWSSUB', ''))
+                        headline = str(item.get('HEADLINE', ''))
+                        if RPT_ANNOUNCEMENT_RE.search(subject) or RPT_ANNOUNCEMENT_RE.search(headline):
+                            pdf_filename = item.get('ATTACHMENTNAME')
+                            date_str = item.get('NEWS_DT', item.get('DT_TM', ''))
+                            if pdf_filename:
+                                candidates.append((date_str, pdf_filename))
+                if candidates:
                     break
-                
-                for item in table:
-                    subject = str(item.get('NEWSSUB', ''))
-                    headline = str(item.get('HEADLINE', ''))
-                    if 'Related Party' in subject or 'Related Party' in headline:
-                        pdf_filename = item.get('ATTACHMENTNAME')
-                        date_str = item.get('NEWS_DT', item.get('DT_TM', ''))
-                        if pdf_filename:
-                            candidates.append((date_str, pdf_filename))
                             
             pdf_filename = None
             if candidates:
+                # NEWS_DT format is proven to be ISO-8601 (e.g. '2024-05-08T20:39:00.957'), so string max is chronologically correct.
                 pdf_filename = max(candidates, key=lambda c: c[0])[1]
                     
             new_result = None
@@ -292,6 +345,8 @@ def main():
                 "old_amount": old_result.get("rpt_amount_cr"),
                 "new_status": new_result.get("status") if new_result else "ERROR",
                 "new_amount": new_result.get("rpt_amount_cr") if new_result else None,
+                "new_pct": new_result.get("rpt_pct") if new_result else None,
+                "filing_type": new_result.get("filing_type") if new_result else None,
                 "flags": new_result.get("flags", "") if new_result else "",
                 "unit_source": new_result.get("unit_source", "") if new_result else "",
                 "rescaled": new_result.get("rescaled", False) if new_result else False
@@ -307,7 +362,31 @@ def main():
     delta_df = pd.DataFrame(delta_rows)
     delta_df.to_csv(DELTA_TABLE_PATH, index=False)
     print(f"Delta table saved to {DELTA_TABLE_PATH}")
-    # Cache is explicitly NOT saved per PR-1 constraints.
+
+    if args.commit_cache:
+        curr_cache = init_cache()
+        promoted_count = 0
+        for row in delta_rows:
+            t = row["ticker"]
+            st = row["new_status"]
+            if st in ("OK", "EXEMPT"):
+                curr_cache[t] = {
+                    "status": st,
+                    "rpt_amount_cr": row.get("new_amount"),
+                    "rpt_pct": row.get("new_pct"),
+                    "filing_type": row.get("filing_type"),
+                    "flags": row.get("flags", ""),
+                    "unit_source": row.get("unit_source", ""),
+                    "rescaled": row.get("rescaled", False)
+                }
+                promoted_count += 1
+        temp_cache_path = RPT_CACHE_PATH + ".tmp"
+        with open(temp_cache_path, "w", encoding="utf-8") as f:
+            json.dump(curr_cache, f, indent=2)
+        os.replace(temp_cache_path, RPT_CACHE_PATH)
+        print(f"Atomically committed {promoted_count} verified RPT entries to {RPT_CACHE_PATH}")
+    else:
+        print("Dry-run mode: Cache NOT updated (pass --commit-cache to promote verified entries).")
 
 if __name__ == '__main__':
     main()

@@ -115,3 +115,42 @@ def test_malformed_runtime_config():
         validate_runtime_config(config)
         
     assert "missing" in str(exc_info.value).lower()
+
+
+def test_fundamental_fetcher_missing_keys_backfilled():
+    """Verify that FundamentalFetcher._apply_overrides fills missing keys with None."""
+    from fundamental_fetcher import FundamentalFetcher
+    from schema_contracts import CONTRACTS
+
+    fetcher = FundamentalFetcher()
+    partial_data = {"symbol": "TEST", "market_cap_cr": 500.0}
+    validated = fetcher._apply_overrides("TEST", partial_data)
+
+    expected_keys = CONTRACTS["fundamental_fetcher"]["keys"]
+    assert len(expected_keys) == 32
+    for k in expected_keys:
+        assert k in validated
+    assert validated["promoter_holding"] is None
+    assert validated["market_cap_cr"] == 500.0
+
+
+def test_fundamental_fetcher_zero_promoter_handling():
+    """Verify zero-promoter extraction sets holding=0.0 and free_float = mcap."""
+    from fundamental_fetcher import FundamentalFetcher
+
+    fetcher = FundamentalFetcher()
+    headers = ["", "Sep 2024", "Dec 2024"]
+    data = {
+        "FIIs": ["30.0%", "32.0%"],
+        "DIIs": ["20.0%", "21.0%"],
+        "Public": ["50.0%", "47.0%"]
+    }
+    out = {"market_cap_cr": 10000.0}
+    fetcher._extract_shareholding(out, headers, data)
+    fetcher._derive_free_float(out)
+
+    assert out["promoter_holding"] == 0.0
+    assert "0.0%" in out["promoter_trend"]
+    assert out["fii_holding"] == 32.0
+    assert out["dii_holding"] == 21.0
+    assert out["free_float_cr"] == 10000.0

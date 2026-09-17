@@ -33,7 +33,6 @@ shadow_box_model.pkl
 # Cache and temp files
 bse_page.html
 *.html
-data/rpt_cache.json
 data/rpt_filings_cache.json
 data/rpt_pdfs/
 data/fundamental_analysis_cache.json

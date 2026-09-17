@@ -1,0 +1,539 @@
+{
+  "ETERNAL": {
+    "status": "OK",
+    "rpt_amount_cr": 16004.51,
+    "rpt_pct": 23.74,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:lakh/million",
+    "unit_source": "backstop:lakh",
+    "rescaled": true
+  },
+  "STYLEBAAZA": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "SUDARSCHEM": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "JPOLYINVST": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "MANORAMA": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "PAYTM": {
+    "status": "OK",
+    "rpt_amount_cr": 30471.44,
+    "rpt_pct": 339.82,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "JSWCEMENT": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "PAGEIND": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "ANANTRAJ": {
+    "status": "OK",
+    "rpt_amount_cr": 101.38,
+    "rpt_pct": 3.97,
+    "filing_type": "BSE_PDF",
+    "flags": "",
+    "unit_source": "explicit:lakh",
+    "rescaled": false
+  },
+  "HINDPETRO": {
+    "status": "OK",
+    "rpt_amount_cr": 68054.72,
+    "rpt_pct": 14.43,
+    "filing_type": "BSE_PDF",
+    "flags": "",
+    "unit_source": "explicit:crore",
+    "rescaled": false
+  },
+  "OFSS": {
+    "status": "OK",
+    "rpt_amount_cr": 3045.19,
+    "rpt_pct": 34.04,
+    "filing_type": "BSE_PDF",
+    "flags": "",
+    "unit_source": "explicit:million",
+    "rescaled": false
+  },
+  "IPCALAB": {
+    "status": "OK",
+    "rpt_amount_cr": 284.22,
+    "rpt_pct": 2.81,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "DLF": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "GMRAIRPORT": {
+    "status": "OK",
+    "rpt_amount_cr": 11327.55,
+    "rpt_pct": 72.76,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "MOCAPITAL": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "RPPINFRA": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "CEMPRO": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "ENDURANCE": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "ICICIPRULI": {
+    "status": "OK",
+    "rpt_amount_cr": 2781.88,
+    "rpt_pct": 4.39,
+    "filing_type": "BSE_PDF",
+    "flags": "",
+    "unit_source": "explicit:lakh",
+    "rescaled": false
+  },
+  "INDUSTOWER": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "TORNTPHARM": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "PHOENIXLTD": {
+    "status": "OK",
+    "rpt_amount_cr": 7422.4,
+    "rpt_pct": 163.35,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:lakh/million",
+    "unit_source": "backstop:lakh",
+    "rescaled": true
+  },
+  "SOFTTECH": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "PFIZER": {
+    "status": "OK",
+    "rpt_amount_cr": 346.58,
+    "rpt_pct": 13.49,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "EMIL": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "ANTHEM": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "BAJAJFINSV": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "HCG": {
+    "status": "OK",
+    "rpt_amount_cr": 2243.37,
+    "rpt_pct": 85.4,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "THERMAX": {
+    "status": "OK",
+    "rpt_amount_cr": 563.26,
+    "rpt_pct": 5.2,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "WONDERLA": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "WINDMACHIN": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "STEELCAS": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "DIVISLAB": {
+    "status": "OK",
+    "rpt_amount_cr": 257.23,
+    "rpt_pct": 2.29,
+    "filing_type": "BSE_PDF",
+    "flags": "",
+    "unit_source": "explicit:lakh",
+    "rescaled": false
+  },
+  "HEROMOTOCO": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "AVALON": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "CONSUMER": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "BIL": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "PIDILITIND": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "ACESOFT": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "KINETICENG": {
+    "status": "OK",
+    "rpt_amount_cr": 20.35,
+    "rpt_pct": 11.77,
+    "filing_type": "BSE_PDF",
+    "flags": "",
+    "unit_source": "explicit:lakh",
+    "rescaled": false
+  },
+  "HIMTEK": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "TIERRA": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "TLL": {
+    "status": "EXEMPT",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": "BSE_PDF_EXEMPT",
+    "flags": "",
+    "unit_source": null,
+    "rescaled": false
+  },
+  "SHUKRAPHAR": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "SETL": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "NATFIT": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "ALKEM": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "CHANDRIMA": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "LAURUSLABS": {
+    "status": "OK",
+    "rpt_amount_cr": 394.52,
+    "rpt_pct": 5.43,
+    "filing_type": "BSE_PDF",
+    "flags": "",
+    "unit_source": "explicit:crore",
+    "rescaled": false
+  },
+  "ASIANHOTNR": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "EMAMILTD": {
+    "status": "OK",
+    "rpt_amount_cr": 27985.07,
+    "rpt_pct": 714.82,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "PRARUH": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "STOVEKRAFT": {
+    "status": "OK",
+    "rpt_amount_cr": 19.74,
+    "rpt_pct": 2.23,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "SHANKARA": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "MRTX": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "AIRFLOA": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "ORICONENT": {
+    "status": "OK",
+    "rpt_amount_cr": 70.19,
+    "rpt_pct": 155.97,
+    "filing_type": "BSE_PDF",
+    "flags": "",
+    "unit_source": "explicit:lakh",
+    "rescaled": false
+  },
+  "TATSILV": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "APOLLOTYRE": {
+    "status": "OK",
+    "rpt_amount_cr": 3789.09,
+    "rpt_pct": 12.93,
+    "filing_type": "BSE_PDF",
+    "flags": "",
+    "unit_source": "explicit:million",
+    "rescaled": false
+  },
+  "COLPAL": {
+    "status": "OK",
+    "rpt_amount_cr": 21784.98,
+    "rpt_pct": 351.14,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "ANURAS": {
+    "status": "OK",
+    "rpt_amount_cr": 1178.6,
+    "rpt_pct": 46.51,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "GLAXO": {
+    "status": "OK",
+    "rpt_amount_cr": 77068.66,
+    "rpt_pct": 1949.13,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "POLICYBZR": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "CORDELIA": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "SHREECEM": {
+    "status": "OK",
+    "rpt_amount_cr": 1121.83,
+    "rpt_pct": 5.12,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "LENSKART": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "HYUNDAI": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "GVPIL": {
+    "status": "OK",
+    "rpt_amount_cr": 542.53,
+    "rpt_pct": 41.99,
+    "filing_type": "BSE_PDF",
+    "flags": "",
+    "unit_source": "explicit:million",
+    "rescaled": false
+  },
+  "SHYAMMETL": {
+    "status": "OK",
+    "rpt_amount_cr": 10987.96,
+    "rpt_pct": 56.11,
+    "filing_type": "BSE_PDF",
+    "flags": "",
+    "unit_source": "explicit:crore",
+    "rescaled": false
+  },
+  "TATAPOWER": {
+    "status": "OK",
+    "rpt_amount_cr": 34068.15,
+    "rpt_pct": 53.7,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "DABUR": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "KALIND": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "ADANIENT": {
+    "status": "OK",
+    "rpt_amount_cr": 116773.43,
+    "rpt_pct": 104.79,
+    "filing_type": "BSE_PDF",
+    "flags": "AMBIGUOUS_SCALE:crore/lakh/million",
+    "unit_source": "backstop:crore",
+    "rescaled": false
+  },
+  "NOVUS": {
+    "status": "NOT_FOUND",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": null
+  },
+  "PESB": {
+    "status": "EXEMPT",
+    "rpt_amount_cr": null,
+    "rpt_pct": null,
+    "filing_type": "BSE_PDF_EXEMPT",
+    "flags": "",
+    "unit_source": null,
+    "rescaled": false
+  }
+}

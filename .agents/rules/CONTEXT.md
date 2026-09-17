@@ -4,16 +4,16 @@
 
 
 **Current Working Set (trading_dashboard):**
+- `trading_dashboard/scratch\audit_open.json`
+- `trading_dashboard/scratch\probe_open.js`
+- `trading_dashboard/scratch\audit_ledgers.json`
+- `trading_dashboard/scratch\probe_ledgers.js`
 - `trading_dashboard/test-results\.last-run.json`
-- `trading_dashboard/docs\known_bugs.md`
-- `trading_dashboard/dash_pages\institutional_signals.py`
-- `trading_dashboard/tests\ui_audit_inst_signals.spec.js`
-- `trading_dashboard/scratch\pw_verify.config.js`
-- `trading_dashboard/tests\vikram_panel.spec.js`
-- `trading_dashboard/scripts\bse_rpt_scraper.py`
-- `trading_dashboard/dash_pages\_vikram_callback.py`
-- `trading_dashboard/dash_app_v2.py`
-- `trading_dashboard/.uimax-reviews.json`
+- `trading_dashboard/scratch\mockups\_shot_concept_inst.js`
+- `trading_dashboard/scratch\mockups\_build_concept.py`
+- `trading_dashboard/scratch\mockups\_chk_inst.py`
+- `trading_dashboard/scratch\mockups\_count_dup.py`
+- `trading_dashboard/scratch\mockups\_build_dash2.py`
 
 **Constraints for Today:**
 - Do NOT hallucinate variables or schemas. Use Dynamic Schema Discovery.

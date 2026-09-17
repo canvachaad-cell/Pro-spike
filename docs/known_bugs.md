@@ -351,14 +351,20 @@
 **FAILED ATTEMPTS**: None.
 **AI PROCESS**: Utilized `uxtools-ui-audit` UX heuristics. Gated edits behind `/fix_before_touch` and `DEEP_PLAN` to evaluate blast radius before execution.
 
-## BUG-029 — RPT Scraper Blind to New Filings (Hardcoded Date Window)
-**STATUS**: OPEN (PR-1 Merged, PR-3 pending)
-**FILE**: `scripts/bse_rpt_scraper.py`
-**SYMPTOM**: The BSE scraper misses newly filed Related Party Transactions after June 2024.
-**ROOT CAUSE**: The date window for the BSE API call is hardcoded to `from_date_str='20230630'` / `to_date_str='20240630'`. This renders the pipeline blind to ~18 months of filings regardless of how good the extractor gets.
-**FIX**: Pinned as PR-3 target. For now (PR-1), a runtime `[WARNING]` has been added to log on every scraper run if the current date is outside the configured window.
-**FAILED ATTEMPTS**: None yet.
-**AI PROCESS**: Followed the RPT Scraper Hardening Implementation Plan v2 to ensure this technical debt is surfaced with a runtime warning and a logged issue rather than silently failing.
+## BUG-029 — RPT Scraper Blind to New Filings (Hardcoded Date Window) & Pipeline Hardening
+**STATUS**: FIXED
+**FILE**: `scripts/bse_rpt_scraper.py`, `conviction_scorer.py`, `fundamental_fetcher.py`
+**SYMPTOM**: The BSE scraper misses newly filed Related Party Transactions after June 2024, or returns 0 filings silently if querying >366 days. Additionally, multi-page SEBI disclosures lose transactions across pages 2+, and EXEMPT filings were penalized as missing data.
+**ROOT CAUSE**: The date window for the BSE API call was hardcoded to `20230630-20240630`. Spanning >366 days triggers BSE API silent zero returns. Also, single-page table extraction dropped continuation rows, and conviction_scorer treated EXEMPT as rpt_data_missing.
+**FIX**: 
+1. Added `generate_date_windows(start_date_str="20230101")` yielding <=350-day windows in reverse chronological order up to current date (`datetime.now()`).
+2. Broadened announcement pattern matching to `RPT_ANNOUNCEMENT_RE` (case-insensitive Reg 23(9) / Related Party / RPT).
+3. Hardened `extract_rpt_v2` with table continuation logic to accumulate value across multi-page SEBI tabular filings.
+4. Added `--commit-cache` flag to `scripts/bse_rpt_scraper.py` for atomic promotion to `data/rpt_cache.json` (preserving dry-run by default).
+5. Updated `conviction_scorer.py` to give `EXEMPT` filings a 10/10 clean score in 6-metric mode (`rpt_data_missing=False`).
+6. Updated `fundamental_fetcher.py` to refresh stale `NOT_FOUND`/`NOT_SCRAPED` entries when verified data exists in offline cache.
+**FAILED ATTEMPTS**: Earlier versions used a single wide date query which silently returned empty JSON from BSE API.
+**AI PROCESS**: Full fix_before_touch and PR-3 implementation plan, verified with 9 comprehensive unit tests in `tests/test_rpt_pipeline_v3.py` and empirical CLI dry-run.
 
 ## BUG-030 — Vikram Dynamic Probe Network Deadlock
 **STATUS**: FIXED
@@ -410,3 +416,23 @@
 **FIX**: Implemented by Gemini Antigravity agent, verified by GLM: sticky first column gained `shadow-[8px_0_12px_-8px_rgba(0,0,0,0.55)]` inset edge; `.table-edge-fade::after` right-edge gradient overlay (mobile-only media query, z-25, pointer-events none) attached to table wrappers; `max-md:py-2 max-md:px-3` density compression preserving desktop spacing. Desktop untouched.
 **FAILED ATTEMPTS**: None.
 **AI PROCESS**: Same concurrent verification as BUG-033; axe-core zero violations, live probe confirmed 4 tab badges and 200 OK on /institutional-signals.
+
+---
+
+## BUG-035 — FundamentalFetcher Schema Drift on Zero-Promoter & Missing Metric Tickers
+**STATUS**: FIXED
+**FILE**: `fundamental_fetcher.py`, `tests/test_schema_contracts.py`, `data/fundamental_cache.json`
+**SYMPTOM**: Offline batch scraping (`scripts/bse_rpt_scraper.py --commit-cache`) and live Vikram stock lookups crashed with `SchemaDriftError: Schema Drift Detected in 'fundamental_fetcher'. Missing required columns: ['fii_trend', 'op_lev_ratio', 'promoter_holding', ...]` on tickers such as `PAYTM`, `ETERNAL`, `NATFIT`, and 12 other cached companies.
+**ROOT CAUSE**:
+1. **Dynamic Key Omission**: `_fetch_live()` built `out` incrementally and omitted keys (like `ebit_4q_growth`, `op_lev_ratio`, `roice_pct`, `pledge_note`) when calculation prerequisites were unmet (e.g. loss-making companies without positive EBIT growth, or companies lacking multi-year balance sheets).
+2. **Zero-Promoter Shareholding Omission**: `_find_table(parsed, ("Promoters", "DIIs"), quarters=True)` strictly required both `"Promoters"` and `"DIIs"`. For professionally managed companies with 0% promoter holding (`PAYTM`, `ITC`, `ICICI Bank`), the table was bypassed entirely, skipping all shareholding extraction and free-float derivation.
+3. **Legacy Cache Schema Drift**: 15 of 36 entries in `data/fundamental_cache.json` had incomplete keys saved prior to contract enforcement, triggering instant exceptions on cache read.
+**FIX**:
+1. Directly imported `CONTRACTS["fundamental_fetcher"]["keys"]` into `fundamental_fetcher.py` and initialized `out` with all 32 required keys defaulted to `None`.
+2. Updated `_apply_overrides()` to backfill any missing contract keys with `None` before calling `validate("fundamental_fetcher", data)`, guaranteeing contract compliance for both live fetches and cache hits.
+3. Switched shareholding table lookup to `_find_table_multi(parsed, [["Promoters", "DIIs", "FIIs", "Public"]], quarters=True)`. If no promoter row exists, gracefully set `promoter_holding = 0.0` and `promoter_trend = "0.0% (Professionally Managed / No Promoters)"`.
+4. Hardened `_derive_free_float()` to handle 0.0% promoter holding (allocating 100% of market cap to free float).
+5. Migrated `data/fundamental_cache.json` so 36/36 cached entries conform to the 32-key schema contract.
+6. Added automated regression tests in `tests/test_schema_contracts.py` covering key backfilling and zero-promoter shareholding parsing.
+**FAILED ATTEMPTS**: None. Full pre-flight root-cause hypothesis accurately isolated both the omission drift and the table-matching failure.
+**AI PROCESS**: Executed under `DEMONCORE: PLAN_DEEP` with explicit PR-4 implementation plan approval. Verified via `python -m py_compile`, `pytest tests/` (38 passed in 0.90s), empirical `PAYTM` live scrape, RPT cache commit, and end-to-end `ConvictionScorer` veto verification.
