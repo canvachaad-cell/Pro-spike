@@ -33,9 +33,19 @@ def run_canary():
         try:
             if provider == "google":
                 api_key = os.environ.get("GEMINI_API_KEY", "")
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={api_key}"
+                if not api_key:
+                    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+                    if os.path.exists(env_path):
+                        with open(env_path, "r", encoding="utf-8") as env_f:
+                            for line in env_f:
+                                line = line.strip()
+                                if line.startswith("GEMINI_API_KEY="):
+                                    api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
+                                    break
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent"
                 payload = {"contents": [{"parts": [{"text": "Reply exactly with OK"}]}]}
-                resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=probe_timeout)
+                headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
+                resp = requests.post(url, json=payload, headers=headers, timeout=probe_timeout)
                 resp.raise_for_status()
                 success = True
             else:

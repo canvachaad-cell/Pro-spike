@@ -1,6 +1,9 @@
 import sys
 import os
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 # Append the directory containing dash_pages to sys.path
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 

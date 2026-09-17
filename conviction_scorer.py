@@ -254,7 +254,7 @@ class ConvictionScorer:
             "data_completeness": {"resolved_count": 0, "total_count": 6, "label": "0/6 metrics resolved"},
             "not_applicable_metrics": [],
             "rpt_data_missing": False,
-            "veto_status_table_row": "| 🚫 Veto Status | ⏳ UNVERIFIED |",
+            "veto_status_table_row": "| 🚫 Veto Status | ⏳ UNVERIFIED | ⏳ |",
         }
 
         # Large-cap disclaimer handling
@@ -293,9 +293,9 @@ class ConvictionScorer:
             else:
                 base["display_badge"] = "⚠️ Large-cap signal — likely rebalancing noise; verify separately"
             if base["veto"]:
-                base["veto_status_table_row"] = "| 🚫 Veto Status | 🚫 VETO_TRIGGERED |"
+                base["veto_status_table_row"] = "| 🚫 Veto Status | 🚫 VETO_TRIGGERED | 🚫 |"
             elif base["unverified_veto"]:
-                base["veto_status_table_row"] = "| 🚫 Veto Status | ⏳ UNVERIFIED |"
+                base["veto_status_table_row"] = "| 🚫 Veto Status | ⏳ UNVERIFIED | ⏳ |"
             else:
                 base["veto_status_table_row"] = "| 🚫 Veto Status | CLEAR | ✅ |"
                 
@@ -357,7 +357,7 @@ class ConvictionScorer:
             base["score"] = 0
             base["rating"] = "VETO"
             base["display_badge"] = f"🚫 VETO: {veto_reasons[0]}"
-            base["veto_status_table_row"] = "| 🚫 Veto Status | 🚫 VETO_TRIGGERED |"
+            base["veto_status_table_row"] = "| 🚫 Veto Status | 🚫 VETO_TRIGGERED | 🚫 |"
             return base
 
         # Handle Unverified Veto (missing mandatory veto metrics block clean pass)
@@ -365,7 +365,7 @@ class ConvictionScorer:
             base["unverified_veto"] = True
             base["veto_reasons"] = unverified_veto_reasons
             base["rating"] = "UNVERIFIED_VETO"
-            base["veto_status_table_row"] = "| 🚫 Veto Status | ⏳ UNVERIFIED |"
+            base["veto_status_table_row"] = "| 🚫 Veto Status | ⏳ UNVERIFIED | ⏳ |"
         else:
             base["veto_status_table_row"] = "| 🚫 Veto Status | CLEAR | ✅ |"
 

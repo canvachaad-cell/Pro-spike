@@ -500,11 +500,17 @@ _SYMBOL_STOPWORDS = {
 }
 
 
-@lru_cache(maxsize=1)
+_known_symbols_cache = set()
+_known_symbols_mtime = 0.0
+
 def _known_symbols():
     """Symbols from portfolio + engine watchlists + signal history + ranked
-    pool (cached per process). Includes historically-fired scanner names so
+    pool (cached per process with 15-minute TTL). Includes historically-fired scanner names so
     bare lowercase queries ("katipatang") resolve without a search call."""
+    global _known_symbols_cache, _known_symbols_mtime
+    now = time.monotonic()
+    if _known_symbols_cache and (now - _known_symbols_mtime) < 900:
+        return _known_symbols_cache
     syms = set()
     paths = [ACTIVE_WATCHLIST] + [p for _, p in ENGINE_FILES]
     paths += [
@@ -520,9 +526,12 @@ def _known_symbols():
                 syms.update(str(s).strip().upper() for s in df[col].dropna() if len(str(s).strip()) >= 3)
         except Exception:
             continue
+    _known_symbols_cache = syms
+    _known_symbols_mtime = now
     return syms
 
 
+@lru_cache(maxsize=128)
 def extract_query_symbols(question):
     """Uppercase tokens that look like stock symbols; known ones first.
 
@@ -726,35 +735,22 @@ def build_fundamental_context(question):
             target_name = re.sub(r"(LTD|LIMITED|INDIA|PLC|PVT)$", "", target_name)
             if target_name:
                 try:
+                    cache_path = os.path.join("data", "fundamental_cache.json")
+                    cache = {}
+                    if os.path.exists(cache_path):
+                        with open(cache_path, "r", encoding="utf-8") as fh:
+                            cache = json.load(fh)
                     for cand in _known_symbols():
-                        cache_name = None
-                        try:
-                            cache_path = os.path.join("data", "fundamental_cache.json")
-                            if os.path.exists(cache_path):
-                                with open(cache_path, "r", encoding="utf-8") as fh:
-                                    cache = json.load(fh)
-                                entry = cache.get(cand)
-                                cache_name = (entry or {}).get("data", {}).get("name", "")
-                        except Exception:
-                            cache_name = None
+                        entry = cache.get(cand)
+                        cache_name = (entry or {}).get("data", {}).get("name", "")
                         if not cache_name:
                             continue
                         cand_name = re.sub(r"(LTD|LIMITED|INDIA|PLC|PVT)$", "", re.sub(r"[^A-Z0-9]", "", str(cache_name).upper()))
                         if cand_name and cand_name == target_name:
                             display_sym = cand
-                            try:
-                                cache_path = os.path.join("data", "fundamental_cache.json")
-                                cache = {}
-                                if os.path.exists(cache_path):
-                                    with open(cache_path, "r", encoding="utf-8") as fh:
-                                        cache = json.load(fh)
-                                entry = cache.get(sym)
-                                if entry and cand not in cache:
-                                    cache[cand] = entry
-                                    with open(cache_path, "w", encoding="utf-8") as fh:
-                                        json.dump(cache, fh, indent=1)
-                            except Exception:
-                                pass
+                            entry_sym = cache.get(sym)
+                            if entry_sym and cand not in cache:
+                                _fetcher._save_cache(cand, entry_sym.get("data", entry_sym))
                             break
                 except Exception:
                     pass
@@ -896,18 +892,23 @@ def _build_fundamental_context_safe(question):
     If screener.in is slow, returns a degraded context so Vikram
     falls back to Google Search grounding instead of hanging.
     """
-    with _cf.ThreadPoolExecutor(max_workers=1) as ex:
+    ex = _cf.ThreadPoolExecutor(max_workers=1)
+    try:
         fut = ex.submit(build_fundamental_context, question)
+        return fut.result(timeout=_FETCH_TIMEOUT)
+    except _cf.TimeoutError:
+        return (
+            "(LIVE FUNDAMENTAL FETCH TIMED OUT — screener.in was too slow. "
+            "You MUST use your Google Search tool to find this company's key "
+            "fundamentals — market cap, promoter/pledge, OCF vs PAT, interest "
+            "coverage, RoCE — and mark each searched value with 🔍. "
+            "Do NOT use ⏳ without having searched first.)"
+        )
+    finally:
         try:
-            return fut.result(timeout=_FETCH_TIMEOUT)
-        except _cf.TimeoutError:
-            return (
-                "(LIVE FUNDAMENTAL FETCH TIMED OUT — screener.in was too slow. "
-                "You MUST use your Google Search tool to find this company's key "
-                "fundamentals — market cap, promoter/pledge, OCF vs PAT, interest "
-                "coverage, RoCE — and mark each searched value with 🔍. "
-                "Do NOT use ⏳ without having searched first.)"
-            )
+            ex.shutdown(wait=False, cancel_futures=True)
+        except TypeError:
+            ex.shutdown(wait=False)
 
 
 # ---------------------------------------------------------------------------
@@ -1121,7 +1122,7 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested):
         ]
     except Exception:
         # DEEP_AUDIT FIX: API congested. Do not abort. Fallback to emergency known-models list.
-        model_names = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+        model_names = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-lite-latest"]
 
     probe_start = time.monotonic()
 
@@ -1138,6 +1139,9 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested):
                 return text, sources, None
             except Exception as e:
                 print(f"[PROBE ERROR] model {name} failed: {repr(e)}")
+                if "429" in str(e) and use_search:
+                    print("[PROBE CIRCUIT BREAKER] Search grounding 429 quota exhausted. Skipping remaining search probes.")
+                    break
                 if "503" in str(e) or "429" in str(e):
                     time.sleep(1)
     return None, None, "All dynamically probed models (with and without search) returned errors."
@@ -1195,7 +1199,8 @@ def ask_vikram(question, history):
     # Render's free tier has a 0.1 CPU limit which causes massive thread contention.
     # We drop workers to 2 on Render to stay within limits, while keeping 5 for localhost.
     workers = 2 if os.environ.get("RENDER") else 5
-    with _cf.ThreadPoolExecutor(max_workers=workers) as pool:
+    pool = _cf.ThreadPoolExecutor(max_workers=workers)
+    try:
         f_port = pool.submit(build_portfolio_context) if q_type != "engine_audit" else None
         f_sig  = pool.submit(build_engine_signals)
         f_fund = pool.submit(_build_fundamental_context_safe, question) if q_type == "stock_analysis" else None
@@ -1206,6 +1211,11 @@ def ask_vikram(question, history):
         fund_ctx = _safe_result(f_fund, 9, "(LIVE FUNDAMENTAL FETCH TIMED OUT)") if f_fund else "(Fundamental fetch skipped)"
         ledg_ctx = _safe_result(f_ledg, 4, "Ledger data unavailable.") if f_ledg else "(Ledger context skipped)"
         risk_ctx = build_risk_architecture_context() if q_type in ("engine_audit", "portfolio_audit") else "(Risk architecture skipped)"
+    finally:
+        try:
+            pool.shutdown(wait=False, cancel_futures=True)
+        except TypeError:
+            pool.shutdown(wait=False)
 
     system_prompt = (
         VIKRAM_SYSTEM_PROMPT
@@ -1241,7 +1251,10 @@ def ask_vikram(question, history):
 
     last_err = None
     search_was_requested = search_requested
+    skip_search_due_to_quota = False
     for model_name, use_search in attempts:
+        if use_search and skip_search_due_to_quota:
+            continue
         for attempt in range(3):
             try:
                 text, sources = _generate(model_name, system_prompt, contents, use_search)
@@ -1253,6 +1266,10 @@ def ask_vikram(question, history):
             except Exception as e:
                 last_err = e
                 err_str = str(e)
+                if "429" in err_str and use_search:
+                    print(f"[VIKRAM CIRCUIT BREAKER] Search grounding 429 quota hit on {model_name}. Bypassing search for remainder of query.")
+                    skip_search_due_to_quota = True
+                    break
                 if "503" in err_str or "429" in err_str:
                     # On Render (0.1 CPU), long sleeps starve gevent's event loop.
                     # 0.5s intervals are enough to survive transient spikes without
