@@ -3,6 +3,8 @@ import sys
 import subprocess
 import json
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 def run_cmd(cmd):
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     return result.returncode, result.stdout.strip(), result.stderr.strip()
@@ -67,7 +69,7 @@ def main():
     if not run_tests():
         sys.exit(1)
         
-    print("\n✅ All pre-deploy checks passed. Safe to push.")
+    print("\n[OK] All pre-deploy checks passed. Safe to push.")
 
 if __name__ == "__main__":
     main()

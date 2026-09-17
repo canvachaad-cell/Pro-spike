@@ -4,6 +4,7 @@
 
 
 **Current Working Set (trading_dashboard):**
+- `trading_dashboard/scripts\predeploy_check.py`
 - `trading_dashboard/scratch\audit_open.json`
 - `trading_dashboard/scratch\probe_open.js`
 - `trading_dashboard/scratch\audit_ledgers.json`
@@ -13,7 +14,6 @@
 - `trading_dashboard/scratch\mockups\_build_concept.py`
 - `trading_dashboard/scratch\mockups\_chk_inst.py`
 - `trading_dashboard/scratch\mockups\_count_dup.py`
-- `trading_dashboard/scratch\mockups\_build_dash2.py`
 
 **Constraints for Today:**
 - Do NOT hallucinate variables or schemas. Use Dynamic Schema Discovery.
