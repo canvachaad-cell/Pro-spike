@@ -486,3 +486,32 @@
 5. Created end-to-end automated Playwright audit test `tests/audit_vikram_stlnetwork.spec.js` asserting panel rendering, query execution, veto trigger enforcement, and verified live balance sheet data without timeouts.
 **FAILED ATTEMPTS**: None.
 **AI PROCESS**: Followed `fix_before_touch` protocol. Isolated blast radius to `dash_pages/_vikram_callback.py` and `conviction_scorer.py`. Formulated hypothesis, tested `build_fundamental_context` in unit Python sandbox, executed full `pytest tests/` suite (38/38 passing), and audited live localhost:8050 with Playwright (`tests/vikram_panel.spec.js` and `tests/audit_vikram_stlnetwork.spec.js` both 100% passing).
+
+---
+
+## BUG-038 — Vikram Latency Degradation via Upstream 503/504 Congestion, Redundant Backoff Sleeps, and Duplicate Scrapes
+**STATUS**: FIXED
+**FILE**: `config/vikram_runtime.json`, `dash_pages/_vikram_callback.py`, `fundamental_fetcher.py`, `tests/audit_vikram_latency.spec.js`, `tests/audit_vikram_stlnetwork.spec.js`
+**SYMPTOM**: Vikram queries suffered from 30–45s response delays ("long thinking" indicator), even when client interaction mechanics were responsive. In addition, queries for unlisted tickers hung the context thread, and upstream load spikes caused cascading multi-model timeouts.
+**ROOT CAUSE**:
+1. **Candidate Model Order vs. Upstream Outage**: `config/vikram_runtime.json` prioritized `gemini-3.6-flash` (1st) and `gemini-3.5-flash` (2nd). Upstream Google API servers suffered from heavy load `503 UNAVAILABLE` spikes on 3.6-flash and `504 DEADLINE_EXCEEDED` timeouts (25s) on 3.5-flash.
+2. **Redundant Exponential Sleep on 503 Overload**: When `gemini-3.6-flash` failed with 503, `ask_vikram` looped 3 times with exponential backoff (`sleep 1s, 2s, 4s = 7s`) retrying the exact same congested model instead of instantly failing over to healthy alternative candidates.
+3. **Delayed Candidate 3 (`gemini-flash-lite-latest`)**: Empirical benchmarks showed `gemini-flash-lite-latest` responds with 100% success in **2.2s–3.2s** on the full 21KB system prompt. However, because it was listed 3rd, it was only invoked after 35+ seconds of cascading failures on candidates 1 and 2.
+4. **Duplicate Standalone Fetch on 404 Tickers**: For unlisted/SME tickers (e.g. `GUJJUBHAI`), `FundamentalFetcher` re-attempted `_fetch_live(symbol, standalone=True)` after having already confirmed a 404 on the exact same standalone URL, locking the context thread for 8.02s and triggering a forced Google Search grounding fallback.
+**FIX**:
+1. Promoted `gemini-flash-lite-latest` to Candidate 0 in `config/vikram_runtime.json` as the primary fast-path model, keeping 3.5-flash and 3.6-flash as secondary fallbacks.
+2. Updated `ask_vikram` retry loop in `dash_pages/_vikram_callback.py` to fail over immediately on `503 UNAVAILABLE` without wasting 7 seconds in exponential sleep.
+3. Guarded `FundamentalFetcher` in `fundamental_fetcher.py` (`if "not found on screener.in" not in str(data.get("error", "")):`) against repeating standalone scrapes when a ticker has already returned 404.
+4. Reduced `api_timeout_ms` from 25000 to 15000 to enforce a strict latency ceiling.
+5. Added automated Playwright latency benchmark `tests/audit_vikram_latency.spec.js` verifying response times remain under 4.5s.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**:
+1. Deep audit via `DEMONCORE: ROOT_CAUSE`. Benchmarked raw model APIs under full 21KB system prompt payload in `scratch/benchmark_models.py` to isolate the 503/504 upstream stall.
+2. Executed end-to-end Playwright latency benchmark on live Dash server (`localhost:8050`):
+   - General Greeting (`"hi"`): **3.16s**
+   - Stock Analysis (`"STLNETWORK"`): **3.11s** (10x speedup from previous 35–45s)
+   - Engine Audit (`"audit alpha leaks"`): **3.64s**
+3. Verified end-to-end stock audit spec `tests/audit_vikram_stlnetwork.spec.js` on live server: passed in **8.6s** (down from 43.8s), rendering complete metric scorecard (Pledge 9/10, Interest 2/10, RoICE 2/10, FCF 0/10), active veto trigger (`🚫 VETO_TRIGGERED`), and conviction score (`0 / 100 — VETO`) with 0 `⏳` placeholders.
+4. Verified golden regression test suite: `python -m pytest tests/` -> 38/38 passed in 1.67s.
+
+

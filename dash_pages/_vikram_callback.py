@@ -1281,15 +1281,15 @@ def ask_vikram(question, history):
                     print(f"[VIKRAM CIRCUIT BREAKER] Search grounding 429 quota hit on {model_name}. Bypassing search for remainder of query.")
                     skip_search_due_to_quota = True
                     break
-                if "503" in err_str or "429" in err_str:
-                    # On Render (0.1 CPU), long sleeps starve gevent's event loop.
-                    # 0.5s intervals are enough to survive transient spikes without
-                    # blocking the worker for 6 seconds per retry.
+                if "503" in err_str:
+                    print(f"[VIKRAM FAILOVER] Model {model_name} returned 503 (high demand). Failing over immediately to next candidate.")
+                    break
+                if "429" in err_str:
                     sleep_sec = 0.5 if os.environ.get("RENDER") else 2 ** attempt
                     time.sleep(sleep_sec)
                     continue
-                elif "timed out" in err_str.lower() or isinstance(e, TimeoutError):
-                    # DEEP_AUDIT CIRCUIT BREAKER: TCP Timeout. Do not loop. Abort static loop immediately.
+                elif "504" in err_str or "deadline" in err_str.lower() or "timed out" in err_str.lower() or isinstance(e, TimeoutError):
+                    print(f"[VIKRAM FAILOVER] Model {model_name} timed out or hit deadline. Failing over immediately to next candidate.")
                     break
                 else:
                     break

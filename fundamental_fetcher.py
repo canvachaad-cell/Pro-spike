@@ -144,9 +144,10 @@ class FundamentalFetcher:
         if _quality_count(data) < MIN_QUALITY_KEYS or _is_financially_hollow(data):
             # hollow consolidated page OR consolidated has holdings but no financials
             # (common for BSE-only small-caps filing standalone accounts only)
-            standalone = self._fetch_live(symbol, standalone=True)
-            if _quality_count(standalone) > _quality_count(data):
-                data = standalone
+            if "not found on screener.in" not in str(data.get("error", "")):
+                standalone = self._fetch_live(symbol, standalone=True)
+                if _quality_count(standalone) > _quality_count(data):
+                    data = standalone
         if _quality_count(data) < MIN_QUALITY_KEYS:
             stale = self._load_cache(symbol, allow_stale=True)
             if stale is not None and _quality_count(stale) >= MIN_QUALITY_KEYS:

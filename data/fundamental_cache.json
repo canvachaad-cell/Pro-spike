@@ -2139,5 +2139,146 @@
    "rpt_status": "NOT_SCRAPED",
    "symbol": "STL"
   }
+ },
+ "BLUESTARCO": {
+  "ts": 1789661492.008552,
+  "data": {
+   "ocf_3yr_cr": [
+    289.0,
+    688.0,
+    154.0
+   ],
+   "price": 1553.0,
+   "rpt_status": "NOT_SCRAPED",
+   "fii_holding": 12.75,
+   "market_cap_cr": 31891.0,
+   "rpt_pct": null,
+   "symbol": "BLUESTARCO",
+   "dii_trend": "Sep 2023: 25.24% -> Dec 2023: 24.82% -> Mar 2024: 24.69% -> Jun 2024: 23.56% -> Sep 2024: 22.84% -> Dec 2024: 22.19% -> Mar 2025: 23.13% -> Jun 2025: 23.37% -> Sep 2025: 25.32% -> Dec 2025: 26.76% -> Mar 2026: 27.78% -> Jun 2026: 28.24%",
+   "borrowings_cr": 810.0,
+   "url": "https://www.screener.in/company/BLUESTARCO/consolidated/",
+   "revenue_ttm_cr": 12797.0,
+   "pledge_direction": "flat",
+   "rpt_amount_cr": null,
+   "ebit_4q_growth": 0.08014354066985646,
+   "promoter_holding": 36.49,
+   "op_lev_inflecting": false,
+   "fii_trend": "Sep 2023: 14.89% -> Dec 2023: 15.38% -> Mar 2024: 15.93% -> Jun 2024: 17.04% -> Sep 2024: 18.06% -> Dec 2024: 18.48% -> Mar 2025: 16.94% -> Jun 2025: 16.21% -> Sep 2025: 16.05% -> Dec 2025: 14.66% -> Mar 2026: 13.80% -> Jun 2026: 12.75%",
+   "name": "Blue Star Ltd",
+   "free_float_cr": 20254,
+   "pledge_trend": [
+    0.0
+   ],
+   "dii_holding": 28.24,
+   "roce_abs_pct": 22.0,
+   "interest_coverage_recent": 12.09,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "quarterly_quarters": 13,
+   "fcf_pat_ratio": 0.74,
+   "roice_pct": 19.3,
+   "promoter_trend": "Sep 2023: 36.49% -> Dec 2023: 36.50% -> Mar 2024: 36.50% -> Jun 2024: 36.53% -> Sep 2024: 36.46% -> Dec 2024: 36.46% -> Mar 2025: 36.47% -> Jun 2025: 36.48% -> Sep 2025: 36.48% -> Dec 2025: 36.48% -> Mar 2026: 36.48% -> Jun 2026: 36.49%",
+   "interest_coverage_trend": "deteriorating",
+   "op_lev_ratio": 1.3582812699222238,
+   "revenue_4q_growth": 0.05900364117841774,
+   "pat_3yr_cr": [
+    414.0,
+    591.0,
+    527.0
+   ]
+  }
+ },
+ "SWIGGY": {
+  "ts": 1789661514.6135795,
+  "data": {
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "dii_trend": "Dec 2024: 7.75% -> Mar 2025: 9.33% -> Jun 2025: 13.53% -> Sep 2025: 15.95% -> Dec 2025: 22.54% -> Mar 2026: 25.45% -> Jun 2026: 27.38%",
+   "revenue_4q_growth": 0.4680499882103277,
+   "fcf_pat_ratio": 0.66,
+   "rpt_pct": null,
+   "roce_abs_pct": -15.5,
+   "op_lev_ratio": null,
+   "pledge_trend": [
+    0.0
+   ],
+   "rpt_amount_cr": null,
+   "ocf_3yr_cr": [
+    -1313.0,
+    -2169.0,
+    -2898.0
+   ],
+   "name": "Swiggy Ltd",
+   "symbol": "SWIGGY",
+   "pat_3yr_cr": [
+    -2350.0,
+    -3117.0,
+    -4154.0
+   ],
+   "borrowings_cr": 2551.0,
+   "ebit_4q_growth": null,
+   "quarterly_quarters": 13,
+   "interest_coverage_trend": "improving",
+   "interest_coverage_recent": -13.91,
+   "dii_holding": 27.38,
+   "free_float_cr": 76379,
+   "pledge_direction": "flat",
+   "revenue_ttm_cr": 24904.0,
+   "url": "https://www.screener.in/company/SWIGGY/consolidated/",
+   "op_lev_inflecting": null,
+   "market_cap_cr": 76379.0,
+   "rpt_status": "NOT_SCRAPED",
+   "promoter_holding": 0.0,
+   "fii_trend": "Dec 2024: 6.19% -> Mar 2025: 4.90% -> Jun 2025: 7.36% -> Sep 2025: 12.23% -> Dec 2025: 16.07% -> Mar 2026: 14.59% -> Jun 2026: 13.96%",
+   "fii_holding": 13.96,
+   "promoter_trend": "0.0% (Professionally Managed / No Promoters)",
+   "roice_pct": 9.3,
+   "price": 276.0
+  }
+ },
+ "GROWW": {
+  "ts": 1789661515.9338496,
+  "data": {
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "dii_trend": "Dec 2025: 4.92% -> Mar 2026: 5.92% -> Jun 2026: 10.08%",
+   "revenue_4q_growth": 0.3773981603153745,
+   "fcf_pat_ratio": -0.03,
+   "rpt_pct": null,
+   "roce_abs_pct": 27.6,
+   "op_lev_ratio": 0.8661923092322388,
+   "pledge_trend": [
+    0.0
+   ],
+   "rpt_amount_cr": null,
+   "ocf_3yr_cr": [
+    885.0,
+    -962.0,
+    -21.0
+   ],
+   "name": "Billionbrains Garage Ventures Ltd",
+   "symbol": "GROWW",
+   "pat_3yr_cr": [
+    -805.0,
+    1824.0,
+    2083.0
+   ],
+   "borrowings_cr": 292.0,
+   "ebit_4q_growth": 0.3268993839835729,
+   "quarterly_quarters": 8,
+   "interest_coverage_trend": "improving",
+   "interest_coverage_recent": 95.66,
+   "dii_holding": 10.08,
+   "free_float_cr": 85660,
+   "pledge_direction": "flat",
+   "revenue_ttm_cr": 5241.0,
+   "url": "https://www.screener.in/company/GROWW/consolidated/",
+   "op_lev_inflecting": false,
+   "market_cap_cr": 117568.0,
+   "rpt_status": "NOT_SCRAPED",
+   "promoter_holding": 27.14,
+   "fii_trend": "Dec 2025: 3.13% -> Mar 2026: 2.51% -> Jun 2026: 6.89%",
+   "fii_holding": 6.89,
+   "promoter_trend": "Dec 2025: 27.81% -> Mar 2026: 27.38% -> Jun 2026: 27.14%",
+   "roice_pct": 35.6,
+   "price": 187.0
+  }
  }
 }
