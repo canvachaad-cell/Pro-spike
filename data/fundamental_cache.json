@@ -227,97 +227,97 @@
   }
  },
  "ALGOQUANT": {
-  "ts": 1789557426.4427204,
+  "ts": 1789702235.204286,
   "data": {
-   "symbol": "ALGOQUANT",
-   "url": "https://www.screener.in/company/ALGOQUANT/consolidated/",
-   "name": "Algoquant Fintech Ltd",
-   "market_cap_cr": 1829.0,
-   "price": 65.0,
-   "promoter_trend": "Sep 2023: 65.91% -> Dec 2023: 65.91% -> Mar 2024: 65.91% -> Jun 2024: 65.91% -> Sep 2024: 65.91% -> Dec 2024: 73.68% -> Mar 2025: 73.68% -> Jun 2025: 73.68% -> Sep 2025: 73.68% -> Dec 2025: 73.68% -> Mar 2026: 73.68% -> Jun 2026: 73.68%",
-   "promoter_holding": 73.68,
-   "dii_trend": "Sep 2023: 0.08% -> Dec 2023: 0.08% -> Mar 2024: 0.08% -> Jun 2024: 0.08% -> Sep 2024: 0.08% -> Dec 2024: 0.06% -> Mar 2025: 0.05% -> Jun 2025: 0.05% -> Sep 2025: 0.02% -> Dec 2025: 0.02% -> Mar 2026: 0.02% -> Jun 2026: 0.09%",
-   "dii_holding": 0.09,
-   "fii_trend": "Sep 2023: 5.62% -> Dec 2023: 5.61% -> Mar 2024: 5.48% -> Jun 2024: 5.51% -> Sep 2024: 5.51% -> Dec 2024: 0.71% -> Mar 2025: 0.71% -> Jun 2025: 0.71% -> Sep 2025: 0.61% -> Dec 2025: 0.64% -> Mar 2026: 1.22% -> Jun 2026: 0.81%",
-   "fii_holding": 0.81,
-   "pledge_trend": [
-    32.4
-   ],
-   "pledge_direction": "flat",
-   "quarterly_quarters": 11,
-   "revenue_ttm_cr": 258.0,
-   "revenue_4q_growth": 0.15695067264573992,
-   "ebit_4q_growth": 0.9714285714285714,
-   "op_lev_ratio": 6.18938775510204,
-   "op_lev_inflecting": true,
-   "interest_coverage_trend": "improving",
-   "interest_coverage_recent": 8.79,
    "ocf_3yr_cr": [
     -10.0,
     60.0,
     60.0
    ],
+   "url": "https://www.screener.in/company/ALGOQUANT/consolidated/",
+   "roce_abs_pct": 31.5,
+   "symbol": "ALGOQUANT",
+   "interest_coverage_trend": "improving",
+   "borrowings_cr": 34.0,
+   "rpt_status": "NOT_SCRAPED",
+   "fii_holding": 0.81,
+   "market_cap_cr": 1971.0,
+   "revenue_ttm_cr": 258.0,
+   "ebit_4q_growth": 0.9714285714285714,
+   "roice_pct": null,
+   "op_lev_inflecting": true,
+   "rpt_pct": null,
+   "dii_holding": 0.09,
+   "dii_trend": "Sep 2023: 0.08% -> Dec 2023: 0.08% -> Mar 2024: 0.08% -> Jun 2024: 0.08% -> Sep 2024: 0.08% -> Dec 2024: 0.06% -> Mar 2025: 0.05% -> Jun 2025: 0.05% -> Sep 2025: 0.02% -> Dec 2025: 0.02% -> Mar 2026: 0.02% -> Jun 2026: 0.09%",
+   "rpt_amount_cr": null,
+   "promoter_trend": "Sep 2023: 65.91% -> Dec 2023: 65.91% -> Mar 2024: 65.91% -> Jun 2024: 65.91% -> Sep 2024: 65.91% -> Dec 2024: 73.68% -> Mar 2025: 73.68% -> Jun 2025: 73.68% -> Sep 2025: 73.68% -> Dec 2025: 73.68% -> Mar 2026: 73.68% -> Jun 2026: 73.68%",
+   "quarterly_quarters": 11,
+   "promoter_holding": 73.68,
+   "fcf_pat_ratio": 1.22,
    "pat_3yr_cr": [
     25.0,
     32.0,
     33.0
    ],
-   "fcf_pat_ratio": 1.22,
-   "roce_abs_pct": 31.5,
-   "borrowings_cr": 34.0,
-   "free_float_cr": 481,
-   "rpt_status": "NOT_SCRAPED",
-   "rpt_pct": null,
-   "rpt_amount_cr": null,
-   "roice_pct": null,
-   "pledge_note": null
+   "pledge_direction": "flat",
+   "free_float_cr": 519,
+   "fii_trend": "Sep 2023: 5.62% -> Dec 2023: 5.61% -> Mar 2024: 5.48% -> Jun 2024: 5.51% -> Sep 2024: 5.51% -> Dec 2024: 0.71% -> Mar 2025: 0.71% -> Jun 2025: 0.71% -> Sep 2025: 0.61% -> Dec 2025: 0.64% -> Mar 2026: 1.22% -> Jun 2026: 0.81%",
+   "price": 70.1,
+   "pledge_trend": [
+    32.4
+   ],
+   "revenue_4q_growth": 0.15695067264573992,
+   "pledge_note": null,
+   "op_lev_ratio": 6.18938775510204,
+   "name": "Algoquant Fintech Ltd",
+   "interest_coverage_recent": 8.79
   }
  },
  "SAKSOFT": {
-  "ts": 1789577657.0703876,
+  "ts": 1789702166.7526586,
   "data": {
-   "symbol": "SAKSOFT",
-   "url": "https://www.screener.in/company/SAKSOFT/consolidated/",
-   "name": "Saksoft Ltd",
-   "market_cap_cr": 1869.0,
-   "price": 141.0,
-   "promoter_trend": "Sep 2023: 66.66% -> Dec 2023: 66.64% -> Mar 2024: 66.64% -> Jun 2024: 66.64% -> Sep 2024: 66.64% -> Dec 2024: 66.64% -> Mar 2025: 66.68% -> Jun 2025: 66.68% -> Sep 2025: 66.68% -> Dec 2025: 66.68% -> Mar 2026: 66.72% -> Jun 2026: 66.72%",
-   "promoter_holding": 66.72,
-   "dii_trend": "Sep 2023: 0.00% -> Dec 2023: 0.03% -> Mar 2024: 0.00% -> Jun 2024: 0.00% -> Sep 2024: 0.00% -> Dec 2024: 0.00% -> Mar 2025: 0.05% -> Jun 2025: 0.00% -> Sep 2025: 0.14% -> Dec 2025: 0.14% -> Mar 2026: 0.00% -> Jun 2026: 0.01%",
-   "dii_holding": 0.01,
-   "fii_trend": "Sep 2023: 3.96% -> Dec 2023: 3.93% -> Mar 2024: 4.00% -> Jun 2024: 3.53% -> Sep 2024: 3.25% -> Dec 2024: 2.86% -> Mar 2025: 2.79% -> Jun 2025: 2.78% -> Sep 2025: 2.29% -> Dec 2025: 2.23% -> Mar 2026: 2.40% -> Jun 2026: 2.18%",
-   "fii_holding": 2.18,
-   "pledge_trend": [
-    0.0
-   ],
-   "pledge_direction": "flat",
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "quarterly_quarters": 13,
-   "revenue_ttm_cr": 1007.0,
-   "revenue_4q_growth": 0.08163265306122448,
-   "ebit_4q_growth": 0.18471337579617833,
-   "op_lev_ratio": 2.2627388535031847,
-   "op_lev_inflecting": true,
-   "interest_coverage_trend": "improving",
-   "interest_coverage_recent": 28.88,
    "ocf_3yr_cr": [
     117.0,
     111.0,
     171.0
    ],
+   "url": "https://www.screener.in/company/SAKSOFT/consolidated/",
+   "roce_abs_pct": 22.7,
+   "symbol": "SAKSOFT",
+   "interest_coverage_trend": "improving",
+   "borrowings_cr": 44.0,
+   "rpt_status": "NOT_SCRAPED",
+   "fii_holding": 2.18,
+   "market_cap_cr": 1894.0,
+   "revenue_ttm_cr": 1007.0,
+   "ebit_4q_growth": 0.18471337579617833,
+   "roice_pct": 19.5,
+   "op_lev_inflecting": true,
+   "rpt_pct": null,
+   "dii_holding": 0.01,
+   "dii_trend": "Sep 2023: 0.00% -> Dec 2023: 0.03% -> Mar 2024: 0.00% -> Jun 2024: 0.00% -> Sep 2024: 0.00% -> Dec 2024: 0.00% -> Mar 2025: 0.05% -> Jun 2025: 0.00% -> Sep 2025: 0.14% -> Dec 2025: 0.14% -> Mar 2026: 0.00% -> Jun 2026: 0.01%",
+   "rpt_amount_cr": null,
+   "promoter_trend": "Sep 2023: 66.66% -> Dec 2023: 66.64% -> Mar 2024: 66.64% -> Jun 2024: 66.64% -> Sep 2024: 66.64% -> Dec 2024: 66.64% -> Mar 2025: 66.68% -> Jun 2025: 66.68% -> Sep 2025: 66.68% -> Dec 2025: 66.68% -> Mar 2026: 66.72% -> Jun 2026: 66.72%",
+   "quarterly_quarters": 13,
+   "promoter_holding": 66.72,
+   "fcf_pat_ratio": 1.18,
    "pat_3yr_cr": [
     96.0,
     109.0,
     133.0
    ],
-   "fcf_pat_ratio": 1.18,
-   "roice_pct": 19.5,
-   "roce_abs_pct": 22.7,
-   "borrowings_cr": 44.0,
-   "free_float_cr": 622,
-   "rpt_status": "NOT_SCRAPED",
-   "rpt_pct": null,
-   "rpt_amount_cr": null
+   "pledge_direction": "flat",
+   "free_float_cr": 630,
+   "fii_trend": "Sep 2023: 3.96% -> Dec 2023: 3.93% -> Mar 2024: 4.00% -> Jun 2024: 3.53% -> Sep 2024: 3.25% -> Dec 2024: 2.86% -> Mar 2025: 2.79% -> Jun 2025: 2.78% -> Sep 2025: 2.29% -> Dec 2025: 2.23% -> Mar 2026: 2.40% -> Jun 2026: 2.18%",
+   "price": 143.0,
+   "pledge_trend": [
+    0.0
+   ],
+   "revenue_4q_growth": 0.08163265306122448,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "op_lev_ratio": 2.2627388535031847,
+   "name": "Saksoft Ltd",
+   "interest_coverage_recent": 28.88
   }
  },
  "EMAMILTD": {
@@ -463,50 +463,50 @@
   }
  },
  "EMIL": {
-  "ts": 1789472975.833002,
+  "ts": 1789702254.184053,
   "data": {
-   "symbol": "EMIL",
-   "url": "https://www.screener.in/company/EMIL/consolidated/",
-   "name": "Electronics Mart India Ltd",
-   "market_cap_cr": 7121.0,
-   "price": 185.0,
-   "promoter_trend": "Sep 2023: 72.97% -> Dec 2023: 72.97% -> Mar 2024: 72.97% -> Jun 2024: 72.97% -> Sep 2024: 65.17% -> Dec 2024: 65.17% -> Mar 2025: 65.17% -> Jun 2025: 65.17% -> Sep 2025: 65.17% -> Dec 2025: 65.17% -> Mar 2026: 65.17% -> Jun 2026: 65.17%",
-   "promoter_holding": 65.17,
-   "dii_trend": "Sep 2023: 15.18% -> Dec 2023: 16.50% -> Mar 2024: 16.73% -> Jun 2024: 16.96% -> Sep 2024: 18.93% -> Dec 2024: 17.96% -> Mar 2025: 18.55% -> Jun 2025: 17.22% -> Sep 2025: 17.90% -> Dec 2025: 18.93% -> Mar 2026: 20.08% -> Jun 2026: 20.89%",
-   "dii_holding": 20.89,
-   "fii_trend": "Sep 2023: 4.51% -> Dec 2023: 4.99% -> Mar 2024: 5.12% -> Jun 2024: 4.95% -> Sep 2024: 8.80% -> Dec 2024: 9.23% -> Mar 2025: 8.68% -> Jun 2025: 7.18% -> Sep 2025: 6.86% -> Dec 2025: 6.15% -> Mar 2026: 5.19% -> Jun 2026: 4.77%",
-   "fii_holding": 4.77,
-   "pledge_trend": [
-    0.0
-   ],
-   "pledge_direction": "flat",
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "quarterly_quarters": 13,
-   "revenue_ttm_cr": 7863.0,
-   "revenue_4q_growth": 0.2017423200366804,
-   "ebit_4q_growth": 0.4164588528678304,
-   "op_lev_ratio": 2.064310813874405,
-   "op_lev_inflecting": true,
-   "interest_coverage_trend": "improving",
-   "interest_coverage_recent": 3.72,
    "ocf_3yr_cr": [
     160.0,
     176.0,
     444.0
    ],
+   "url": "https://www.screener.in/company/EMIL/consolidated/",
+   "roce_abs_pct": 12.1,
+   "symbol": "EMIL",
+   "interest_coverage_trend": "improving",
+   "borrowings_cr": 1997.0,
+   "rpt_status": "NOT_FOUND",
+   "fii_holding": 4.77,
+   "market_cap_cr": 7121.0,
+   "revenue_ttm_cr": 7863.0,
+   "ebit_4q_growth": 0.4164588528678304,
+   "roice_pct": 10.1,
+   "op_lev_inflecting": true,
+   "rpt_pct": null,
+   "dii_holding": 20.89,
+   "dii_trend": "Sep 2023: 15.18% -> Dec 2023: 16.50% -> Mar 2024: 16.73% -> Jun 2024: 16.96% -> Sep 2024: 18.93% -> Dec 2024: 17.96% -> Mar 2025: 18.55% -> Jun 2025: 17.22% -> Sep 2025: 17.90% -> Dec 2025: 18.93% -> Mar 2026: 20.08% -> Jun 2026: 20.89%",
+   "rpt_amount_cr": null,
+   "promoter_trend": "Sep 2023: 72.97% -> Dec 2023: 72.97% -> Mar 2024: 72.97% -> Jun 2024: 72.97% -> Sep 2024: 65.17% -> Dec 2024: 65.17% -> Mar 2025: 65.17% -> Jun 2025: 65.17% -> Sep 2025: 65.17% -> Dec 2025: 65.17% -> Mar 2026: 65.17% -> Jun 2026: 65.17%",
+   "quarterly_quarters": 13,
+   "promoter_holding": 65.17,
+   "fcf_pat_ratio": 1.73,
    "pat_3yr_cr": [
     184.0,
     160.0,
     107.0
    ],
-   "fcf_pat_ratio": 1.73,
-   "roice_pct": 10.1,
-   "roce_abs_pct": 12.1,
-   "borrowings_cr": 1997.0,
+   "pledge_direction": "flat",
    "free_float_cr": 2480,
-   "rpt_status": "NOT_FOUND",
-   "rpt_pct": null,
-   "rpt_amount_cr": null
+   "fii_trend": "Sep 2023: 4.51% -> Dec 2023: 4.99% -> Mar 2024: 5.12% -> Jun 2024: 4.95% -> Sep 2024: 8.80% -> Dec 2024: 9.23% -> Mar 2025: 8.68% -> Jun 2025: 7.18% -> Sep 2025: 6.86% -> Dec 2025: 6.15% -> Mar 2026: 5.19% -> Jun 2026: 4.77%",
+   "price": 185.0,
+   "pledge_trend": [
+    0.0
+   ],
+   "revenue_4q_growth": 0.2017423200366804,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "op_lev_ratio": 2.064310813874405,
+   "name": "Electronics Mart India Ltd",
+   "interest_coverage_recent": 3.72
   }
  },
  "GABRIEL": {
@@ -2279,6 +2279,54 @@
    "promoter_trend": "Dec 2025: 27.81% -> Mar 2026: 27.38% -> Jun 2026: 27.14%",
    "roice_pct": 35.6,
    "price": 187.0
+  }
+ },
+ "JOJO": {
+  "ts": 1789702299.948009,
+  "data": {
+   "ocf_3yr_cr": [
+    -0.7,
+    -12.9,
+    10.5
+   ],
+   "url": "https://www.screener.in/company/531910/consolidated/",
+   "roce_abs_pct": 17.8,
+   "symbol": "JOJO",
+   "interest_coverage_trend": "improving",
+   "borrowings_cr": 3.0,
+   "rpt_status": "NOT_SCRAPED",
+   "fii_holding": null,
+   "market_cap_cr": 1559.0,
+   "revenue_ttm_cr": 26.74,
+   "ebit_4q_growth": null,
+   "roice_pct": 20.3,
+   "op_lev_inflecting": null,
+   "rpt_pct": null,
+   "dii_holding": null,
+   "dii_trend": null,
+   "rpt_amount_cr": null,
+   "promoter_trend": "Dec 2023: 3.91% -> Mar 2024: 65.08% -> Jun 2024: 65.08% -> Sep 2024: 66.49% -> Dec 2024: 66.49% -> Mar 2025: 66.49% -> Jun 2025: 66.49% -> Sep 2025: 66.49% -> Dec 2025: 67.80% -> Mar 2026: 67.80% -> Jun 2026: 67.79%",
+   "quarterly_quarters": 13,
+   "promoter_holding": 67.79,
+   "fcf_pat_ratio": -0.49,
+   "pat_3yr_cr": [
+    2.3,
+    -1.7,
+    5.6
+   ],
+   "pledge_direction": "flat",
+   "free_float_cr": 502,
+   "fii_trend": null,
+   "price": 226.0,
+   "pledge_trend": [
+    0.0
+   ],
+   "revenue_4q_growth": 3.355048859934853,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "op_lev_ratio": null,
+   "name": "JOJO Ltd",
+   "interest_coverage_recent": 12.0,
+   "interest_coverage_data_note": "limited_history_5q"
   }
  }
 }

@@ -514,4 +514,17 @@
 3. Verified end-to-end stock audit spec `tests/audit_vikram_stlnetwork.spec.js` on live server: passed in **8.6s** (down from 43.8s), rendering complete metric scorecard (Pledge 9/10, Interest 2/10, RoICE 2/10, FCF 0/10), active veto trigger (`🚫 VETO_TRIGGERED`), and conviction score (`0 / 100 — VETO`) with 0 `⏳` placeholders.
 4. Verified golden regression test suite: `python -m pytest tests/` -> 38/38 passed in 1.67s.
 
+---
 
+## BUG-039 — Institutional Signals Mobile View Pinned Date Instead of Symbol
+**STATUS**: FIXED
+**FILE**: `dash_pages/institutional_signals.py`
+**SYMPTOM**: On mobile viewports (<768px), when scrolling horizontally to view wide table contents in the Institutional Signals Engine, the `DATE` column remained static/pinned with a black background (`bg-[#0a0a0a]`), while the `SYMBOL` column scrolled off-screen. Consequently, traders could not see which ticker corresponded to which metric. Furthermore, critical AI Probability/Conviction metrics (`AI_WIN_PROBABILITY`, `AI_SCORE`, `AI_STATUS`) were buried 4–5 columns deep, requiring extensive horizontal panning.
+**ROOT CAUSE**: In `legacy_table()`, `alpha_table()`, `flexgate_table()`, `completed_trades()`, and `velocity_simulation()`, table column definitions placed `DATE` / `ENTRY_DATE` at index 0. Because `_grid_table` and `_grid_row` applied sticky styling (`sticky left-0 z-10/30 bg-[#0a0a0a] ...`) to index 0 (`cells[0]` and `header_cells[0]`), the Date column was pinned rather than Symbol.
+**FIX**:
+1. Reordered columns across all engine tabs so `SYMBOL` is at index 0 and `AI Probability` (`AI_WIN_PROBABILITY` in Alpha, `AI_SCORE` in Legacy, `AI_STATUS` in FlexGate, `ENTRY_AI_PROB` in Completed Trades) is at index 1.
+2. Formatted Symbol with high-contrast text (`font-semibold text-on-surface`) inside the sticky left-0 container (`bg-[#0a0a0a]` with inset depth shadow `shadow-[8px_0_12px_-8px_rgba(0,0,0,0.55)]`).
+3. Added matching sticky header cell to `completed_trades()` and `velocity_simulation()` ledger tables to prevent header/body drift on horizontal pan.
+4. Optimized mobile column widths (`SYMBOL` at `minmax(150px, 1.5fr)`, `AI Probability` at `minmax(110px, 1.0fr)`) so Symbol and AI Probability are visible simultaneously on 360px–412px screens before horizontal scroll begins.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Full compliance with `fix_before_touch` protocol. Verified syntax via `py_compile`. Ran unit test suites (`test_unit_table.py`, `test_schema_contracts.py` 11/11 passed). Verified programmatic table headers and column alignment via automated inspection script.

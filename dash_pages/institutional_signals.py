@@ -188,9 +188,9 @@ def legacy_table():
         if date_raw.notna().any():
             is_today = date_raw == date_raw.max()
 
-    cols = ["DATE", "SYMBOL", "EXCHANGE", "CLOSE", "AI_SCORE", "SIS", "Whale_Density", "Implied_Trades", "STABILITY_RAW", "TRIGGER_COUNT_30D", "DELIV_PER", "DELIVERY_TURNOVER", "ATW"]
+    cols = ["SYMBOL", "AI_SCORE", "DATE", "EXCHANGE", "CLOSE", "SIS", "Whale_Density", "Implied_Trades", "STABILITY_RAW", "TRIGGER_COUNT_30D", "DELIV_PER", "DELIVERY_TURNOVER", "ATW"]
     avail = [c for c in cols if c in df.columns]
-    wide = {"DATE": "minmax(115px, 1fr)", "SYMBOL": "minmax(190px, 1.8fr)"}
+    wide = {"SYMBOL": "minmax(160px, 1.6fr)", "AI_SCORE": "minmax(90px, 0.9fr)", "DATE": "minmax(110px, 1fr)"}
     tpl = _template(avail, wide)
     fmt = {
         "CLOSE": lambda v: _f(v, "{:.2f}", "₹"),
@@ -232,7 +232,7 @@ def legacy_table():
         cells = []
         for c in avail:
             if c == "SYMBOL":
-                cells.append(html.Div(sym, className="font-semibold"))
+                cells.append(html.Div(sym, className="font-semibold text-on-surface"))
             elif c == "DATE":
                 cells.append(html.Div(str(r.get(c, "-")) if pd.notna(r.get(c)) else "-", className="text-on-surface-variant"))
             elif c == "EXCHANGE":
@@ -257,9 +257,9 @@ def alpha_table():
     if "DATE" in df.columns:
         df = df.assign(DATE=_fmt_date(df["DATE"]))
 
-    cols = ["DATE", "SYMBOL", "EXCHANGE", "ENTRY_PRICE", "CLOSE", "AI_WIN_PROBABILITY", "SIS", "Whale_Density", "Implied_Trades", "STOP_LOSS", "TAKE_PROFIT", "REC_POS_SIZE_INR", "ATR14"]
+    cols = ["SYMBOL", "AI_WIN_PROBABILITY", "DATE", "EXCHANGE", "ENTRY_PRICE", "CLOSE", "SIS", "Whale_Density", "Implied_Trades", "STOP_LOSS", "TAKE_PROFIT", "REC_POS_SIZE_INR", "ATR14"]
     avail = [c for c in cols if c in df.columns]
-    wide = {"DATE": "minmax(115px, 1fr)", "SYMBOL": "minmax(170px, 1.6fr)", "STOP_LOSS": "minmax(150px, 1.3fr)", "TAKE_PROFIT": "minmax(150px, 1.3fr)"}
+    wide = {"SYMBOL": "minmax(150px, 1.5fr)", "AI_WIN_PROBABILITY": "minmax(115px, 1.1fr)", "DATE": "minmax(110px, 1fr)", "STOP_LOSS": "minmax(140px, 1.2fr)", "TAKE_PROFIT": "minmax(140px, 1.2fr)"}
     tpl = _template(avail, wide)
 
     rows = []
@@ -268,7 +268,7 @@ def alpha_table():
         cells = []
         for c in avail:
             if c == "SYMBOL":
-                cells.append(html.Div(str(r.get(c, "")), className="font-semibold"))
+                cells.append(html.Div(str(r.get(c, "")), className="font-semibold text-on-surface"))
             elif c == "DATE":
                 cells.append(html.Div(str(r.get(c, "-")) if pd.notna(r.get(c)) else "-", className="text-on-surface-variant"))
             elif c == "EXCHANGE":
@@ -322,9 +322,9 @@ def completed_trades():
     if "EXIT_DATE" in completed.columns:
         completed["EXIT_DATE"] = _fmt_date(completed["EXIT_DATE"])
 
-    cols = ["ENTRY_DATE", "SYMBOL", "STATUS", "ENTRY_AI_PROB", "ENTRY_WHALE_DENSITY", "ENTRY_PRICE", "EXIT_PRICE", "EXIT_DATE", "STOP_LOSS", "TAKE_PROFIT"]
+    cols = ["SYMBOL", "ENTRY_AI_PROB", "STATUS", "ENTRY_DATE", "ENTRY_PRICE", "EXIT_PRICE", "EXIT_DATE", "ENTRY_WHALE_DENSITY", "STOP_LOSS", "TAKE_PROFIT"]
     avail = [c for c in cols if c in completed.columns]
-    wide = {"ENTRY_DATE": "minmax(115px, 1fr)", "SYMBOL": "minmax(165px, 1.5fr)", "EXIT_PRICE": "minmax(150px, 1.3fr)", "STOP_LOSS": "minmax(145px, 1.25fr)", "TAKE_PROFIT": "minmax(145px, 1.25fr)"}
+    wide = {"SYMBOL": "minmax(150px, 1.5fr)", "ENTRY_AI_PROB": "minmax(110px, 1fr)", "ENTRY_DATE": "minmax(110px, 1fr)", "EXIT_PRICE": "minmax(140px, 1.2fr)", "STOP_LOSS": "minmax(140px, 1.2fr)", "TAKE_PROFIT": "minmax(140px, 1.2fr)"}
     tpl = _template(avail, wide)
 
     rows = []
@@ -333,7 +333,7 @@ def completed_trades():
         cells = []
         for c in avail:
             if c == "SYMBOL":
-                cells.append(html.Div(str(r.get(c, "")), className="font-semibold"))
+                cells.append(html.Div(str(r.get(c, "")), className="font-semibold text-on-surface"))
             elif c == "STATUS":
                 badge = _STATUS_BADGE.get(str(r.get(c, "")), "text-on-surface-variant")
                 cells.append(html.Div(str(r.get(c, "-")), className=f"{badge}"))
@@ -376,6 +376,11 @@ def completed_trades():
             )
         )
 
+    header_cells = [
+        html.Div(c, className="sticky left-0 z-30 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 max-md:pl-3 py-3 max-md:py-2 -my-3 shadow-[8px_0_12px_-8px_rgba(0,0,0,0.55)]") if i == 0 else html.Div(c)
+        for i, c in enumerate(avail)
+    ]
+
     return html.Details(
         className="glass-panel rounded-2xl mt-4 overflow-x-auto",
         tabIndex="0",
@@ -386,9 +391,9 @@ def completed_trades():
                 style={"minWidth": "1150px"},
                 children=[
                     html.Div(
-                        className="grid gap-2 px-4 py-3 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words",
+                        className="grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words sticky top-0 z-20 bg-[#0a0a0a]",
                         style={"gridTemplateColumns": tpl},
-                        children=[html.Div(c) for c in avail],
+                        children=header_cells,
                     )
                 ] + rows + completed_footer,
             ),
@@ -407,11 +412,11 @@ def flexgate_table(path, missing_msg, empty_msg):
         df = df.assign(DATE=_fmt_date(df["DATE"]))
 
     has_ai = ("AI_WIN_PROBABILITY" in df.columns) and ("AI_APPROVED" in df.columns)
-    cols = ["DATE", "SYMBOL", "EXCHANGE", "CLOSE", "AI_STATUS", "SIS", "Whale_Density", "Implied_Trades", "CHANDELIER_EXIT", "REC_POS_SIZE_INR", "ATR14"]
+    cols = ["SYMBOL", "AI_STATUS", "DATE", "EXCHANGE", "CLOSE", "SIS", "Whale_Density", "Implied_Trades", "CHANDELIER_EXIT", "REC_POS_SIZE_INR", "ATR14"]
     avail = [c for c in cols if c in df.columns or c == "AI_STATUS"]
     if not has_ai:
         avail = [c for c in avail if c != "AI_STATUS"]
-    wide = {"DATE": "minmax(115px, 1fr)", "SYMBOL": "minmax(170px, 1.5fr)"}
+    wide = {"SYMBOL": "minmax(150px, 1.5fr)", "AI_STATUS": "minmax(110px, 1fr)", "DATE": "minmax(110px, 1fr)"}
     tpl = _template(avail, wide)
 
     rows = []
@@ -419,7 +424,7 @@ def flexgate_table(path, missing_msg, empty_msg):
         cells = []
         for c in avail:
             if c == "SYMBOL":
-                cells.append(html.Div(str(r.get(c, "")), className="font-semibold"))
+                cells.append(html.Div(str(r.get(c, "")), className="font-semibold text-on-surface"))
             elif c == "DATE":
                 cells.append(html.Div(str(r.get(c, "-")) if pd.notna(r.get(c)) else "-", className="text-on-surface-variant"))
             elif c == "EXCHANGE":
@@ -590,8 +595,8 @@ def velocity_simulation(ledger_csv, risk_pct, ai_threshold=None, title="₹10L V
     if sim_records:
         sim_df = pd.DataFrame(sim_records)
         sim_df = sim_df.sort_values(by="DATE", ascending=False)
-        sim_cols = ["DATE", "SYMBOL", "STATUS", "INVESTED", "CURR_VALUE", "REALIZED_PNL", "UNREALIZED_PNL", "TOTAL_PNL", "PNL_%"]
-        sim_wide = {"DATE": "minmax(115px, 1fr)", "SYMBOL": "minmax(160px, 1.4fr)"}
+        sim_cols = ["SYMBOL", "STATUS", "DATE", "INVESTED", "CURR_VALUE", "REALIZED_PNL", "UNREALIZED_PNL", "TOTAL_PNL", "PNL_%"]
+        sim_wide = {"SYMBOL": "minmax(150px, 1.4fr)", "DATE": "minmax(110px, 1fr)"}
         sim_tpl = _template(sim_cols, sim_wide)
         sim_status_class = {
             "ACTIVE": "text-[#f1c40f] font-semibold",
@@ -603,8 +608,10 @@ def velocity_simulation(ledger_csv, risk_pct, ai_threshold=None, title="₹10L V
             cells = []
             for c in sim_cols:
                 v = r.get(c)
-                if c in ("DATE", "SYMBOL"):
-                    cells.append(html.Div("-" if v is None or pd.isna(v) else str(v), className="text-on-surface" if c == "SYMBOL" else "text-on-surface-variant"))
+                if c == "SYMBOL":
+                    cells.append(html.Div("-" if v is None or pd.isna(v) else str(v), className="text-on-surface font-semibold"))
+                elif c == "DATE":
+                    cells.append(html.Div("-" if v is None or pd.isna(v) else str(v), className="text-on-surface-variant"))
                 elif c == "STATUS":
                     cells.append(html.Div("-" if v is None or pd.isna(v) else str(v), className=sim_status_class.get(str(v), "text-[#95a5a6]")))
                 elif c in ("INVESTED", "CURR_VALUE"):
@@ -627,6 +634,11 @@ def velocity_simulation(ledger_csv, risk_pct, ai_threshold=None, title="₹10L V
                 )
             )
 
+        sim_header_cells = [
+            html.Div(c, className="sticky left-0 z-30 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 max-md:pl-3 py-3 max-md:py-2 -my-3 shadow-[8px_0_12px_-8px_rgba(0,0,0,0.55)]") if i == 0 else html.Div(c)
+            for i, c in enumerate(sim_cols)
+        ]
+
         ledger_section.append(
             html.Details(
                 className="glass-panel rounded-2xl mt-4 overflow-x-auto",
@@ -638,9 +650,9 @@ def velocity_simulation(ledger_csv, risk_pct, ai_threshold=None, title="₹10L V
                         style={"minWidth": "950px"},
                         children=[
                             html.Div(
-                                className="grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words",
+                                className="grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words sticky top-0 z-20 bg-[#0a0a0a]",
                                 style={"gridTemplateColumns": sim_tpl},
-                                children=[html.Div(c) for c in sim_cols],
+                                children=sim_header_cells,
                             )
                         ] + rows,
                     ),
