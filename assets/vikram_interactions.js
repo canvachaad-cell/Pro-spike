@@ -94,4 +94,34 @@
             focusInput();
         }
     });
+
+    // 3. Dropdown A11y Sanitizer: ensure accessible label and prevent aria-hidden-focus violations in dcc.Dropdown
+    function sanitizeAriaHiddenFocus() {
+        var targets = document.querySelectorAll('.dash-dropdown-focus-target, .Select-input input');
+        targets.forEach(function (el) {
+            if (!el.getAttribute('aria-label')) {
+                el.setAttribute('aria-label', 'Search stock');
+            }
+            var hiddenParent = el.closest('[aria-hidden="true"]');
+            if (hiddenParent && hiddenParent !== el) {
+                hiddenParent.removeAttribute('aria-hidden');
+            }
+            if (el.getAttribute('aria-hidden') === 'true') {
+                el.removeAttribute('aria-hidden');
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', sanitizeAriaHiddenFocus);
+    } else {
+        sanitizeAriaHiddenFocus();
+    }
+    window.addEventListener('load', sanitizeAriaHiddenFocus);
+
+    // Watch for dynamically rendered dropdowns on page navigation
+    var bodyObserver = new MutationObserver(function () {
+        sanitizeAriaHiddenFocus();
+    });
+    bodyObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
 })();

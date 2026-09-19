@@ -100,7 +100,7 @@ def layout():
         children=[
             html.Header(
                 children=[
-                    html.H2("Data Health", className="font-display-lg text-[36px] text-on-surface tracking-tight"),
+                    html.H1("Data Health", className="font-display-lg text-[36px] text-on-surface tracking-tight"),
                     html.P(f"Feed freshness and sync status. Background sync last ran: {last_run}.",
                            className="font-body-md text-on-surface-variant"),
                 ]

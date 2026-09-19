@@ -101,6 +101,8 @@ def ledger_table(path, engine_name):
         ))
     return html.Div(
         className="table-scroll-wrapper",
+        tabIndex="0",
+        **{"aria-label": f"{engine_name} Performance Ledger Table"},
         children=[
             html.Div(
                 className="glass-panel rounded-2xl overflow-hidden",
@@ -151,7 +153,7 @@ def layout():
         children=[
             html.Header(
                 children=[
-                    html.H2("Win Rate", className="font-display-lg text-[36px] text-on-surface tracking-tight"),
+                    html.H1("Win Rate", className="font-display-lg text-[36px] text-on-surface tracking-tight"),
                     html.P("Performance report: manual watchlist trades and engine ledger outcomes.",
                            className="font-body-md text-on-surface-variant"),
                 ]

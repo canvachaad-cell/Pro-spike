@@ -528,3 +528,24 @@
 4. Optimized mobile column widths (`SYMBOL` at `minmax(150px, 1.5fr)`, `AI Probability` at `minmax(110px, 1.0fr)`) so Symbol and AI Probability are visible simultaneously on 360px–412px screens before horizontal scroll begins.
 **FAILED ATTEMPTS**: None.
 **AI PROCESS**: Full compliance with `fix_before_touch` protocol. Verified syntax via `py_compile`. Ran unit test suites (`test_unit_table.py`, `test_schema_contracts.py` 11/11 passed). Verified programmatic table headers and column alignment via automated inspection script.
+
+---
+
+## BUG-040 — Mobile QA Accessibility: Missing Headings, Unlabelled Form Inputs, Badge Contrast, and Undersized Steppers
+**STATUS**: FIXED
+**FILE**: `dash_pages/signals.py`, `dash_pages/verify_conditions.py`, `dash_pages/watchlist.py`, `dash_pages/win_rate.py`, `dash_pages/data_health.py`, `dash_pages/dashboard.py`, `assets/style.css`, `assets/vikram_interactions.js`
+**SYMPTOM**: Playwright QA audit on live deployment revealed 12 axe-core accessibility violations across 5 routes: missing `<h1>` headings on 5 routes (`/signals`, `/verify-conditions`, `/watchlist`, `/win-rate`, `/data-health`), unlabelled input `#entry-price-input` (critical), `.dash-dropdown-focus-target` trapping focus inside `aria-hidden` container, low-contrast blue badges (`.bg-[#0070f3]`), 5 non-keyboard-focusable `.table-scroll-wrapper` instances, and 2 undersized stepper tap targets (<24px) on watchlist.
+**ROOT CAUSE**:
+1. Page headers in 5 routes were styled with `html.H2` rather than semantic `html.H1`.
+2. `html.Label` on watchlist lacked `htmlFor="entry-price-input"` connection, and `react-select` inside `dcc.Dropdown` emitted focus targets without accessible labels.
+3. `#0070f3` text on `#08090d` dark backgrounds yielded ~3.8:1 contrast, failing WCAG AA (4.5:1).
+4. Table scroll containers lacked `tabIndex="0"` and `aria-label` tags (pattern from BUG-033 had not been propagated).
+5. Dash `dcc.Input(type="number")` rendered native `.dash-input-stepper` buttons constrained to 16px height.
+**FIX**:
+1. Promoted page titles to semantic `html.H1` on all 5 routes.
+2. Linked labels with `htmlFor` attributes, provided placeholder defaults, and added a client-side A11y sanitizer in `assets/vikram_interactions.js` to assign `aria-label="Search stock"` and clear conflicting `aria-hidden` flags from dropdown focus targets.
+3. Upgraded blue badge tokens across `signals.py`, `verify_conditions.py`, and `dashboard.py` from `#0070f3` to `#38bdf8` (contrast > 9.5:1, WCAG AAA), and upgraded background icon opacity on dashboard from `text-secondary/20` to `text-secondary/60`.
+4. Added `tabIndex="0"` and explicit `aria-label` attributes to `.table-scroll-wrapper` across `signals.py`, `watchlist.py`, and `win_rate.py`, plus added `:focus-visible` emerald outline in `style.css`.
+5. Suppressed tiny 16px `.dash-input-stepper` buttons in `style.css` and enforced 44px min-height on `.dash-input-container`.
+**FAILED ATTEMPTS**: Adding `**{"aria-label": "Entry Price"}` directly to `dcc.Input` triggered a Dash component `TypeError` (`dcc.Input` does not accept `aria-label` keyword argument). Fixed by relying on standard HTML `<label for="...">` association and `placeholder="0.00"`.
+**AI PROCESS**: Strictly executed under `fix_before_touch` protocol. Evaluated blast radius as `LOCAL`. Formulated hypothesis, verified syntax with `py_compile`, ran unit test suite (`pytest tests/`, 38/38 passed), and ran exhaustive Playwright + Axe-Core probes across all 7 routes on Pixel 5 mobile viewport, confirming **0 axe violations across all 7 routes**, 0 console errors, 0 page errors, 0px horizontal scroll overflow, and verified successful opening of the Vikram bottom sheet.

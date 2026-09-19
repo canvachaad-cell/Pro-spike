@@ -121,6 +121,8 @@ def build_positions_section(wm):
         stats,
         html.Div(
             className="table-scroll-wrapper",
+            tabIndex="0",
+            **{"aria-label": "Active Positions Table"},
             children=[
                 html.Div(
                     className="glass-panel rounded-2xl overflow-hidden",
@@ -164,6 +166,8 @@ def build_closed_section(wm):
         ))
     return html.Div(
         className="table-scroll-wrapper",
+        tabIndex="0",
+        **{"aria-label": "Closed Positions Table"},
         children=[
             html.Div(
                 className="glass-panel rounded-2xl overflow-hidden",
@@ -201,7 +205,7 @@ def layout():
                     html.Div(
                         className="flex-1 flex flex-col gap-1",
                         children=[
-                            html.Label("Search for a stock that recently triggered a scanner:", className="font-label-sm text-[11px] font-bold text-on-surface-variant uppercase tracking-widest"),
+                            html.Label("Search for a stock that recently triggered a scanner:", htmlFor="symbol-dropdown", className="font-label-sm text-[11px] font-bold text-on-surface-variant uppercase tracking-widest"),
                             dcc.Dropdown(
                                 id="symbol-dropdown",
                                 options=options,
@@ -214,12 +218,13 @@ def layout():
                     html.Div(
                         className="flex flex-col gap-1",
                         children=[
-                            html.Label("Entry Price", className="font-label-sm text-[11px] font-bold text-on-surface-variant uppercase tracking-widest"),
+                            html.Label("Entry Price", htmlFor="entry-price-input", className="font-label-sm text-[11px] font-bold text-on-surface-variant uppercase tracking-widest"),
                             dcc.Input(
                                 id="entry-price-input",
                                 type="number",
                                 value=0,
                                 step=0.05,
+                                placeholder="0.00",
                                 className="glass-panel bg-transparent rounded-lg px-3 py-2 font-data-md text-on-surface w-32 focus:ring-0 focus:outline-none outline-none appearance-none",
                             ),
                         ]
@@ -241,7 +246,7 @@ def layout():
         children=[
             html.Header(
                 children=[
-                    html.H2("Watchlist", className="font-display-lg text-[36px] text-on-surface tracking-tight"),
+                    html.H1("Watchlist", className="font-display-lg text-[36px] text-on-surface tracking-tight"),
                     html.P("Active position tracking with automatic price updates and PnL.", className="font-body-md text-on-surface-variant"),
                 ]
             ),

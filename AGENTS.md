@@ -41,6 +41,7 @@ All run inside `Pro-spike` root directory:
 
 - Before touching Data Pipeline / Downloaders -> read `.agents/rules/SKILL-pipeline.md` & `data_downloader.py`
 - Before touching Signal Logic / Flexgate / Scorer -> read `.agents/rules/SKILL-trading.md` & `conviction_scorer.py`
+- Before touching Veto Logic / Fundamental Filters -> read `docs/decision_log_veto_system.md` & `conviction_scorer.py`
 - Before touching Dashboard UI / Streamlit pages -> read `.agents/rules/SKILL-dashboard.md` & `dashboard.py`
 - Before touching Data Schemas / CSVs -> read `.agents/rules/DATA-SCHEMA.md`
 - Before touching Core Components / Data Loaders -> read `docs/known_bugs.md`

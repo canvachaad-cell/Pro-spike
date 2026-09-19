@@ -229,6 +229,35 @@ nav { flex: 1; padding: 0 12px; }
 .table-scroll-wrapper::-webkit-scrollbar {
     height: 3px;
 }
+.table-scroll-wrapper:focus-visible {
+    outline: 2px solid var(--accent-emerald);
+    outline-offset: 2px;
+}
+
+/* Suppress undersized browser-native number spinners failing 24px tap-target heuristic */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type=number] {
+    -moz-appearance: textfield;
+}
+.dash-input-stepper {
+    display: none !important;
+}
+.dash-input-container {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+.dash-input-container input.dash-input-element {
+    min-height: 38px;
+    width: 100% !important;
+    background: transparent;
+    color: inherit;
+    font-size: 14px;
+}
 /* VERIFY CONDITIONS ACCORDION */
 .glass-panel {
     background-color: rgba(29, 33, 42, 0.7);

@@ -140,7 +140,7 @@ def build_right_panel(symbol, df_signals):
                                 className="flex items-center gap-2",
                                 children=[
                                     html.Span("BASELINE (3/3)", className="px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold tracking-wider"),
-                                    html.Span("PROGRESSION (9/9)", className="px-2 py-0.5 rounded-full bg-[#0070f3]/10 text-[#0070f3] border border-[#0070f3]/20 text-[10px] font-bold tracking-wider")
+                                    html.Span("PROGRESSION (9/9)", className="px-2 py-0.5 rounded-full bg-[#38bdf8]/15 text-[#38bdf8] border border-[#38bdf8]/30 text-[10px] font-bold tracking-wider")
                                 ]
                             ),
                             html.Div(
@@ -226,7 +226,7 @@ def layout():
             html.Div(
                 className="w-full lg:w-1/3 xl:w-1/4 flex flex-col gap-3",
                 children=[
-                    html.H2("Active Signals", className="font-display-sm text-[24px] font-bold text-on-surface mb-2"),
+                    html.H1("Active Signals", className="font-display-sm text-[24px] font-bold text-on-surface mb-2"),
                     html.Div(
                         id="left-panel-buttons",
                         className="flex flex-col gap-3",

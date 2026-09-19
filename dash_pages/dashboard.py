@@ -75,7 +75,7 @@ _scorer = ConvictionScorer()
 _CLASS_PILL = {
     "S": "bg-[#e74c3c]/15 text-[#e74c3c] border-[#e74c3c]/30",
     "M": "bg-[#FFB300]/15 text-[#FFB300] border-[#FFB300]/30",
-    "L": "bg-[#0070f3]/15 text-[#0070f3] border-[#0070f3]/30",
+    "L": "bg-[#38bdf8]/15 text-[#38bdf8] border-[#38bdf8]/30",
     "U": "bg-white/5 text-on-surface-variant border-outline-variant/50",
 }
 _CLASS_TITLE = {
@@ -166,7 +166,7 @@ def build_signal_rows(df):
         turnover_str = format_turnover(deliv_turn)
 
         # Exchange badge styling
-        badge_bg = "bg-[#0070f3]/20 text-[#0070f3] border-[#0070f3]/30" if exch.upper() == "NSE" else "bg-[#34d399]/20 text-[#34d399] border-[#34d399]/30"
+        badge_bg = "bg-[#38bdf8]/15 text-[#38bdf8] border-[#38bdf8]/30" if exch.upper() == "NSE" else "bg-[#34d399]/20 text-[#34d399] border-[#34d399]/30"
 
         rows.append(html.Div(
             className="glass-panel p-4 rounded-xl mb-3 flex flex-wrap items-center justify-between gap-4 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 cursor-pointer group relative z-10 hover:z-20",
@@ -353,7 +353,7 @@ def layout():
                             html.Div(
                                 className="glass-panel rounded-2xl p-6 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-secondary/10",
                                 children=[
-                                    html.Div(className="absolute top-0 right-0 p-4 text-secondary/20 group-hover:text-secondary/40 transition-colors", children=[html.Span("stacked_bar_chart", **{"aria-hidden": "true"}, className="material-symbols-outlined text-[48px]")]),
+                                    html.Div(className="absolute top-0 right-0 p-4 text-secondary/60 group-hover:text-secondary/80 transition-colors", children=[html.Span("stacked_bar_chart", **{"aria-hidden": "true"}, className="material-symbols-outlined text-[48px]")]),
                                     html.Div("Total Scanned", className="font-label-sm text-[12px] font-bold text-on-surface-variant tracking-widest uppercase mb-1"),
                                     html.Div(f"{total_scanned:,}", className="font-display-lg text-[40px] font-bold text-secondary animate-number-roll"),
                                     html.Div(f"As of {as_of_str}", className="text-[10px] text-on-surface-variant mt-4")

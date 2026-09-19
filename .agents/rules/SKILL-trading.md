@@ -31,3 +31,9 @@ Any velocity simulation must strictly follow this logic:
 When calling external APIs (like yfinance), append exchange suffixes:
 - BSE: `.BO`
 - NSE: `.NS`
+
+## 5. Fundamental Veto Policy (IMMUTABLE DECISION — Sep 2026)
+- **Hard Entry Blockers:** Do NOT loosen or shift Veto metrics (`FCF/PAT Divergence`, `Promoter Pledge`, `RPT %`) to position-sizing controls. They remain strict entry-blocking vetoes.
+- **Empirical Grounding (Simpson's Paradox Resolution):** In small-caps (< ₹7,000 Cr), clean fundamentals outperform vetoed names with **+14.83% vs +7.22% peak upside** (MFE, $p=0.0456$) and **+8.15% vs +1.37% net return**. Loosening vetoes directly reduces small-cap expectancy.
+- **Promoter Pledge:** 100% lethal in small-caps ($0/5$ winners, $-1.03\%$ return) — strictly non-negotiable hard veto.
+- **Reference:** Read `docs/decision_log_veto_system.md` before proposing any changes to conviction scoring or veto states.

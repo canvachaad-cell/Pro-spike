@@ -101,7 +101,7 @@ def build_signals_table(signals):
     rows = []
     for _, r in signals.head(100).iterrows():
         exch = str(r.get("EXCHANGE", "NSE"))
-        badge = "bg-[#0070f3]/20 text-[#0070f3]" if exch.upper() == "NSE" else "bg-[#34d399]/20 text-[#34d399]"
+        badge = "bg-[#38bdf8]/15 text-[#38bdf8] border border-[#38bdf8]/30" if exch.upper() == "NSE" else "bg-[#34d399]/20 text-[#34d399] border border-[#34d399]/30"
         mom = float(r.get("MOMENTUM_SCORE", 0) or 0)
         rows.append(html.Div(
             className="grid grid-cols-7 gap-2 px-4 py-3 items-center hover:bg-white/5 transition-colors border-b border-outline-variant/40",
@@ -123,6 +123,8 @@ def build_signals_table(signals):
         ))
     return html.Div(
         className="table-scroll-wrapper",
+        tabIndex="0",
+        **{"aria-label": "12-Condition Signals Table"},
         children=[
             html.Div(
                 className="glass-panel rounded-2xl overflow-hidden",
@@ -170,6 +172,8 @@ def build_history_section():
     )
     table = html.Div(
         className="table-scroll-wrapper",
+        tabIndex="0",
+        **{"aria-label": "Signal History Table"},
         children=[
             html.Div(
                 className="glass-panel rounded-2xl overflow-hidden", 
@@ -200,7 +204,7 @@ def layout():
         children=[
             html.Header(
                 children=[
-                    html.H2("Signals", className="font-display-lg text-[36px] text-on-surface tracking-tight"),
+                    html.H1("Signals", className="font-display-lg text-[36px] text-on-surface tracking-tight"),
                     html.P("12-Condition Progressive Spiker scanner with momentum scoring.",
                            className="font-body-md text-on-surface-variant"),
                 ]
