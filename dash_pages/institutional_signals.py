@@ -662,6 +662,7 @@ def velocity_simulation(ledger_csv, risk_pct, ai_threshold=None, title="₹10L V
 
     return html.Details(
         className="glass-panel rounded-2xl mt-6 font-body-md",
+        open=True,
         children=[
             html.Summary(f"📊 {title}", className="px-4 py-3 font-label-caps text-on-surface-variant uppercase tracking-wider text-xs cursor-pointer select-none outline-none"),
             html.Div(
