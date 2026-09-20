@@ -745,3 +745,17 @@ details.glass-panel .accordion-content {
     transform: none;
 }
 
+/* ============================================================
+   ENGINE TABS HORIZONTAL SCROLL & SWIPE
+   Dash dcc.Tabs injects .tab-parent with overflow-x: hidden by default.
+   Override to allow touch pan/swipe to reach FlexGate 2.0 and Legacy.
+   ============================================================ */
+.tab-parent {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.tab-parent::-webkit-scrollbar {
+    display: none;
+}
+

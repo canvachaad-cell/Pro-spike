@@ -294,7 +294,7 @@ def layout():
                 children=[
                     # Left Column (Dominant Signals Area - span 2 columns)
                     html.Div(
-                        className="xl:col-span-2 flex flex-col gap-4 order-2 xl:order-1",
+                        className="xl:col-span-2 flex flex-col gap-4 order-1 xl:order-1",
                         children=[
                             html.Div(
                                 className="glass-panel p-6 rounded-2xl flex flex-col relative overflow-hidden h-full",
@@ -347,7 +347,7 @@ def layout():
                     
                     # Right Column (Stats Tiles - span 1 column)
                     html.Div(
-                        className="flex flex-col gap-6 order-1 xl:order-2",
+                        className="flex flex-col gap-6 order-2 xl:order-2",
                         children=[
                             # Total Stocks Bento Tile
                             html.Div(

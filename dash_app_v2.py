@@ -99,6 +99,10 @@ mobile_bottom_nav = html.Nav(
             children=[html.Span("leaderboard", className="material-symbols-outlined nav-icon"), html.Span("Dashboard")]
         ),
         dcc.Link(
+            className="mobile-nav-item", id="nav-btn-inst-signals", href="/institutional-signals",
+            children=[html.Span("shield", className="material-symbols-outlined nav-icon"), html.Span("Inst. Signals")]
+        ),
+        dcc.Link(
             className="mobile-nav-item", id="nav-btn-signals", href="/signals",
             children=[html.Span("bolt", className="material-symbols-outlined nav-icon"), html.Span("Signals")]
         ),
@@ -113,10 +117,6 @@ mobile_bottom_nav = html.Nav(
             **{"aria-label": "Open Vikram AI"},
             className="mobile-nav-item cursor-pointer",
             children=[html.Span("smart_toy", className="material-symbols-outlined nav-icon"), html.Span("Vikram")]
-        ),
-        dcc.Link(
-            className="mobile-nav-item", id="nav-btn-inst-signals", href="/institutional-signals",
-            children=[html.Span("shield", className="material-symbols-outlined nav-icon"), html.Span("Inst. Signals")]
         )
     ]
 )

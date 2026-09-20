@@ -685,8 +685,6 @@ def _tab_alpha():
     return [
         _section_header("Path A: Alpha Markups", "#FFB300"),
         alpha_table(),
-        _section_header("Trade Execution Log", "#F50057"),
-        completed_trades() or html.Div("No completed trades recorded yet.", className="p-4 font-body-md text-outline text-center"),
         velocity_simulation(SBIA_LEDGER, risk_pct=0.003),
     ]
 
@@ -780,19 +778,19 @@ def layout():
                 children=[
                     dcc.Tabs(
                         id="engine-tabs",
-                        value="legacy",
+                        value="alpha",
                         parent_className="w-full",
                         className="flex flex-row gap-2 pb-2",
-                        parent_style={"borderBottom": "none", "backgroundColor": "transparent"},
+                        parent_style={"borderBottom": "none", "backgroundColor": "transparent", "overflowX": "auto"},
                         children=[
-                            dcc.Tab(label=f"🔬 Legacy{legacy_count}", value="legacy", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
                             dcc.Tab(label=f"🏆 SBIA Alpha{alpha_count}", value="alpha", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
                             dcc.Tab(label=f"🔭 FlexGate{flexgate_count}", value="flexgate", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
                             dcc.Tab(label=f"🤖 FlexGate 2.0{flexgate2_count}", value="flexgate2", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
+                            dcc.Tab(label=f"🔬 Legacy{legacy_count}", value="legacy", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
                         ],
                     )
                 ]
             ),
-            html.Div(id="engine-tab-content", children=_tab_legacy()),
+            html.Div(id="engine-tab-content", children=_tab_alpha()),
         ],
     )
