@@ -549,3 +549,54 @@
 5. Suppressed tiny 16px `.dash-input-stepper` buttons in `style.css` and enforced 44px min-height on `.dash-input-container`.
 **FAILED ATTEMPTS**: Adding `**{"aria-label": "Entry Price"}` directly to `dcc.Input` triggered a Dash component `TypeError` (`dcc.Input` does not accept `aria-label` keyword argument). Fixed by relying on standard HTML `<label for="...">` association and `placeholder="0.00"`.
 **AI PROCESS**: Strictly executed under `fix_before_touch` protocol. Evaluated blast radius as `LOCAL`. Formulated hypothesis, verified syntax with `py_compile`, ran unit test suite (`pytest tests/`, 38/38 passed), and ran exhaustive Playwright + Axe-Core probes across all 7 routes on Pixel 5 mobile viewport, confirming **0 axe violations across all 7 routes**, 0 console errors, 0 page errors, 0px horizontal scroll overflow, and verified successful opening of the Vikram bottom sheet.
+
+---
+
+## BUG-041 - Radar Mockup: ENTRY GATE Column Unpinned + Sort Glyphs Dim (same failure family as BUG-039)
+**STATUS**: FIXED (mockup-only; `scratch/` is gitignored, nothing in `dash_pages/` touched)
+**FILE**: `scratch/mockups/prospike_fundamental_radar.html` (md5 `E3C5C728...` -> `C2AFE5EB...`); backup chain `pre_gate_fix.html` (real copy) + screenshots `gate_pinned_M/D.png`
+**SYMPTOM**: On a 390px phone the radar matrix is ~895px wide inside a 358px scroller (2.3 screens of horizontal swipe). The pinned STOCK column held (`x=17` after `scrollLeft=300`) but ENTRY GATE was `position:static`, so after 300px of swipe `gateTh.x=gateTd.x=-152` and STOCK overlapped GATE by exactly 300px: the CLEAR/VETO verdict for the row being read vanished. Also the three sort affordances (`#sort-breakout|squeeze|delivery`) rendered at the dim `outline` token `rgb(138,145,161)` (`#8a91a1`) on `bg-white/5`, i.e. same weight as body meta text - invisible as controls.
+**ROOT CAUSE**: (1) header `th` line 388 and 6 row `td`s lacked any `sticky` class while STOCK had `sticky left-0 z-20/z-10`; measured offsets: scroller-left 16px/296px, STOCK width 131px@390 / 184px@768+ -> GATE needs `left-[131px] sm:left-[184px]`, `z-[19]/z-[9]` (strictly under STOCK), opaque bg (`bg-surface-container-high/low`). (2) idle glyphs used `text-outline`; worse, `sortTable()` *rewrote* `className` to that same dim string, so any HTML-only brightening self-reverted on first click.
+**FIX**: (1) header `th` + 6 `td`s -> `sticky left-[131px] sm:left-[184px] z-[19]/z-[9] bg-surface-container-high/low border-r border-outline-variant/30` (+ header keeps its shadow); 3 spans (lines 390/394/397) AND the `sortTable()` reset string -> `text-on-surface ... bg-white/10 border border-outline-variant/40`. (2) In `toggleDrawer()`, added instant horizontal scroll reset `tableScrollContainer.scrollTo({ left: 0, behavior: 'auto' })` on mobile viewports (<1024px) so that when a drawer expands while the table was swiped right, the drawer buttons never clip off-screen (verified in Playwright: button `x` changed from `-26` to `+33`, fully inside the 390px viewport). Verified: A1 sticky x7; A2 drift |gate.x-(scLeft+stockW)|<=1px at all 3 viewports; A3 overlap 0px (was 300). NOTE: A5-style check showed Conviction `td.x < gate.right` at `scrollLeft=300` under 230px of frozen columns - expected (table is 2.3 screens wide by design), not a regression; at `scrollLeft=0` the column is fully readable.
+**FAILED ATTEMPTS**: (1) Trusting `prospike_fundamental_radar.bak.html` as a rollback point - `difflib.unified_diff` = 0 lines; it differs only LF-vs-CRLF (1335 bytes). Created a real `pre_gate_fix` copy + md5 log instead. (2) Inline `node -e` probes: PowerShell mangled quoting and a 2.5KB one-liner hung the shell; moved probes to `scratch/radar_verify.js` + `scratch/radar_shots.js` and ran with `node <file>` instead. (3) `Test-Path $env:TEMP/radar_verify.js` was True while written from a here-string pipe whose completion shell-integration never confirmed - copy to `scratch/` (where `playwright-core` resolves) before executing.
+**AI PROCESS**: `fix_before_touch` + `DEMONCORE: PLAN_DEEP` first (blast radius `ISOLATED` - untracked scratch mockup, JIT Tailwind CDN confirmed so arbitrary `left-[131px]`/`z-[19]` compile). Discarded handoff assumptions, re-measured in headless Chrome at 390x844/768x1024/1280x900 (A1-A9: sticky x7, drift<=1px, overlap 0, zG=19<zS=20, idle glyph `rgb(224,226,233)`, post-sort breakout primary + others stay bright, BHATIA drawer 2 buttons in-viewport, main scrollable, docOverflowX=0). Out of scope by design: P2 hover-tint sync on sticky cells (measured STOCK td opaque `rgb(23,27,34)`), P3 pill-row scroll affordance (SBIA clipped at x=446).
+
+---
+
+## BUG-042 â€” Dual-Engine Conviction Architecture: RPT Retirement, Vikram 5-Metric Weight Calibration & Standalone Momentum Scorer
+**STATUS**: FIXED
+**FILE**: `conviction_scorer.py`, `fundamental_fetcher.py`, `dash_pages/_vikram_callback.py`, `momentum_scorer.py`, `dash_pages/momentum_score.py`, `dash_app_v2.py`, `tests/test_conviction_golden.py`, `tests/test_rpt_pipeline_v3.py`, `tests/test_momentum_scorer.py`, `test_6_metric_scorer.py`
+**SYMPTOM**:
+1. BSE scraper fragility on Reg 23(9) Related Party Transactions (RPT) caused recurring `UNVERIFIED_VETO` stalls, silent zero returns on date queries, and brittle dual-mode branching ("6-Metric Mode" vs "5-Metric Mode (rpt_data_missing)").
+2. In Vikram's legacy 5-metric weights, Interest Coverage was dangerously underweighted (9%), and Operating Leverage was overly dominant (38%), allowing cyclical peak margin names to distort conviction.
+3. Traders lacked a conjoined tactical momentum engine to evaluate daily float cornering mechanics (Delivery %, Delivery Turnover â‚¹3.5â€“5 Cr, Float Absorbed >1.5%, Intraday MAE > -1.8%) alongside empirical fundamental winner weights derived from live ledger analysis.
+**ROOT CAUSE**:
+1. Small caps (< â‚¹10 Cr equity / < â‚¹25 Cr net worth) are legally exempt from Reg 23(9) under SEBI LODR Reg 15(2). Scraping BSE PDFs for RPT was structurally unviable and added zero alpha (live ledger audit proved winners were differentiated by 0.00% pledge and cash conversion, never RPT).
+2. Interest Coverage at 9% failed to protect against debt service traps during monetary tightening.
+3. Tactical execution timing was decoupled from baseline fundamental gatekeeping.
+**FIX**:
+1. Completely retired RPT from `conviction_scorer.py` gate scoring and veto checks.
+2. Standardized Vikram on permanent 5-metric weights (`METRIC_WEIGHTS_VIKRAM`): Operating Leverage 30%, Promoter Pledge 25%, FCF/PAT Quality 20%, Interest Coverage 20%, RoICE 5%.
+3. De-wired `RPTFetcher` in `fundamental_fetcher.py` while maintaining safe backward-compatible placeholders (`rpt_status: "NOT_APPLICABLE"`) to preserve the 32-key schema contract (`test_schema_contracts.py`).
+4. Created `momentum_scorer.py` implementing Sub-Part A (Float Mechanics 55%) and Sub-Part B (Empirical Fundamentals 45% using live ledger weights: FCF 30%, Pledge 30%, Cov 25%, Op-Lev 10%, RoICE 5%).
+5. Created `dash_pages/momentum_score.py` mounted at `/momentum` and wired into `dash_app_v2.py`, featuring global veto state detection, dual-engine comparison, detailed metric tables, and conjoined execution verdicts.
+6. Updated all unit tests and fixtures.
+**FAILED ATTEMPTS**: None. Pre-flight `/fix_before_touch` caught delivery turnover unit discrepancies (â‚¹ Cr vs â‚¹), float absorption formula resolution, and schema contract preservation prior to code modification.
+**AI PROCESS**: Executed with strict adherence to `fix_before_touch` protocol and approved implementation plan. Verified via `python -m py_compile`, `python -X utf8 check_pipeline.py`, full unit test suite (`pytest tests/`, 45/45 passed in 5.98s), and confirmed Dash page registry integration and programmatic callback rendering.
+---
+
+## BUG-043 — Vikram "Infinite Thinking" Regression: No Global Deadline + Single Unguarded Loader-Clear + No-Op Latency Gate
+**STATUS**: FIXED (PR-2 -> PR-1 -> PR-3 -> PR-4)
+**FILE**: dash_pages/_vikram_callback.py, config/vikram_runtime.json, 	ests/audit_vikram_latency.spec.js
+**SYMPTOM**: Vikram spinner never clears; input permanently disabled; requires hard page reload to recover. This is occurrence #8 of the same failure family (previous: BUG-016, 018, 022, 026, 030, 031, 036, 038).
+**ROOT CAUSE**:
+1. **No end-to-end budget**: sk_vikram() has zero monotonic() / deadline tracking. Worst-case execution ˜ 202s (4 screener variants × 10s pre-pool + 19s context pool + 90s static model loop + 38s probe).
+2. **Single unguarded loader-clear**: esolve_message() calls sk_vikram() at L1446 with no 	ry/except. Any exception from ThreadPoolExecutor (thread exhaustion), uild_risk_architecture_context() (called synchronously, unguarded), or any future uncaught callsite -> Dash 500 -> disabled=True and _loader_bubble() permanently stuck.
+3. **No-op regression gate**: 	ests/audit_vikram_latency.spec.js L41 only asserts 	oBeEnabled({ timeout: 90000 }). No latency threshold assertion exists. BUG-038 ledger entry claims "verified <4.5s" — this assertion was **never in the committed file**. All 8 previous "FIXED" entries passed a gate that tolerates a 90-second hang.
+**FIX**:
+1. (PR-2) Wrapped sk_vikram(...) call in esolve_message with 	ry/except Exception — inputs are **always** re-enabled, even on unhandled exceptions. Fail-loudly print retained per AGENTS.md.
+2. (PR-1) Added MAX_TOTAL_S = 45 constant. Added 4 deadline checkpoints (A: before classify, B: after context, C: in static model loop, D: before probe). Passed absolute deadline into _probe_dynamic_fallback replacing its internal probe_start + PROBE_TOTAL_TIMEOUT. Raised pi_timeout_ms from 15000 -> 25000 to resolve the BUG-022/BUG-038 contradiction.
+3. (PR-3) Capped screener name-search to 2 variants × 5s (was 4 × 10s = 40s). Moved _classify_query into the thread pool to run concurrently with uild_engine_signals.
+4. (PR-4) Added real latency assertions to 	ests/audit_vikram_latency.spec.js: expect(t1).toBeLessThan(15), expect(t2).toBeLessThan(50), expect(t3).toBeLessThan(50), loader-dots count assertion, recovery 	oBeEnabled timeout reduced from 90s to 55s.
+**FAILED ATTEMPTS**: See BUG-022 (15s api_timeout regression), BUG-038 (fake 4.5s assertion).
+**AI PROCESS**: DEMONCORE: DEEP_AUDIT -> grounded every finding against live source code -> prioritized PR-2 (recovery) before PR-1 (budget) -> verified that PR-3 preserves @lru_cache thread safety -> added falsifiable test assertions.

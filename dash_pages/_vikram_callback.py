@@ -590,14 +590,14 @@ def extract_query_symbols(question):
             variants.append(v.upper())
         seen_v = set()
         uniq = [v for v in variants if v and not (v in seen_v or seen_v.add(v))]
-        for variant in uniq:
+        for variant in uniq[:2]:
             try:
                 import requests as _rq
                 r = _rq.get(
                     "https://www.screener.in/api/company/search/",
                     params={"q": variant},
                     headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
-                    timeout=10,
+                    timeout=5,
                 )
                 if r.status_code != 200:
                     continue
@@ -829,15 +829,16 @@ def build_fundamental_context(question):
             gate_val = (gate.get("roice", "n/a") if isinstance(gate, dict) else "n/a")
             detail.append(f"RoICE — {' | '.join(roice_disp)} | Blended score: {gate_val}/10")
         if "rpt_pct" in d or "rpt_status" in d:
-            rpt = d.get("rpt_pct")
             st = d.get("rpt_status", "NOT_FOUND")
-            if res.get("rpt_data_missing"):
-                st = res.get("rpt_fetch_status", "NOT_SCRAPED")
-                detail.append(f"rpt_fetch_status: {st}")
-            elif rpt is not None:
-                detail.append(f"RPT % of Revenue: {_pct(rpt, 2)} (Status: {st})")
-            else:
-                detail.append(f"RPT % of Revenue: NOT_FOUND (Status: {st})")
+            if st != "NOT_APPLICABLE":
+                rpt = d.get("rpt_pct")
+                if res.get("rpt_data_missing"):
+                    st = res.get("rpt_fetch_status", "NOT_SCRAPED")
+                    detail.append(f"rpt_fetch_status: {st}")
+                elif rpt is not None:
+                    detail.append(f"RPT % of Revenue: {_pct(rpt, 2)} (Status: {st})")
+                else:
+                    detail.append(f"RPT % of Revenue: NOT_FOUND (Status: {st})")
         if d.get("borrowings_cr") is not None:
             detail.append(f"Borrowings: ₹{d['borrowings_cr']:,.0f} Cr")
         if detail:
@@ -1013,6 +1014,11 @@ except Exception as e:
     MODEL_CANDIDATES = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-lite-latest"]
     RUNTIME_CONFIG = {}
 
+# Maximum wall-clock seconds allowed for a single ask_vikram() call,
+# end-to-end. This is the ONLY authoritative budget — all inner timeouts
+# must respect it. Set conservatively to allow a 15s model call inside
+# a full context-build pass without being too aggressive.
+MAX_TOTAL_S = 45
 
 def _ensure_configured():
     global _client, _probe_client
@@ -1103,18 +1109,13 @@ _SEARCH_TRIGGER = re.compile(
 )
 
 
-def _probe_dynamic_fallback(system_prompt, contents, search_requested):
+def _probe_dynamic_fallback(system_prompt, contents, search_requested, deadline):
     """Dynamically find a working model when the static cluster is overloaded.
 
-    HARD CAP: This entire function must complete within PROBE_TOTAL_TIMEOUT
-    seconds. If every model fails or the loop is too slow, we return a clean
-    error instead of hanging the Dash thread indefinitely.
+    deadline: absolute time.monotonic() value — abort if exceeded at any loop iteration.
     """
     global _working_model, _working_search
     import time
-
-    # Hard cap on dynamic probe wall-clock time
-    PROBE_TOTAL_TIMEOUT = 28  # seconds
 
     try:
         models = list(_probe_client.models.list())
@@ -1129,14 +1130,11 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested):
         # DEEP_AUDIT FIX: API congested. Do not abort. Fallback to emergency known-models list.
         model_names = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-lite-latest"]
 
-    probe_start = time.monotonic()
-
     for use_search in ([True, False] if search_requested else [False]):
         for name in model_names:
-            # Hard cap: if we've spent more than PROBE_TOTAL_TIMEOUT seconds
-            # in this probe, abort immediately to unblock the Dash thread.
-            if time.monotonic() - probe_start > PROBE_TOTAL_TIMEOUT:
-                return None, None, f"Dynamic probe timed out after {PROBE_TOTAL_TIMEOUT}s — all models were too slow."
+            # Respect the caller's end-to-end deadline — do not overshoot it.
+            if time.monotonic() > deadline:
+                return None, None, f"Global budget exhausted during dynamic probe."
             try:
                 text, sources = _generate(name, system_prompt, contents, use_search, client=_probe_client)
                 _working_model = name
@@ -1197,23 +1195,36 @@ def ask_vikram(question, history):
 
     Returns (reply_text, sources, error_message) — error is None on success.
     """
+    import time as _time
+
     global _working_model, _working_search
+    _fn_start = _time.monotonic()
+    _deadline = _fn_start + MAX_TOTAL_S
+
     err = _ensure_configured()
     if err:
         return None, [], err
 
-    q_type = _classify_query(question)
-    
-    # Render's free tier has a 0.1 CPU limit which causes massive thread contention.
-    # We drop workers to 2 on Render to stay within limits, while keeping 5 for localhost.
+    # --- CHECKPOINT A: before _classify_query (which triggers network I/O) ---
+    if _time.monotonic() > _deadline:
+        return None, [], f"Vikram timed out before query classification ({MAX_TOTAL_S}s budget exceeded)."
+
     workers = 2 if os.environ.get("RENDER") else 5
     pool = _cf.ThreadPoolExecutor(max_workers=workers)
     try:
+        # Submit _classify_query concurrently first — it may hit screener.in (2 variants × 5s = 10s cap).
+        f_classify = pool.submit(_classify_query, question)
+        # While it's running, pre-submit the two context builders that are always needed.
+        f_sig = pool.submit(build_engine_signals)
+
+        # Resolve classify (budget: 12s — generous enough for the 10s cap + overhead)
+        q_type = _safe_result(f_classify, 12, "general")
+
+        # Now decide remaining context tasks based on resolved q_type.
         f_port = pool.submit(build_portfolio_context) if q_type != "engine_audit" else None
-        f_sig  = pool.submit(build_engine_signals)
         f_fund = pool.submit(_build_fundamental_context_safe, question) if q_type == "stock_analysis" else None
         f_ledg = pool.submit(build_ledger_context) if q_type == "engine_audit" else None
-        
+
         port_ctx = _safe_result(f_port, 3, "Portfolio data unavailable.") if f_port else "(Portfolio context skipped)"
         sig_ctx  = _safe_result(f_sig, 3, "Engine signals unavailable.")
         fund_ctx = _safe_result(f_fund, 9, "(LIVE FUNDAMENTAL FETCH TIMED OUT)") if f_fund else "(Fundamental fetch skipped)"
@@ -1224,6 +1235,10 @@ def ask_vikram(question, history):
             pool.shutdown(wait=False, cancel_futures=True)
         except TypeError:
             pool.shutdown(wait=False)
+
+    # --- CHECKPOINT B: after context phase ---
+    if _time.monotonic() > _deadline:
+        return None, [], f"Vikram timed out during context build ({MAX_TOTAL_S}s budget)."
 
     system_prompt = (
         VIKRAM_SYSTEM_PROMPT
@@ -1264,6 +1279,10 @@ def ask_vikram(question, history):
     search_was_requested = search_requested
     skip_search_due_to_quota = False
     for model_name, use_search in attempts:
+        # --- CHECKPOINT C: before each model attempt ---
+        if _time.monotonic() > _deadline:
+            print(f"[VIKRAM BUDGET] Global {MAX_TOTAL_S}s budget exhausted in static loop. Aborting.")
+            return None, [], f"Vikram timed out after {MAX_TOTAL_S}s — all models were too slow. Try again."
         if use_search and skip_search_due_to_quota:
             continue
         for attempt in range(3):
@@ -1300,7 +1319,12 @@ def ask_vikram(question, history):
     # If we exhausted the static list and everything failed, trigger dynamic probe
     # (whether due to 503, 429, 404, or empty responses from deprecated models)
     if last_err:
-        text, sources, probe_err = _probe_dynamic_fallback(system_prompt, contents, search_was_requested)
+        # --- CHECKPOINT D: before probe ---
+        if _time.monotonic() > _deadline:
+            return None, [], f"Vikram timed out before dynamic probe ({MAX_TOTAL_S}s budget)."
+        text, sources, probe_err = _probe_dynamic_fallback(
+            system_prompt, contents, search_was_requested, deadline=_deadline
+        )
         if text:
             if search_was_requested and not sources and not _working_search:
                 text = "(live search unavailable this query — answering from your data only)\n\n" + text
@@ -1437,17 +1461,31 @@ def ack_message(n_clicks, n_submit, question, history):
 )
 def resolve_message(pending, history):
     """Slow half: run the Gemini query (screener fetch + Google Search) and
-    replace the loader with Vikram's answer, then re-enable the input."""
+    replace the loader with Vikram's answer, then re-enable the input.
+
+    SAFETY GUARANTEE: This function ALWAYS returns with disabled=False,
+    regardless of what happens inside ask_vikram. No exception may leave the
+    UI in a permanently-wedged state requiring a hard page reload.
+    """
     if not pending or not pending.get("q"):
         return no_update, no_update, False, False
     question = pending["q"]
     history = history or []
-    reply, sources, err = ask_vikram(question, history)
-    if err:
-        reply = f"⚠️ {err}"
+    try:
+        reply, sources, err = ask_vikram(question, history)
+        if err:
+            reply = f"⚠️ {err}"
+            sources = []
+    except Exception as exc:
+        print(f"[VIKRAM CRITICAL] ask_vikram raised an unhandled exception: {repr(exc)}")
+        reply = (
+            "⚠️ Vikram encountered an unexpected error. "
+            "Please try again — your chat history is preserved."
+        )
         sources = []
     new_history = (history + [
         {"role": "user", "text": question},
         {"role": "model", "text": reply, "sources": sources},
     ])[-MAX_HISTORY:]
+    # CRITICAL: disabled=False is returned unconditionally — inputs are always re-enabled.
     return render_chat(new_history), new_history, False, False

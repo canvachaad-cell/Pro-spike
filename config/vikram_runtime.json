@@ -16,7 +16,7 @@
             "search_grounding_enabled": false
         }
     ],
-    "api_timeout_ms": 15000,
+    "api_timeout_ms": 25000,
     "probe_timeout_s": 10,
     "worker_counts": {
         "local": 4,
