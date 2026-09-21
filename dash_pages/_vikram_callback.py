@@ -981,34 +981,41 @@ def build_empirical_fundamental_scorecard(symbol: str) -> str:
     mcap_str = f" | MCap ₹{mcap:,.0f} Cr" if mcap else ""
 
     lines = [
-        f"### 📊 Empirical Fundamental Scorecard — **{sym}** ({name}{mcap_str})",
-        f"> Sub-Part B of the Dual-Engine Momentum Architecture (45% weight)",
+        f"### 📊 **{sym}** — Quality Scorecard ({name}{mcap_str})",
+        f"> Sub-Part B · Dual-Engine Momentum (45% weight)",
         "",
-        "| Metric | Weight | Gate Score | Pts Earned | Status |",
-        "|--------|--------|-----------|-----------|--------|",
+        "| Metric | Weight | Score | Signal |",
+        "|--------|--------|-------|--------|",
     ]
 
+    scored_rows = []
     for key, (label, weight_pct) in _EMP_METRIC_LABELS.items():
         entry = part_b.get(key, {})
         gate  = entry.get("gate_score")
         pts   = entry.get("pts", 0.0)
+        # Skip entirely if no data — no ⏳ ever
         if gate is None:
-            bar    = "⏳ N/A"
-            status = "Data unavailable"
-        elif gate >= 8:
-            bar    = f"**{gate}/10** 🟢"
-            status = "Pass"
-        elif gate >= 5:
-            bar    = f"**{gate}/10** 🟡"
-            status = "Marginal"
+            continue
+        try:
+            gate_f = float(gate)
+        except (TypeError, ValueError):
+            continue  # skip non-numeric gate values (e.g. "limited_history_5q")
+        if gate_f >= 8:
+            signal = "🟢"
+        elif gate_f >= 5:
+            signal = "🟡"
         else:
-            bar    = f"**{gate}/10** 🔴"
-            status = "Fail"
-        lines.append(f"| {label} | {weight_pct}% | {bar} | {pts:.2f} | {status} |")
+            signal = "🔴"
+        scored_rows.append(f"| {label} | {weight_pct}% | **{gate_f:.0f} / 10** | {signal} |")
+
+    if scored_rows:
+        lines += scored_rows
+    else:
+        lines.append("| _(No scoreable data available — check Screener.in for this ticker)_ | — | — | — |")
 
     lines += [
         "",
-        f"**Sub-Part B Score: {part_b_score:.1f} / 100 → Contribution to Momentum Score: {part_b_contrib:.1f} pts (out of 45 max)**",
+        f"**Sub-Part B Score: {part_b_score:.1f} / 100 → Contribution: {part_b_contrib:.1f} pts (out of 45 max)**",
         "",
     ]
 
@@ -1021,7 +1028,7 @@ def build_empirical_fundamental_scorecard(symbol: str) -> str:
     else:
         lines.append("✅ **Veto Status: CLEAR** — No hard deal-breakers on pledge or FCF.")
 
-    # Add raw data notes for transparency
+    # Raw inputs — only show what has actual data
     fcf = fund.get("fcf_pat_ratio")
     pledge_lst = (fund.get("pledge_trend") or [])
     pledge_latest = pledge_lst[-1] if pledge_lst else None
@@ -1029,17 +1036,23 @@ def build_empirical_fundamental_scorecard(symbol: str) -> str:
     op_lev = fund.get("op_lev_ratio")
     roice  = fund.get("roice_pct")
 
-    lines += [
-        "",
-        "**Raw Inputs:**",
-        f"- FCF/PAT 3yr cumulative: `{fcf if fcf is not None else 'N/A'}`",
-        f"- Promoter pledge (latest quarter): `{f'{pledge_latest:.1f}%' if pledge_latest is not None else 'N/A'}`",
-        f"- Interest coverage trend: `{cov if cov else 'N/A'}`",
-        f"- Operating leverage ratio: `{f'{op_lev:.1f}x' if op_lev is not None else 'N/A'}`",
-        f"- RoICE Δ-trend: `{f'{roice:.1f}%' if roice is not None else 'N/A'}`",
-    ]
+    raw = []
+    if fcf is not None:
+        raw.append(f"- FCF/PAT 3yr cumulative: `{fcf}`")
+    if pledge_latest is not None:
+        raw.append(f"- Promoter pledge (latest): `{pledge_latest:.1f}%`")
+    if cov:
+        raw.append(f"- Interest coverage trend: `{cov}`")
+    if op_lev is not None:
+        raw.append(f"- Operating leverage: `{op_lev:.1f}x`")
+    if roice is not None:
+        raw.append(f"- RoICE Δ-trend: `{roice:.1f}%`")
+
+    if raw:
+        lines += ["", "**Raw Inputs:**"] + raw
 
     return "\n".join(lines)
+
 
 
 _EMP_FUND_TRIGGER = re.compile(
