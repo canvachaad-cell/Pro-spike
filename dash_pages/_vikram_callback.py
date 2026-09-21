@@ -17,6 +17,16 @@ from dash import Input, Output, State, html, dcc, no_update
 import pandas as pd
 from functools import lru_cache
 
+try:
+    from fundamental_fetcher import FundamentalFetcher as _FundFetcher
+    from momentum_scorer import MomentumScorer as _MomScorer
+    _emp_fetcher = _FundFetcher()
+    _emp_scorer  = _MomScorer()
+except Exception as _e_import:
+    print(f"[VIKRAM] Warning: could not import MomentumScorer for empirical context: {_e_import}")
+    _emp_fetcher = None
+    _emp_scorer  = None
+
 ACTIVE_WATCHLIST = os.path.join("watchlist", "active_watchlist.csv")
 ENGINE_FILES = [
     ("Legacy Screener", os.path.join("data", "legacy_watchlist.csv")),
@@ -918,6 +928,135 @@ def _build_fundamental_context_safe(question):
 
 
 # ---------------------------------------------------------------------------
+# Empirical Fundamental Scorecard (fz trigger / "empirical fundamental of X")
+# ---------------------------------------------------------------------------
+
+_EMP_METRIC_LABELS = {
+    "fcf_pat":          ("FCF/PAT Quality",     30),
+    "pledge_trend":     ("Promoter Pledge",      30),
+    "interest_coverage":("Interest Coverage",    25),
+    "op_leverage":      ("Operating Leverage",   10),
+    "roice":            ("RoICE",                 5),
+}
+
+def build_empirical_fundamental_scorecard(symbol: str) -> str:
+    """Returns a pre-formatted Sub-Part B scorecard string for Vikram to display.
+    Triggered by 'fz <SYMBOL>' or 'empirical fundamental of <SYMBOL>'.
+    No LLM call — data is fetched directly from FundamentalFetcher + MomentumScorer.
+    """
+    sym = str(symbol).upper().strip()
+    if not sym:
+        return "⚠️ No symbol detected. Usage: `fz JOJO` or `empirical fundamental of JOJO`."
+
+    if _emp_fetcher is None or _emp_scorer is None:
+        return f"⚠️ Empirical scorer unavailable (import error at startup). Run `python -m py_compile momentum_scorer.py` to diagnose."
+
+    try:
+        fund = _emp_fetcher.fetch(sym) or {}
+    except Exception as fe:
+        return f"⚠️ Fundamental fetch failed for **{sym}**: {fe}"
+
+    if fund.get("error"):
+        return (
+            f"⚠️ **{sym}** — Live fundamental fetch incomplete: {fund['error']}\n"
+            f"Screener.in could not resolve this ticker. Check the symbol spelling or "
+            f"try its BSE code (e.g. `fz 531126`)."
+        )
+
+    try:
+        # MomentumScorer.score() needs a signal_row + fund dict.
+        # We pass an empty signal_row — Part B works purely off fund.
+        mom_res = _emp_scorer.score({}, fund)
+    except Exception as me:
+        return f"⚠️ Momentum scorer failed for **{sym}**: {me}"
+
+    part_b = mom_res.get("part_b_breakdown", {})
+    part_b_score  = mom_res.get("part_b_score",  0.0)
+    part_b_contrib= mom_res.get("part_b_contrib",0.0)
+    is_vetoed     = mom_res.get("blocked_by_veto", False)
+    veto_reasons  = mom_res.get("veto_reasons", [])
+
+    name = fund.get("name", sym)
+    mcap = fund.get("market_cap_cr")
+    mcap_str = f" | MCap ₹{mcap:,.0f} Cr" if mcap else ""
+
+    lines = [
+        f"### 📊 Empirical Fundamental Scorecard — **{sym}** ({name}{mcap_str})",
+        f"> Sub-Part B of the Dual-Engine Momentum Architecture (45% weight)",
+        "",
+        "| Metric | Weight | Gate Score | Pts Earned | Status |",
+        "|--------|--------|-----------|-----------|--------|",
+    ]
+
+    for key, (label, weight_pct) in _EMP_METRIC_LABELS.items():
+        entry = part_b.get(key, {})
+        gate  = entry.get("gate_score")
+        pts   = entry.get("pts", 0.0)
+        if gate is None:
+            bar    = "⏳ N/A"
+            status = "Data unavailable"
+        elif gate >= 8:
+            bar    = f"**{gate}/10** 🟢"
+            status = "Pass"
+        elif gate >= 5:
+            bar    = f"**{gate}/10** 🟡"
+            status = "Marginal"
+        else:
+            bar    = f"**{gate}/10** 🔴"
+            status = "Fail"
+        lines.append(f"| {label} | {weight_pct}% | {bar} | {pts:.2f} | {status} |")
+
+    lines += [
+        "",
+        f"**Sub-Part B Score: {part_b_score:.1f} / 100 → Contribution to Momentum Score: {part_b_contrib:.1f} pts (out of 45 max)**",
+        "",
+    ]
+
+    if is_vetoed:
+        veto_str = "; ".join(veto_reasons) if veto_reasons else "Hard veto triggered."
+        lines += [
+            f"🚫 **GLOBAL HARD VETO ACTIVE** — {veto_str}",
+            "_Tactical momentum entry forbidden regardless of float mechanics._",
+        ]
+    else:
+        lines.append("✅ **Veto Status: CLEAR** — No hard deal-breakers on pledge or FCF.")
+
+    # Add raw data notes for transparency
+    fcf = fund.get("fcf_pat_ratio")
+    pledge_lst = (fund.get("pledge_trend") or [])
+    pledge_latest = pledge_lst[-1] if pledge_lst else None
+    cov = fund.get("interest_coverage_trend")
+    op_lev = fund.get("op_lev_ratio")
+    roice  = fund.get("roice_pct")
+
+    lines += [
+        "",
+        "**Raw Inputs:**",
+        f"- FCF/PAT 3yr cumulative: `{fcf if fcf is not None else 'N/A'}`",
+        f"- Promoter pledge (latest quarter): `{f'{pledge_latest:.1f}%' if pledge_latest is not None else 'N/A'}`",
+        f"- Interest coverage trend: `{cov if cov else 'N/A'}`",
+        f"- Operating leverage ratio: `{f'{op_lev:.1f}x' if op_lev is not None else 'N/A'}`",
+        f"- RoICE Δ-trend: `{f'{roice:.1f}%' if roice is not None else 'N/A'}`",
+    ]
+
+    return "\n".join(lines)
+
+
+_EMP_FUND_TRIGGER = re.compile(
+    r"(?:\bfz\s+(\S+))|(?:empirical\s+fundamental(?:s)?\s+(?:of\s+)?(\S+))",
+    re.IGNORECASE,
+)
+
+
+def _extract_empirical_symbol(question: str):
+    """Returns the ticker symbol if the query is an empirical fundamental request, else None."""
+    m = _EMP_FUND_TRIGGER.search(question or "")
+    if m:
+        return m.group(1) or m.group(2)
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Simulation ledger + risk architecture context (engine audit)
 # ---------------------------------------------------------------------------
 
@@ -1152,7 +1291,10 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested, deadline)
 
 
 def _classify_query(question):
-    """Returns: 'stock_analysis' | 'portfolio_audit' | 'engine_audit' | 'general'"""
+    """Returns: 'empirical_fundamental' | 'stock_analysis' | 'portfolio_audit' | 'engine_audit' | 'general'"""
+    # Check empirical fundamental trigger FIRST — it short-circuits to a direct scorecard response.
+    if _extract_empirical_symbol(question):
+        return "empirical_fundamental"
     q = (question or "").upper()
     symbols = extract_query_symbols(question)
     if symbols:
@@ -1208,6 +1350,13 @@ def ask_vikram(question, history):
     # --- CHECKPOINT A: before _classify_query (which triggers network I/O) ---
     if _time.monotonic() > _deadline:
         return None, [], f"Vikram timed out before query classification ({MAX_TOTAL_S}s budget exceeded)."
+
+    # --- SHORT-CIRCUIT: empirical fundamental scorecard (no LLM call) ---
+    emp_sym = _extract_empirical_symbol(question)
+    if emp_sym:
+        print(f"[VIKRAM] Empirical fundamental short-circuit for symbol: {emp_sym}")
+        scorecard = build_empirical_fundamental_scorecard(emp_sym)
+        return scorecard, [], None
 
     workers = 2 if os.environ.get("RENDER") else 5
     pool = _cf.ThreadPoolExecutor(max_workers=workers)
