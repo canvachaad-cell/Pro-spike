@@ -600,3 +600,20 @@
 4. (PR-4) Added real latency assertions to 	ests/audit_vikram_latency.spec.js: expect(t1).toBeLessThan(15), expect(t2).toBeLessThan(50), expect(t3).toBeLessThan(50), loader-dots count assertion, recovery 	oBeEnabled timeout reduced from 90s to 55s.
 **FAILED ATTEMPTS**: See BUG-022 (15s api_timeout regression), BUG-038 (fake 4.5s assertion).
 **AI PROCESS**: DEMONCORE: DEEP_AUDIT -> grounded every finding against live source code -> prioritized PR-2 (recovery) before PR-1 (budget) -> verified that PR-3 preserves @lru_cache thread safety -> added falsifiable test assertions.
+
+---
+
+## BUG-044 — Missing Fundamentals & Hallucination on JS-Rendered BSE Small-Caps (GGAUTO / 531399)
+**STATUS**: FIXED
+**FILE**: screener_playwright.py, fundamental_fetcher.py, dash_pages/_vikram_callback.py
+**SYMPTOM**: BSE-only micro/small-cap tickers (e.g. GGAUTO / 531399) returned empty/N/A fundamental metrics on Screener.in requests scraper. Vikram LLM was forced to guess/hallucinate company names (e.g. 'Gangarosa Automotives', 'Gangappa Automotives') and promoter percentages (e.g. 55.45%, 49.46% vs actual 39.60%).
+**ROOT CAUSE**:
+1. Screener.in renders financial tables dynamically via JavaScript for certain standalone/BSE companies, and non-subsidiary small-caps reside on standalone URLs (/company/531399/) rather than consolidated (/consolidated/).
+2. Raw requests.get() received an empty HTML table skeleton without JS execution.
+3. Fallback browser scraper was previously querying /consolidated/ with a fragile selector that timed out.
+**FIX**:
+1. Refactored screener_playwright.py to try both standalone and consolidated endpoints with domcontentloaded and DOM hydration wait.
+2. Extracted _parse_html in undamental_fetcher.py and hooked Playwright as a seamless fallback whenever _is_financially_hollow(data) or _quality_count(data) < MIN_QUALITY_KEYS is detected.
+3. Injected exact company name (G G Automotive Gears Ltd), promoter holding (39.60%), pledge (0.00%), and 3yr financials into Vikram's prompt context, with strict anti-hallucination instructions.
+**FAILED ATTEMPTS**: Relying on Google Search fallback caused LLM hallucination when search returned stale or mismatched company snippets.
+**AI PROCESS**: Root cause proved empirically via scratch/debug_ggauto.py and 	est_parse_playwright.py. Verified clean compilation and 100% accurate data extraction (Mcap: 197 Cr, Promoter: 39.6%, Pledge: 0.0%, ROCE: 24.1%, FCF/PAT: 1.61).

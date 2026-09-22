@@ -5,24 +5,23 @@
     "veto": false,
     "unverified_veto": false,
     "veto_reasons": [],
-    "score": 88,
+    "score": 90,
     "rating": "HIGH_CONVICTION",
     "boosters": [
-      "Strong Operating Leverage (31% weight, +80/100)",
-      "Interest coverage improving (+15% weight)"
+      "Strong Operating Leverage (30% weight, +80/100)",
+      "Interest coverage improving (+20% weight)"
     ],
     "drags": [],
-    "display_badge": "\u26a1 88 | \u2705 Clean Pass (5-Metric Mode (5/5 metrics resolved))",
+    "display_badge": "\u26a1 90 | \u2705 Clean Pass (5-Metric Vikram (5/5 metrics resolved))",
     "data_completeness": {
       "resolved_count": 5,
       "total_count": 5,
-      "label": "5-Metric Mode (5/5 metrics resolved)"
+      "label": "5-Metric Vikram (5/5 metrics resolved)"
     },
-    "not_applicable_metrics": [
-      "rpt_pct"
-    ],
-    "rpt_data_missing": true,
-    "rpt_fetch_status": "NOT_SCRAPED"
+    "not_applicable_metrics": [],
+    "rpt_data_missing": false,
+    "rpt_fetch_status": "NOT_APPLICABLE",
+    "veto_status_table_row": "| \ud83d\udeab Veto Status | CLEAR | \u2705 |"
   },
   "GREENPLY": {
     "stock_class": "S",
@@ -30,24 +29,23 @@
     "veto": false,
     "unverified_veto": false,
     "veto_reasons": [],
-    "score": 88,
+    "score": 90,
     "rating": "HIGH_CONVICTION",
     "boosters": [
-      "Strong Operating Leverage (31% weight, +80/100)",
-      "Interest coverage improving (+15% weight)"
+      "Strong Operating Leverage (30% weight, +80/100)",
+      "Interest coverage improving (+20% weight)"
     ],
     "drags": [],
-    "display_badge": "\u26a1 88 | \u2705 Clean Pass (5-Metric Mode (5/5 metrics resolved))",
+    "display_badge": "\u26a1 90 | \u2705 Clean Pass (5-Metric Vikram (5/5 metrics resolved))",
     "data_completeness": {
       "resolved_count": 5,
       "total_count": 5,
-      "label": "5-Metric Mode (5/5 metrics resolved)"
+      "label": "5-Metric Vikram (5/5 metrics resolved)"
     },
-    "not_applicable_metrics": [
-      "rpt_pct"
-    ],
-    "rpt_data_missing": true,
-    "rpt_fetch_status": "NOT_SCRAPED"
+    "not_applicable_metrics": [],
+    "rpt_data_missing": false,
+    "rpt_fetch_status": "NOT_APPLICABLE",
+    "veto_status_table_row": "| \ud83d\udeab Veto Status | CLEAR | \u2705 |"
   },
   "ALGOQUANT": {
     "stock_class": "S",
@@ -62,11 +60,13 @@
     "display_badge": "\u26a0\ufe0f Financial/Trading Business \u2014 Standard scorer not calibrated for this model. Manual review required.",
     "data_completeness": {
       "resolved_count": 0,
-      "total_count": 6,
-      "label": "0/6 metrics resolved"
+      "total_count": 5,
+      "label": "0/5 metrics resolved"
     },
     "not_applicable_metrics": [],
-    "rpt_data_missing": false
+    "rpt_data_missing": false,
+    "rpt_fetch_status": "NOT_APPLICABLE",
+    "veto_status_table_row": "| \ud83d\udeab Veto Status | CLEAR | \u2705 |"
   },
   "EMAMILTD": {
     "stock_class": "M",
@@ -74,24 +74,23 @@
     "veto": false,
     "unverified_veto": false,
     "veto_reasons": [],
-    "score": 58,
+    "score": 56,
     "rating": "MODERATE",
     "boosters": [],
     "drags": [
-      "Weak Operating Leverage (31% weight, -80/100)",
-      "Interest coverage deteriorating (-15% weight)"
+      "Weak Operating Leverage (30% weight, -80/100)",
+      "Interest coverage deteriorating (-20% weight)"
     ],
-    "display_badge": "\u2705 58 | (5-Metric Mode (5/5 metrics resolved))",
+    "display_badge": "\u2705 56 | (5-Metric Vikram (5/5 metrics resolved))",
     "data_completeness": {
       "resolved_count": 5,
       "total_count": 5,
-      "label": "5-Metric Mode (5/5 metrics resolved)"
+      "label": "5-Metric Vikram (5/5 metrics resolved)"
     },
-    "not_applicable_metrics": [
-      "rpt_pct"
-    ],
-    "rpt_data_missing": true,
-    "rpt_fetch_status": "NOT_FOUND"
+    "not_applicable_metrics": [],
+    "rpt_data_missing": false,
+    "rpt_fetch_status": "NOT_APPLICABLE",
+    "veto_status_table_row": "| \ud83d\udeab Veto Status | CLEAR | \u2705 |"
   },
   "HDFCBANK": {
     "stock_class": "L",
@@ -103,18 +102,17 @@
     "rating": "LARGE_CAP_DISCLAIMER",
     "boosters": [],
     "drags": [],
-    "display_badge": "\u26a0\ufe0f Large-cap (\u2265 \u20b920,000 Cr) \u00b7 Fundamentals 75/100 (STRONG) \u2014 rebalancing noise; verify separately",
+    "display_badge": "\u26a0\ufe0f Large-cap (\u2265 \u20b920,000 Cr) \u00b7 Fundamentals 85/100 (STRONG) \u2014 rebalancing noise; verify separately",
     "data_completeness": {
       "resolved_count": 0,
-      "total_count": 6,
-      "label": "0/6 metrics resolved"
+      "total_count": 5,
+      "label": "0/5 metrics resolved"
     },
-    "not_applicable_metrics": [
-      "rpt_pct"
-    ],
-    "rpt_data_missing": true,
-    "rpt_fetch_status": "NOT_SCRAPED",
-    "fundamental_score": 75,
+    "not_applicable_metrics": [],
+    "rpt_data_missing": false,
+    "rpt_fetch_status": "NOT_APPLICABLE",
+    "veto_status_table_row": "| \ud83d\udeab Veto Status | CLEAR | \u2705 |",
+    "fundamental_score": 85,
     "fundamental_rating": "STRONG",
     "gate": {
       "pledge_trend": 9,

@@ -147,6 +147,26 @@ class FundamentalFetcher:
                 standalone = self._fetch_live(symbol, standalone=True)
                 if _quality_count(standalone) > _quality_count(data):
                     data = standalone
+        if (_quality_count(data) < MIN_QUALITY_KEYS or _is_financially_hollow(data)) and "not found on screener.in" not in str(data.get("error", "")):
+            # Fall back to Playwright (headless Chrome) to get JS-rendered page and standalone/consolidated endpoints.
+            print(f"[FundamentalFetcher] Trying Playwright JS fallback for {symbol}")
+            try:
+                from screener_playwright import fetch_with_playwright
+                # Extract BSE code from the URL we already resolved, if present
+                url_fetched = data.get("url", "")
+                bse_m = re.search(r"/company/(\d{6})/", url_fetched)
+                bse_code = bse_m.group(1) if bse_m else None
+                pw_data = fetch_with_playwright(symbol, bse_code=bse_code)
+                if not pw_data.get("error") and _quality_count(pw_data) > _quality_count(data):
+                    data = pw_data
+                    print(f"[FundamentalFetcher] Playwright fallback SUCCESS for {symbol} (quality={_quality_count(data)})")
+                else:
+                    print(f"[FundamentalFetcher] Playwright fallback did not improve data for {symbol}: {pw_data.get('error')}")
+            except ImportError:
+                print(f"[FundamentalFetcher] playwright not installed — cannot JS-render {symbol}")
+            except Exception as e:
+                print(f"[FundamentalFetcher] Playwright fallback error for {symbol}: {e}")
+
         if _quality_count(data) < MIN_QUALITY_KEYS:
             stale = self._load_cache(symbol, allow_stale=True)
             if stale is not None and _quality_count(stale) >= MIN_QUALITY_KEYS:
@@ -181,6 +201,65 @@ class FundamentalFetcher:
             data["rpt_amount_cr"] = None
             self._save_cache(symbol, data)
         return self._apply_overrides(symbol, data)
+
+    def _parse_html(self, html_text: str, symbol: str, url: str) -> dict:
+        """Parse raw or Playwright-rendered HTML into structured fundamental data dictionary."""
+        try:
+            soup = BeautifulSoup(html_text, "html.parser")
+            out = {k: None for k in REQUIRED_FUNDAMENTAL_KEYS}
+            out["symbol"] = symbol
+            out["url"] = url
+            h1 = soup.select_one("h1")
+            if h1:
+                out["name"] = h1.get_text(strip=True)
+
+            # top ratios: market cap / price
+            ratios = {}
+            for li in soup.select("ul#top-ratios li"):
+                n = li.select_one(".name")
+                v = li.select_one(".value")
+                if n and v:
+                    ratios[n.get_text(strip=True)] = v.get_text(" ", strip=True)
+            m = re.search(r"([\d,]+)", ratios.get("Market Cap", ""))
+            if m:
+                out["market_cap_cr"] = float(m.group(1).replace(",", ""))
+            m = re.search(r"([\d,]+(?:\.\d+)?)", ratios.get("Current Price", ""))
+            if m:
+                out["price"] = float(m.group(1).replace(",", ""))
+
+            tables = soup.select("table")
+            parsed = []
+            for t in tables:
+                headers, data = _parse_table(t)
+                if headers and data:
+                    parsed.append((headers, data))
+
+            # Table lookup with financial-sector label fallbacks: banks/NBFCs
+            # use 'Revenue'/'Financing Profit' instead of 'Sales'/'Operating
+            # Profit'. Each key set is a list of acceptable alternatives.
+            pl_q = self._find_table_multi(parsed, [["Sales", "Revenue"], ["Operating Profit", "Financing Profit"]], quarters=True)
+            pl_a = self._find_table_multi(parsed, [["Sales", "Revenue"], ["Net Profit", "Financing Profit"]], quarters=False)
+            qh, qdata = pl_q if pl_q else (None, {})
+            ah, adata = pl_a if pl_a else (None, {})
+            bh, bdata = self._find_table(parsed, ("Equity Capital", "Borrowing"), quarters=False)
+            ch, cdata = self._find_table(parsed, ("Cash from Operating Activity",), quarters=False)
+            sh, sdata = self._find_table_multi(parsed, [["Promoters", "DIIs", "FIIs", "Public"]], quarters=True)
+
+            self._extract_shareholding(out, sh, sdata)
+            self._extract_pledge(out, parsed, html_text)
+            self._extract_quarterly(out, qh, qdata)
+            self._extract_annual(out, ah, adata, bh, bdata, ch, cdata)
+            # Financial-sector marker: screener's P&L uses 'Revenue'/'Financing
+            # Profit' labels for banks/NBFCs/brokers. OCF for such companies is
+            # structurally negative (loan disbursements are operating outflows),
+            # so FCF/PAT vetoes don't apply.
+            if ah and any("Financing Profit" in k for k in adata.keys()):
+                out["sector_type"] = "financial"
+
+            self._derive_free_float(out)
+            return out
+        except Exception as e:
+            return {"symbol": symbol, "error": f"parse error: {e}"}
 
     def _apply_overrides(self, symbol, data):
         """Applies manual sector and business model overrides on cache-hit or live-fetch data,
@@ -256,6 +335,7 @@ class FundamentalFetcher:
     # ---- live fetch ------------------------------------------------------
 
     def _fetch_live(self, symbol, standalone=False):
+        """Fetch fresh fundamentals for SYMBOL from screener.in over HTTP."""
         if standalone:
             url = f"https://www.screener.in/company/{symbol}/"
         else:
@@ -291,62 +371,7 @@ class FundamentalFetcher:
         if r.status_code != 200:
             return {"symbol": symbol, "error": f"HTTP {r.status_code}"}
 
-        try:
-            soup = BeautifulSoup(r.text, "html.parser")
-            out = {k: None for k in REQUIRED_FUNDAMENTAL_KEYS}
-            out["symbol"] = symbol
-            out["url"] = url
-            h1 = soup.select_one("h1")
-            if h1:
-                out["name"] = h1.get_text(strip=True)
-
-            # top ratios: market cap / price
-            ratios = {}
-            for li in soup.select("ul#top-ratios li"):
-                n = li.select_one(".name")
-                v = li.select_one(".value")
-                if n and v:
-                    ratios[n.get_text(strip=True)] = v.get_text(" ", strip=True)
-            m = re.search(r"([\d,]+)", ratios.get("Market Cap", ""))
-            if m:
-                out["market_cap_cr"] = float(m.group(1).replace(",", ""))
-            m = re.search(r"([\d,]+(?:\.\d+)?)", ratios.get("Current Price", ""))
-            if m:
-                out["price"] = float(m.group(1).replace(",", ""))
-
-            tables = soup.select("table")
-            parsed = []
-            for t in tables:
-                headers, data = _parse_table(t)
-                if headers and data:
-                    parsed.append((headers, data))
-
-            # Table lookup with financial-sector label fallbacks: banks/NBFCs
-            # use 'Revenue'/'Financing Profit' instead of 'Sales'/'Operating
-            # Profit'. Each key set is a list of acceptable alternatives.
-            pl_q = self._find_table_multi(parsed, [["Sales", "Revenue"], ["Operating Profit", "Financing Profit"]], quarters=True)
-            pl_a = self._find_table_multi(parsed, [["Sales", "Revenue"], ["Net Profit", "Financing Profit"]], quarters=False)
-            qh, qdata = pl_q if pl_q else (None, {})
-            ah, adata = pl_a if pl_a else (None, {})
-            bh, bdata = self._find_table(parsed, ("Equity Capital", "Borrowing"), quarters=False)
-            ch, cdata = self._find_table(parsed, ("Cash from Operating Activity",), quarters=False)
-            sh, sdata = self._find_table_multi(parsed, [["Promoters", "DIIs", "FIIs", "Public"]], quarters=True)
-
-            self._extract_shareholding(out, sh, sdata)
-            self._extract_pledge(out, parsed, r.text)
-            self._extract_quarterly(out, qh, qdata)
-            self._extract_annual(out, ah, adata, bh, bdata, ch, cdata)
-            # Financial-sector marker: screener's P&L uses 'Revenue'/'Financing
-            # Profit' labels for banks/NBFCs/brokers. OCF for such companies is
-            # structurally negative (loan disbursements are operating outflows),
-            # so FCF/PAT vetoes don't apply.
-            if ah and any("Financing Profit" in k for k in adata.keys()):
-                out["sector_type"] = "financial"
-
-            self._derive_free_float(out)
-            return out
-        except Exception as e:
-            return {"symbol": symbol, "error": f"parse error: {e}"}
+        return self._parse_html(r.text, symbol, url)
 
     @staticmethod
     def _find_table(parsed, row_keys, quarters):

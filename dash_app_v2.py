@@ -280,6 +280,7 @@ def update_nav(pathname, state):
     NAV_LINKS = [
         {"name": "Dashboard", "icon": "leaderboard", "path": "/"},
         {"name": "Signals", "icon": "bolt", "path": "/signals"},
+        {"name": "Momentum Score", "icon": "speed", "path": "/momentum"},
         {"name": "Institutional Signals", "icon": "shield", "path": "/institutional-signals"},
         {"name": "Verify Conditions", "icon": "check_circle", "path": "/verify-conditions"},
         {"name": "Watchlist", "icon": "bookmark", "path": "/watchlist"},

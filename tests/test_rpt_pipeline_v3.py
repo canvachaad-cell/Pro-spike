@@ -57,15 +57,13 @@ def test_scorer_exempt_status():
         "rpt_pct": None,
     }
 
-    # Verify gate score gives 10/10 for EXEMPT
+    # Verify gate score gives 5 clean metrics
     gate = _gate_scores(fund)
-    assert gate["rpt_pct"] == 10
+    assert "rpt_pct" not in gate
+    assert len(gate) == 5
 
-    # Verify full score runs in 6-Metric Mode and does not treat rpt as missing
+    # Verify full score runs in 5-Metric Vikram mode
     res = scorer.score(fund)
-    assert res["rpt_data_missing"] is False
-    assert res["rpt_fetch_status"] == "EXEMPT"
-    assert "rpt_pct" not in res["not_applicable_metrics"]
-    assert "6-Metric Mode" in res["data_completeness"]["label"]
+    assert "5-Metric Vikram" in res["data_completeness"]["label"]
     assert res["score"] is not None
     assert res["score"] >= 75

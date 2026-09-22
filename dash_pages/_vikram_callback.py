@@ -244,9 +244,7 @@ RESPONSE RULES
 - "My view:" = your analysis and opinion
 - "FLAG:" = a risk the user must investigate before acting
 - Be direct and opinionated. You're a seasoned analyst, not a hedger.
-- Never fabricate specific balance sheet figures, prices, or shareholding
-  percentages you don't have. Say "I don't have the latest numbers on that
-  — check Screener.in or BSE filing" instead
+- STRICT GROUNDING & ANTI-HALLUCINATION: The company name, market cap, promoter holding, pledge %, and financials in FUNDAMENTAL DATA are authoritative (from Screener.in/BSE). ALWAYS use the exact company name from the injected data (e.g. 'G G Automotive Gears Ltd' for GGAUTO). NEVER invent company names (do NOT guess names like 'Gangarosa' or 'Gangappa'). NEVER invent shareholding percentages, prices, or balance sheet figures. If data is in FUNDAMENTAL DATA, cite it directly. Only use Google Search if a metric is genuinely missing (marked with ⏳).
 - AUTOMATED Vetoes are HARD STOPS: if the injected data says a VETO is
   active for a symbol, you do NOT give a buy view on it, full stop.
 - Class M prose must mention the injected CONVICTION SCORE's biggest
@@ -254,11 +252,10 @@ RESPONSE RULES
 - Class L: the table's Fundamental Strength line IS the verdict — prose
   reinforces the rebalancing disclaimer briefly
 - MANDATORY SEARCH RULE: for any question about DII/FII holdings, OCF/PAT,
-  pledge, promoter buying, dilution, recent results, or news, you MUST use
-  your Google Search tool FIRST and ground the answer in what it returns.
-  Saying "I don't have" for publicly available data without having searched
-  is a failure mode — search, then answer. If search returns nothing usable,
-  say exactly that
+  pledge, promoter buying, dilution, recent results, or news where data is
+  NOT already injected in FUNDAMENTAL DATA, you MUST use your Google Search
+  tool FIRST and ground the answer in what it returns. Saying "I don't have"
+  for publicly available data without having searched is a failure mode.
 - When asked to audit closed trades or find alpha leaks: skip the table,
   go engine by engine through the SIMULATION LEDGERS with concrete numbers,
   name specific symbols, and compare against the RISK ARCHITECTURE limits
@@ -818,7 +815,10 @@ def build_fundamental_context(question):
                 f"delivery turnover {tech['deliv_turnover']}, avg trade worth {tech['atw']}, "
                 f"30d trigger count {tech['trigger_count']}"
             )
-        if d.get("promoter_trend") is not None:
+        if d.get("promoter_holding") is not None:
+            trend_str = f" (trend: {d['promoter_trend']})" if d.get("promoter_trend") else ""
+            detail.append(f"Promoter holding: {d['promoter_holding']:.2f}%{trend_str}")
+        elif d.get("promoter_trend") is not None:
             detail.append(f"Promoter trend: {d['promoter_trend']}")
         if d.get("dii_trend") is not None:
             detail.append(f"DII trend: {d['dii_trend']}")
@@ -826,7 +826,11 @@ def build_fundamental_context(question):
             detail.append(f"FII trend: {d['fii_trend']}")
         if d.get("pledge_trend") is not None:
             note = d.get("pledge_note", "")
-            detail.append(f"Pledge trend (4Q): {d['pledge_trend']} — direction {d.get('pledge_direction', '?')}{f' ({note})' if note else ''}")
+            p_val = d.get("pledged_pct")
+            if p_val is None and isinstance(d.get("pledge_trend"), list) and d["pledge_trend"]:
+                p_val = d["pledge_trend"][-1]
+            p_str = f"Promoter pledge: {p_val:.2f}% | " if p_val is not None else ""
+            detail.append(f"{p_str}Pledge trend (4Q): {d['pledge_trend']} — direction {d.get('pledge_direction', '?')}{f' ({note})' if note else ''}")
         if d.get("fcf_pat_ratio") is not None and d.get("sector_type") != "financial":
             detail.append(f"OCF/PAT 3yr cumulative: {d['fcf_pat_ratio']}x (OCF 3yr {d.get('ocf_3yr_cr')} ₹Cr vs PAT 3yr {d.get('pat_3yr_cr')} ₹Cr)")
         elif d.get("sector_type") == "financial" and d.get("fcf_pat_ratio") is not None:

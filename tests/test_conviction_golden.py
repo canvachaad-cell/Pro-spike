@@ -51,15 +51,15 @@ def test_algoquant_financial_business(scorer):
 
 
 def test_saksoft_5_metric_mode(scorer):
-    """BUG-009/011: Verify SAKSOFT scores strictly in 5-metric mode when RPT missing."""
+    """BUG-009/011: Verify SAKSOFT scores strictly in 5-Metric Vikram mode."""
     fund = copy.deepcopy(FUNDS.get("SAKSOFT"))
     if not fund:
         pytest.skip("SAKSOFT not in fixtures")
         
     res = scorer.score(fund)
-    assert res["rpt_data_missing"] is True, "SAKSOFT RPT should be missing"
-    assert "5-Metric Mode" in res["data_completeness"]["label"]
-    assert "rpt_pct" in res["not_applicable_metrics"]
+    assert "5-Metric Vikram" in res["data_completeness"]["label"]
+    assert res["score"] == 90
+    assert res["rating"] == "HIGH_CONVICTION"
     
 
 def test_greenply_roice_blending():
