@@ -106,18 +106,6 @@ class MomentumScorer:
         if fcf_res.status == "VETO_TRIGGERED":
             veto_reasons.append(fcf_res.reason)
 
-        if veto_reasons:
-            return {
-                "blocked_by_veto": True,
-                "veto_reasons": veto_reasons,
-                "momentum_score": 0,
-                "momentum_tier": "BLOCKED",
-                "part_a_score": 0.0,
-                "part_b_score": 0.0,
-                "part_a_breakdown": {},
-                "part_b_breakdown": {},
-                "verdict": "🚫 BLOCKED BY VETO GATE — Execution Forbidden",
-            }
 
         # 2. Sub-Part A: Today's Float Mechanics (55% Weight)
         deliv_per = None
@@ -268,6 +256,21 @@ class MomentumScorer:
         else:
             tier = "WEAK"
             verdict = "🔴 WEAK — Insufficient float absorption or weak metrics. Skip."
+
+        if veto_reasons:
+            return {
+                "blocked_by_veto": True,
+                "veto_reasons": veto_reasons,
+                "momentum_score": 0,
+                "momentum_tier": "BLOCKED",
+                "part_a_score": 0.0,
+                "part_a_contrib": 0.0,
+                "part_b_score": 0.0,
+                "part_b_contrib": 0.0,
+                "part_a_breakdown": part_a_breakdown,
+                "part_b_breakdown": part_b_breakdown,
+                "verdict": "🚫 BLOCKED BY VETO GATE — Execution Forbidden",
+            }
 
         return {
             "blocked_by_veto": False,

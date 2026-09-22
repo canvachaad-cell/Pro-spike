@@ -47,50 +47,50 @@
   }
  },
  "SANJIVIN": {
-  "ts": 1789413286.612537,
+  "ts": 1790067754.557248,
   "data": {
-   "symbol": "SANJIVIN",
-   "url": "https://www.screener.in/company/531569/consolidated/",
-   "name": "Sanjivani Paranteral Ltd",
-   "market_cap_cr": 222.0,
-   "price": 181.0,
-   "promoter_trend": "Sep 2023: 32.34% -> Dec 2023: 32.34% -> Mar 2024: 27.67% -> Jun 2024: 27.67% -> Sep 2024: 27.67% -> Dec 2024: 27.67% -> Mar 2025: 28.87% -> Jun 2025: 28.87% -> Sep 2025: 31.20% -> Dec 2025: 31.20% -> Mar 2026: 31.26% -> Jun 2026: 31.56%",
-   "promoter_holding": 31.56,
-   "dii_trend": "Sep 2023: 8.16% -> Dec 2023: 6.01% -> Mar 2024: 9.71% -> Jun 2024: 9.36% -> Sep 2024: 6.26% -> Dec 2024: 6.26% -> Mar 2025: 6.15% -> Jun 2025: 6.15% -> Sep 2025: 6.02% -> Dec 2025: 6.03% -> Mar 2026: 6.03% -> Jun 2026: 5.45%",
-   "dii_holding": 5.45,
-   "pledge_trend": [
-    0.0
-   ],
-   "pledge_direction": "flat",
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "quarterly_quarters": 11,
-   "revenue_ttm_cr": 74.61,
-   "revenue_4q_growth": 0.04276729559748431,
+   "roice_pct": null,
    "ebit_4q_growth": 0.11079812206572767,
+   "dii_trend": "Sep 2023: 8.16% -> Dec 2023: 6.01% -> Mar 2024: 9.71% -> Jun 2024: 9.36% -> Sep 2024: 6.26% -> Dec 2024: 6.26% -> Mar 2025: 6.15% -> Jun 2025: 6.15% -> Sep 2025: 6.02% -> Dec 2025: 6.03% -> Mar 2026: 6.03% -> Jun 2026: 5.45%",
+   "borrowings_cr": 14.0,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "roce_abs_pct": 16.5,
+   "price": 172.0,
+   "symbol": "SANJIVIN",
+   "market_cap_cr": 212.0,
    "op_lev_ratio": 2.590720795360395,
+   "promoter_holding": 31.56,
    "op_lev_inflecting": true,
-   "interest_coverage_trend": "improving",
    "interest_coverage_recent": 20.07,
+   "pledge_direction": "flat",
+   "rpt_amount_cr": null,
+   "name": "Sanjivani Paranteral Ltd",
    "ocf_3yr_cr": [
     -10.7,
     12.4,
     -0.1
+   ],
+   "quarterly_quarters": 11,
+   "interest_coverage_trend": "improving",
+   "dii_holding": 5.45,
+   "pledge_trend": [
+    0.0
    ],
    "pat_3yr_cr": [
     6.2,
     8.1,
     6.7
    ],
-   "fcf_pat_ratio": 0.08,
-   "roce_abs_pct": 16.5,
-   "borrowings_cr": 14.0,
-   "free_float_cr": 152,
-   "rpt_status": "NOT_SCRAPED",
    "rpt_pct": null,
-   "rpt_amount_cr": null,
+   "revenue_4q_growth": 0.04276729559748431,
+   "fcf_pat_ratio": 0.08,
+   "revenue_ttm_cr": 74.61,
+   "free_float_cr": 145,
    "fii_trend": null,
-   "roice_pct": null,
-   "fii_holding": null
+   "rpt_status": "NOT_APPLICABLE",
+   "fii_holding": null,
+   "promoter_trend": "Sep 2023: 32.34% -> Dec 2023: 32.34% -> Mar 2024: 27.67% -> Jun 2024: 27.67% -> Sep 2024: 27.67% -> Dec 2024: 27.67% -> Mar 2025: 28.87% -> Jun 2025: 28.87% -> Sep 2025: 31.20% -> Dec 2025: 31.20% -> Mar 2026: 31.26% -> Jun 2026: 31.56%",
+   "url": "https://www.screener.in/company/531569/consolidated/"
   }
  },
  "IBULLSLTD": {

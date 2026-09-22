@@ -489,11 +489,16 @@ def render_momentum_analysis(symbol):
 
         # Contextual Graceful Badge & Label Handling
         if score_val is not None:
-            score_str = f"{score_val}/10"
-            badge_color = "text-secondary bg-secondary-container/20 border-secondary/40" if score_val >= 8 else (
-                "text-[#FFB300] bg-[#FFB300]/15 border-[#FFB300]/30" if score_val >= 5 else "text-error bg-error-container/20 border-error/30"
-            )
-            extra_note = None
+            if score_val == 0 and is_vetoed:
+                score_str = "0/10 (Veto Trigger)"
+                badge_color = "text-error bg-error-container/20 border-error/40"
+                extra_note = "Deal-breaker threshold violated — tactical entry forbidden."
+            else:
+                score_str = f"{score_val}/10"
+                badge_color = "text-secondary bg-secondary-container/20 border-secondary/40" if score_val >= 8 else (
+                    "text-[#FFB300] bg-[#FFB300]/15 border-[#FFB300]/30" if score_val >= 5 else "text-error bg-error-container/20 border-error/30"
+                )
+                extra_note = None
         else:
             # Handle N/A gracefully depending on accounting reality
             if key == "op_leverage":
