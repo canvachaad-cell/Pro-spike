@@ -512,13 +512,20 @@ _SYMBOL_STOPWORDS = {
 }
 
 
+SYMBOL_ALIASES = {
+    "531399": "GGAUTO",
+    "544735": "NOVUS",
+    "TATAMOTORS": "TMCV",
+    "ZOMATO": "ETERNAL",
+}
+
 _known_symbols_cache = set()
 _known_symbols_mtime = 0.0
 
 def _known_symbols():
     """Symbols from portfolio + engine watchlists + signal history + ranked
-    pool (cached per process with 15-minute TTL). Includes historically-fired scanner names so
-    bare lowercase queries ("katipatang") resolve without a search call."""
+    pool + universal 4,400+ cloud universe (cached per process with 15-minute TTL).
+    Allows instant sub-millisecond resolution of any Indian stock symbol typed in any case."""
     global _known_symbols_cache, _known_symbols_mtime
     now = time.monotonic()
     if _known_symbols_cache and (now - _known_symbols_mtime) < 900:
@@ -529,15 +536,29 @@ def _known_symbols():
         os.path.join("data", "signal_history.csv"),
         os.path.join("data", "active_signals_ranked.csv"),
         os.path.join("data", "survivors_archive.csv"),
+        os.path.join("data", "dashboard_cloud.csv"),
+        os.path.join("data", "combined_dashboard_live.csv"),
     ]
     for path in paths:
-        try:
-            df = pd.read_csv(path)
-            col = "SYMBOL" if "SYMBOL" in df.columns else ("Symbol" if "Symbol" in df.columns else ("symbol" if "symbol" in df.columns else None))
-            if col:
-                syms.update(str(s).strip().upper() for s in df[col].dropna() if len(str(s).strip()) >= 3)
-        except Exception:
+        if not os.path.exists(path):
             continue
+        try:
+            df = pd.read_csv(path, usecols=lambda c: str(c).upper() == "SYMBOL")
+            if not df.empty and "SYMBOL" in df.columns:
+                syms.update(str(s).strip().upper() for s in df["SYMBOL"].dropna() if len(str(s).strip()) >= 3)
+            elif not df.empty:
+                first_col = df.columns[0]
+                syms.update(str(s).strip().upper() for s in df[first_col].dropna() if len(str(s).strip()) >= 3)
+        except Exception:
+            try:
+                df = pd.read_csv(path)
+                col = "SYMBOL" if "SYMBOL" in df.columns else ("Symbol" if "Symbol" in df.columns else ("symbol" if "symbol" in df.columns else None))
+                if col:
+                    syms.update(str(s).strip().upper() for s in df[col].dropna() if len(str(s).strip()) >= 3)
+            except Exception:
+                continue
+    # Add BSE alias keys so scrip codes (e.g. 531399) resolve as known
+    syms.update(SYMBOL_ALIASES.keys())
     _known_symbols_cache = syms
     _known_symbols_mtime = now
     return syms
@@ -547,37 +568,47 @@ def _known_symbols():
 def extract_query_symbols(question):
     """Uppercase tokens that look like stock symbols; known ones first.
 
-    Also matches known symbols typed in any case (e.g. "sjlogistic",
-    "SJLogistic") and falls back to screener.in's company-search API for
-    name-like queries with one or more lowercase words ("indus towers",
-    "sj logistics").
+    Matches known symbols typed in ANY case (e.g. "novus", "what about novus",
+    "sjlogistic", "tcs", "544735") in sub-millisecond time via O(1) set matching against the
+    full 4,400+ equity universe. Falls back to screener.in's company-search API for
+    longer queries with company names ("indus towers", "sj logistics").
     """
     known = _known_symbols()
     q = question or ""
     q_upper = q.upper()
 
-    # 1) Whole-query match against known symbols (any casing) — catches
-    #    "sjlogistic", "SJLOGISTIC fired...", "SJLogistic?" etc.
-    for sym in known:
-        if re.search(rf"\b{re.escape(sym)}\b", q_upper):
-            return [sym]
-
-    tokens = re.findall(r"\b[A-Z][A-Z0-9&-]{2,19}\b", q)
+    # 1) Token-level O(query_words) match against known universe (any casing)
+    # Extracts word tokens of length 2-20 containing letters, numbers, &, -
+    query_tokens = re.findall(r"\b[A-Z0-9&-]{2,20}\b", q_upper)
+    matched_known = []
     seen = set()
+    for tok in query_tokens:
+        tok_clean = tok.rstrip("&-")
+        if tok_clean in _SYMBOL_STOPWORDS or tok_clean in seen or len(tok_clean) < 3:
+            continue
+        resolved = SYMBOL_ALIASES.get(tok_clean, tok_clean)
+        if resolved in known and resolved not in seen:
+            seen.add(resolved)
+            matched_known.append(resolved)
+            
+    if matched_known:
+        return matched_known[:_MAX_SCREENER_LOOKUPS]
+
+    # 2) Fallback to uppercase tokens that might be unlisted / new tickers
+    tokens = re.findall(r"\b[A-Z][A-Z0-9&-]{2,19}\b", q)
     candidates = []
     for t in tokens:
         t = t.rstrip("&-")
         if t in _SYMBOL_STOPWORDS or t in seen or len(t) < 3:
             continue
-        seen.add(t)
-        candidates.append(t)
-    ordered = [c for c in candidates if c in known] + [c for c in candidates if c not in known]
-    if ordered:
-        return ordered[:_MAX_SCREENER_LOOKUPS]
+        resolved = SYMBOL_ALIASES.get(t, t)
+        if resolved not in seen:
+            seen.add(resolved)
+            candidates.append(resolved)
+    if candidates:
+        return candidates[:_MAX_SCREENER_LOOKUPS]
 
-    # 2) No symbol-like token: try company-name search. Requires >= 2
-    #    distinctive words (or a long single word) so generic questions
-    #    ("how is my portfolio") never trigger a fetch.
+    # 3) Fallback: Screener API search for company names
     _NAME_STOP = {"what", "about", "tell", "should", "would", "could", "think",
                   "view", "analysis", "analyze", "analyse", "framework", "stock",
                   "company", "share", "this", "that", "have", "does", "your",
@@ -588,10 +619,7 @@ def extract_query_symbols(question):
                   "my", "portfolio", "positions", "trades", "audit", "alpha",
                   "leaking", "engines", "mode", "fundamentals", "indian"}
     words = [w for w in re.findall(r"[A-Za-z][A-Za-z&-]{2,}", q) if w.lower() not in _NAME_STOP]
-    # Guard: a single short-ish word is too ambiguous to auto-fetch
-    if len(words) >= 2 or (len(words) == 1 and len(words[0]) >= 7):
-        # Variants: original query spacing (preserves "S J Logistics"),
-        # reconstructed distinctive words, and their uppercase forms.
+    if len(words) >= 2 or (len(words) == 1 and len(words[0]) >= 3):
         variants = [q[:60].strip(), " ".join(words[:3])]
         for v in list(variants):
             variants.append(v.upper())
@@ -614,24 +642,19 @@ def extract_query_symbols(question):
                     if not m or m.group(1) in _SYMBOL_STOPWORDS:
                         continue
                     sym = m.group(1)
-                    # Relevance guard: the hit must share a distinctive
-                    # sub-token with the query — prevents "Sj logistics"
-                    # resolving to AEGISLOG via screener's fuzzy index.
                     q_norm = re.sub(r"[^A-Z0-9]", "", q.upper())
                     s_norm = re.sub(r"[^A-Z0-9]", "", sym.upper())
-                    # Company name with legal suffixes stripped — lets
-                    # "kati patang lifestyle" match "Kati patang Lifestyle
-                    # Ltd" (name longer than query must still match).
                     n_norm = re.sub(r"[^A-Z0-9]", "", name.upper())
                     n_norm = re.sub(r"(LTD|LIMITED|INDIA|PLC|PVT)\d*$", "", n_norm)
                     n_core = re.sub(r"(LTD|LIMITED|INDIA|PLC|PVT)", "", n_norm)
                     if q_norm and (
                         s_norm in q_norm
                         or q_norm in s_norm
-                        or (n_norm and n_norm in q_norm)
-                        or (n_core and n_core in q_norm)
+                        or (n_norm and (n_norm in q_norm or q_norm in n_norm))
+                        or (n_core and (n_core in q_norm or q_norm in n_core))
                     ):
-                        return [sym]
+                        resolved = SYMBOL_ALIASES.get(sym, sym)
+                        return [resolved]
             except Exception:
                 pass
     return []

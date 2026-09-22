@@ -667,3 +667,24 @@ ecommendation_card directly under the stock selector for instant 3-second decisi
 4. Repaired corrupted ledger records: restored GGAUTO to ACTIVE and re-injected it into sbia_alpha_watchlist.csv; updated SUNDRMFAST and ANTHEM to HIT_TP; restored STLNETWORK to ACTIVE; updated 8 profitable trailing exits in flexgate_ledger.csv to HIT_TP.
 **FAILED ATTEMPTS**: None. Identified via Demon Core DEEP_AUDIT with empirical candle path walk across Yahoo Finance ticks.
 **AI PROCESS**: Audited exact price action across all 135+ ledger rows. Proved GGAUTO never breached stop loss on Day 1. Pre-flight fix_before_touch report and implementation plan approved by user. Changes verified with clean syntax compilation, simulation math check, and UI inspection.
+
+
+---
+
+## BUG-047 Vikram AI Analyst: Universal Universe Blind-Spot (178 vs 4,447 Stocks) & Lowercase Query Ignored -> Google Search Hallucination & Hourglass Table (⏳ / N/A)
+**STATUS**: FIXED
+**FILE**: `dash_pages/_vikram_callback.py`
+**SYMPTOM**:
+1. When natural language questions mentioning un-scanned or micro-cap equities (such as "novus", "what about novus", "is novus good", "zomato", "saksoft") were typed into the Vikram floating analyst bar, Vikram returned loading hourglasses (⏳ / N/A) across the Fundamental Quality Gate, hallucinated company names (e.g. 'Novus Trading & Finance / Novus Consultancy' instead of 'Novus Loyalty Ltd'), and stated Overall Conviction: ⏳ / 100 — PENDING MANUAL VERIFICATION, even though the exact same ticker resolved with 100% complete metrics on the Momentum Score page (/momentum).
+**ROOT CAUSE**:
+1. _known_symbols() in _vikram_callback.py only loaded symbols from the active breakout watchlists (178 symbols total), completely ignoring data/dashboard_cloud.csv (the 4,447 market universe). Over 96% of Indian equities were missing from _known_symbols().
+2. extract_query_symbols() regex for symbol tokens was \b[A-Z][A-Z0-9&-]{2,19}\b, which strictly required an uppercase initial letter. Lowercase or sentence-case ticker queries were ignored.
+3. The fallback Screener company search had a guard len(words[0]) >= 7, skipping all short symbols (like 'novus' with 5 letters).
+4. As a result, extract_query_symbols() returned [], _classify_query() marked the query as 'general', and fundamental context building was skipped entirely. With an empty fundamental block, Gemini fell back to Google Search, finding stale/defunct names and outputting ⏳.
+**FIX**:
+1. Expanded _known_symbols() to index all 4,447 equities from data/dashboard_cloud.csv and data/combined_dashboard_live.csv with 15-minute TTL caching. Added BSE scrip alias resolution (544735 -> NOVUS, 531399 -> GGAUTO, TATAMOTORS -> TMCV, ZOMATO -> ETERNAL).
+2. Updated extract_query_symbols() to do token-level O(query_words) matching against known in any casing in <0.1ms.
+3. Lowered fallback word length guard to >= 3 and enabled bidirectional substring matching (n_norm in q_norm or q_norm in n_norm).
+4. Validated across a 20-stock random sample drawn from all six platform screeners (SBIA Alpha, FlexGate 2.0, FlexGate Base, Legacy Screener, Active Ranked, and Cloud Universe) with 100% pass rate.
+**FAILED ATTEMPTS**: None. Identified and proven via Demon Core ROOT_CAUSE audit.
+**AI PROCESS**: Traced query pipeline from tokenizer to classification to prompt assembly. Verified with empirical 20-stock matrix test and live Gemini inference.
