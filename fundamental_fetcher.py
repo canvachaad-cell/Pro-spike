@@ -130,13 +130,12 @@ class FundamentalFetcher:
         if cached is not None:
             if _quality_count(cached) >= MIN_QUALITY_KEYS:
                 if cached.get("rpt_status") in ("NOT_FOUND", "NOT_SCRAPED", None):
-                    rpt_info = RPTFetcher().fetch_rpt_data(symbol, revenue_cr=cached.get("revenue_ttm_cr"))
-                    if rpt_info.get("status") in ("OK", "EXEMPT"):
-                        cached = dict(cached)
-                        cached["rpt_status"] = rpt_info.get("status")
-                        cached["rpt_pct"] = rpt_info.get("rpt_pct")
-                        cached["rpt_amount_cr"] = rpt_info.get("rpt_amount_cr")
-                        self._save_cache(symbol, cached)
+                    # RPT_REMOVED: RPT retired from Vikram fundamental architecture
+                    cached = dict(cached)
+                    cached["rpt_status"] = "NOT_APPLICABLE"
+                    cached["rpt_pct"] = None
+                    cached["rpt_amount_cr"] = None
+                    self._save_cache(symbol, cached)
                 return self._apply_overrides(symbol, cached)
             # Hollow cache entry (old bug) — purge and refetch
             self._purge_cache(symbol)
@@ -157,16 +156,29 @@ class FundamentalFetcher:
             if stale is not None:
                 # hollow stale entry — purge so it never shadows future fetches
                 self._purge_cache(symbol)
+            # Partial-hollow: pledge/promoter data is present but annual financials missing.
+            # Return partial data with a note instead of a hard error — scorers will
+            # work on whatever is available (pledge, promoter holding) and skip the rest.
+            # This avoids blanket N/A for BSE small-caps with standalone-only filings.
+            has_pledge = data.get("pledge_trend") is not None or data.get("promoter_holding") is not None
+            if has_pledge and "error" not in data:
+                data = dict(data)
+                data["partial_data"] = True
+                data["partial_data_note"] = "Annual financials (FCF/Op-Lev/Coverage/RoICE) not available on Screener.in for this ticker. Only shareholding data scored."
+                data["rpt_status"] = "NOT_APPLICABLE"
+                data["rpt_pct"] = None
+                data["rpt_amount_cr"] = None
+                # Do NOT cache partial data — try fresh on next call
+                return self._apply_overrides(symbol, data)
             if "error" not in data:
                 data = dict(data)
                 data["error"] = "incomplete data from screener.in (financial tables missing from page)"
             return self._apply_overrides(symbol, data)
         if "error" not in data:
-            revenue_cr = data.get("revenue_ttm_cr")
-            rpt_info = RPTFetcher().fetch_rpt_data(symbol, revenue_cr=revenue_cr)
-            data["rpt_status"] = rpt_info.get("status", "NOT_FOUND")
-            data["rpt_pct"] = rpt_info.get("rpt_pct")
-            data["rpt_amount_cr"] = rpt_info.get("rpt_amount_cr")
+            # RPT_REMOVED: RPT retired from Vikram fundamental architecture
+            data["rpt_status"] = "NOT_APPLICABLE"
+            data["rpt_pct"] = None
+            data["rpt_amount_cr"] = None
             self._save_cache(symbol, data)
         return self._apply_overrides(symbol, data)
 

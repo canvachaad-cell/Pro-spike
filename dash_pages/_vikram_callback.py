@@ -769,7 +769,7 @@ def build_fundamental_context(question):
                             break
                 except Exception:
                     pass
-        if d.get("error"):
+        if d.get("error") and not d.get("partial_data"):
             lines.append(
                 f"- {display_sym}: LIVE FUNDAMENTAL FETCH INCOMPLETE ({d['error']}). "
                 f"You MUST now use your Google Search tool to find this company's key fundamentals "
@@ -778,6 +778,15 @@ def build_fundamental_context(question):
                 f"Only use ⏳ for metrics you cannot verify from search either. Do NOT guess."
             )
             continue
+        if d.get("partial_data"):
+            # BSE small-cap with only shareholding data from Screener.in.
+            # We have pledge/promoter — score those. Tell Gemini to search for the rest.
+            lines.append(
+                f"NOTE: {display_sym} — annual financials (FCF, Op-Lev, Coverage, RoICE) not on Screener.in. "
+                f"Pledge/promoter data is available and scored. Use Google Search to find P&L and cash flow "
+                f"data for the missing metrics, marking each with 🔍."
+            )
+
         if res.get("veto"):
             lines.append(f"⚠️ AUTOMATED VETO ACTIVE FOR {display_sym}: {'; '.join(res['veto_reasons'])}. Do not give a buy view.")
         elif res.get("unverified_veto"):
