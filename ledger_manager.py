@@ -3,6 +3,58 @@ import numpy as np
 import yfinance as yf
 import os
 
+def check_signal_eligibility(ledger_df, sym, trigger_dt, cooldown_days=14):
+    """
+    Enforces:
+    1. Max 1 Active Trade: No stacking if symbol is already ACTIVE.
+    2. Conditional Post-Loss Lockout: Blocks re-entry for 14 calendar days after a LOSS.
+    3. Positive Continuation: Freely permits re-entry after a WIN.
+    """
+    if ledger_df.empty:
+        return True, "FIRST_ENTRY"
+
+    sym_trades = ledger_df[ledger_df['SYMBOL'] == sym]
+    if sym_trades.empty:
+        return True, "FIRST_ENTRY"
+
+    # Rule 1: No stacking while active
+    if (sym_trades['STATUS'] == 'ACTIVE').any():
+        return False, "ALREADY_ACTIVE"
+
+    # Exact duplicate entry check
+    trigger_ts = pd.to_datetime(trigger_dt)
+    if (sym_trades['ENTRY_DATE'] == trigger_ts).any():
+        return False, "DUPLICATE_ENTRY_DATE"
+
+    # Rule 2: Check most recent closed trade
+    closed = sym_trades[sym_trades['STATUS'].isin(['HIT_TP', 'HIT_SL', 'MOMENTUM_LOST'])].copy()
+    if closed.empty:
+        return True, "CLEARED"
+
+    closed['EXIT_DT'] = pd.to_datetime(closed['EXIT_DATE'], errors='coerce')
+    valid_closed = closed[closed['EXIT_DT'].notna() & (closed['EXIT_DT'] <= trigger_ts)]
+    if valid_closed.empty:
+        valid_closed = closed[closed['EXIT_DT'].notna()]
+        if valid_closed.empty:
+            return True, "CLEARED"
+
+    last_trade = valid_closed.sort_values('EXIT_DT').iloc[-1]
+
+    # Determine if last trade was a WIN or LOSS
+    is_loss = (last_trade['STATUS'] == 'HIT_SL') or (
+        last_trade['STATUS'] == 'MOMENTUM_LOST' and
+        pd.notna(last_trade.get('EXIT_PRICE')) and
+        last_trade['EXIT_PRICE'] < last_trade['ENTRY_PRICE']
+    )
+
+    if is_loss and pd.notna(last_trade['EXIT_DT']):
+        days_since_exit = (trigger_ts - last_trade['EXIT_DT']).days
+        if 0 <= days_since_exit < cooldown_days:
+            return False, f"POST_LOSS_LOCKOUT ({days_since_exit}d < {cooldown_days}d)"
+
+    return True, "CLEARED"
+
+
 def update_sbia_ledger(alpha_watchlist, latest_prices_df, ledger_path="data/sbia_ledger.csv"):
     """
     Updates the permanent trade ledger for SBIA Alpha signals.
@@ -35,9 +87,11 @@ def update_sbia_ledger(alpha_watchlist, latest_prices_df, ledger_path="data/sbia
         sym = row['SYMBOL']
         dt = row['DATE_DT']
         
-        exists = ledger_df[(ledger_df['SYMBOL'] == sym) & (ledger_df['ENTRY_DATE'] == dt)].shape[0] > 0
-        if not exists:
+        eligible, reason = check_signal_eligibility(ledger_df, sym, dt, cooldown_days=14)
+        if eligible:
             new_signals.append(row)
+        else:
+            print(f"[RE-ENTRY GATE] SBIA candidate {sym} on {dt.strftime('%Y-%m-%d')} skipped: {reason}")
             
     # Gather ALL symbols we need data for: New signals + existing ACTIVE signals
     active_symbols = ledger_df[ledger_df['STATUS'] == 'ACTIVE']['SYMBOL'].unique().tolist()
@@ -246,9 +300,11 @@ def update_flexgate_ledger(flex_watchlist, latest_prices_df, ledger_path):
         sym = row['SYMBOL']
         dt = row['DATE_DT']
         
-        exists = ledger_df[(ledger_df['SYMBOL'] == sym) & (ledger_df['ENTRY_DATE'] == dt)].shape[0] > 0
-        if not exists:
+        eligible, reason = check_signal_eligibility(ledger_df, sym, dt, cooldown_days=14)
+        if eligible:
             new_signals.append(row)
+        else:
+            print(f"[RE-ENTRY GATE] FlexGate candidate {sym} on {dt.strftime('%Y-%m-%d')} skipped: {reason}")
             
     active_symbols = ledger_df[ledger_df['STATUS'] == 'ACTIVE']['SYMBOL'].unique().tolist()
     new_syms = [row['SYMBOL'] for row in new_signals]
