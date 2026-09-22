@@ -644,3 +644,26 @@ ecommendation_card directly under the stock selector for instant 3-second decisi
 4. Added speed Momentum Score link into mobile_bottom_nav in dash_app_v2.py.
 **FAILED ATTEMPTS**: None. Hypothesized and verified through an empirical 15-stock matrix test script.
 **AI PROCESS**: Full audit triggered via prompt_enhancer -> pre-flight checklist ix_before_touch completed -> hyper-detailed implementation plan approved by user -> empirical verification across 15 tickers passed with 100% resolution -> logged to docs/known_bugs.md.
+
+
+---
+
+## BUG-046 Simulation Ledgers: Day-0 Lookback Contamination (>= entry_dt) & Retroactive Chandelier Stop Paradox in ledger_manager.py
+**STATUS**: FIXED
+**FILE**: ledger_manager.py, data/sbia_ledger.csv, data/flexgate2_ledger.csv, data/flexgate_ledger.csv, data/sbia_alpha_watchlist.csv
+**SYMPTOM**:
+1. Breakout stocks entering the screener on Day T (e.g. GGAUTO on 2026-09-21) were immediately marked as HIT_SL on the exact entry day in data/sbia_ledger.csv with false losses (-8.2%), and were ejected from data/sbia_alpha_watchlist.csv.
+2. Legitimate winning trades that surged to Take Profit (e.g. SUNDRMFAST +9.6%, ANTHEM +10.4%) were marked as Day-0 stop-loss losses.
+3. In FlexGate engines, trades that trailed into substantial profit (e.g. AIRFLOA +26.1%, SETL +18.7%) were marked as HIT_SL upon hitting trailing stops, causing velocity_simulation and dash_pages/win_rate.py to count profitable trades as losses.
+4. Active trades re-evaluated on subsequent days suffered from a time-travel paradox where future ratcheted stops were retroactively compared against Day-1 candle lows.
+**ROOT CAUSE**:
+1. ledger_manager.py iterated price paths using ticker_df[ticker_df.index >= entry_dt]. For trades entered at market close on Day T, the pre-entry morning low of Day T was tested against STOP_LOSS. On volatile breakout days, morning lows were frequently <= Close - 2*ATR, causing instant same-day false stop-outs.
+2. In FlexGate 2.0, current_stop_loss was initialized to row['STOP_LOSS'] from the CSV (which already contained future ratcheted stops), causing past candles to trip future stops.
+3. In trailing-stop engines without static TPs, exit logic unconditionally labeled any trailing stop breach as HIT_SL, even when current_stop_loss > entry_price (profitable exit).
+**FIX**:
+1. Replaced >= entry_dt with > entry_dt in both update_sbia_ledger and update_flexgate_ledger so the trade simulation strictly evaluates candle paths on sessions occurring after trade establishment.
+2. In update_flexgate_ledger, re-initialized replay stop from true entry initial stop: row['ENTRY_PRICE'] - (3.0 * row['ATR14']).
+3. In update_flexgate_ledger, classified any trailing stop exit where current_stop_loss > row['ENTRY_PRICE'] as HIT_TP.
+4. Repaired corrupted ledger records: restored GGAUTO to ACTIVE and re-injected it into sbia_alpha_watchlist.csv; updated SUNDRMFAST and ANTHEM to HIT_TP; restored STLNETWORK to ACTIVE; updated 8 profitable trailing exits in flexgate_ledger.csv to HIT_TP.
+**FAILED ATTEMPTS**: None. Identified via Demon Core DEEP_AUDIT with empirical candle path walk across Yahoo Finance ticks.
+**AI PROCESS**: Audited exact price action across all 135+ ledger rows. Proved GGAUTO never breached stop loss on Day 1. Pre-flight fix_before_touch report and implementation plan approved by user. Changes verified with clean syntax compilation, simulation math check, and UI inspection.

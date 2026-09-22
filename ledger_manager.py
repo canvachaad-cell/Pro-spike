@@ -148,7 +148,8 @@ def update_sbia_ledger(alpha_watchlist, latest_prices_df, ledger_path="data/sbia
                 else:
                     ticker_df = data[yf_sym]
                     
-                path_df = ticker_df[ticker_df.index.tz_localize(None) >= entry_dt].copy()
+                # Path must strictly evaluate days AFTER entry date to avoid Day-0 morning low lookback leakage
+                path_df = ticker_df[ticker_df.index.tz_localize(None) > entry_dt].copy()
                 path_df = path_df.dropna(subset=['Close'])
                 
                 hit = False
@@ -342,12 +343,14 @@ def update_flexgate_ledger(flex_watchlist, latest_prices_df, ledger_path):
                     ticker_df = data.get(yf_sym)
                     
                 if ticker_df is not None:
-                    # Check from entry_dt to ensure we check the entry day's low
-                    path_df = ticker_df[ticker_df.index.tz_localize(None) >= entry_dt].copy()
+                    # Path must strictly evaluate days AFTER entry date to avoid Day-0 morning low lookback leakage
+                    path_df = ticker_df[ticker_df.index.tz_localize(None) > entry_dt].copy()
                     path_df = path_df.dropna(subset=['Close'])
                     
                     # Dynamic Chandelier Exit Trailing Logic
-                    current_stop_loss = row['STOP_LOSS']
+                    # Start current_stop_loss at the true entry stop loss so replayed ratchets start from day 0 without time-travel paradox
+                    initial_sl = row['ENTRY_PRICE'] - (3.0 * row['ATR14']) if (pd.notna(row.get('ATR14')) and row.get('ATR14') > 0) else row['STOP_LOSS']
+                    current_stop_loss = initial_sl
                     highest_high = row['ENTRY_PRICE'] # Start highest_high at entry price
                     
                     hit = False
@@ -365,7 +368,11 @@ def update_flexgate_ledger(flex_watchlist, latest_prices_df, ledger_path):
                                 
                         # 4. Check for Stop Loss Hit
                         if pd.notna(current_stop_loss) and p_row['Low'] <= current_stop_loss:
-                            ledger_df.at[idx, 'STATUS'] = 'HIT_SL'
+                            # In trailing stop engines, an exit in profit above entry is taking profit (HIT_TP)
+                            if current_stop_loss > row['ENTRY_PRICE']:
+                                ledger_df.at[idx, 'STATUS'] = 'HIT_TP'
+                            else:
+                                ledger_df.at[idx, 'STATUS'] = 'HIT_SL'
                             ledger_df.at[idx, 'EXIT_DATE'] = p_date.tz_localize(None)
                             ledger_df.at[idx, 'EXIT_PRICE'] = current_stop_loss
                             hit = True

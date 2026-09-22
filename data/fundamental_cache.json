@@ -2141,50 +2141,50 @@
   }
  },
  "BLUESTARCO": {
-  "ts": 1789661492.008552,
+  "ts": 1790068360.0190456,
   "data": {
+   "dii_trend": "Sep 2023: 25.24% -> Dec 2023: 24.82% -> Mar 2024: 24.69% -> Jun 2024: 23.56% -> Sep 2024: 22.84% -> Dec 2024: 22.19% -> Mar 2025: 23.13% -> Jun 2025: 23.37% -> Sep 2025: 25.32% -> Dec 2025: 26.76% -> Mar 2026: 27.78% -> Jun 2026: 28.24%",
+   "rpt_status": "NOT_APPLICABLE",
+   "fcf_pat_ratio": 0.74,
+   "market_cap_cr": 31620.0,
+   "op_lev_ratio": 1.3582812699222238,
+   "revenue_ttm_cr": 12797.0,
+   "name": "Blue Star Ltd",
+   "fii_trend": "Sep 2023: 14.89% -> Dec 2023: 15.38% -> Mar 2024: 15.93% -> Jun 2024: 17.04% -> Sep 2024: 18.06% -> Dec 2024: 18.48% -> Mar 2025: 16.94% -> Jun 2025: 16.21% -> Sep 2025: 16.05% -> Dec 2025: 14.66% -> Mar 2026: 13.80% -> Jun 2026: 12.75%",
+   "pat_3yr_cr": [
+    414.0,
+    591.0,
+    527.0
+   ],
+   "revenue_4q_growth": 0.05900364117841774,
+   "interest_coverage_recent": 12.09,
+   "roce_abs_pct": 22.0,
+   "free_float_cr": 20082,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "quarterly_quarters": 13,
+   "roice_pct": 19.3,
+   "symbol": "BLUESTARCO",
+   "pledge_trend": [
+    0.0
+   ],
+   "ebit_4q_growth": 0.08014354066985646,
+   "price": 1538.0,
+   "fii_holding": 12.75,
+   "rpt_amount_cr": null,
+   "interest_coverage_trend": "deteriorating",
+   "promoter_trend": "Sep 2023: 36.49% -> Dec 2023: 36.50% -> Mar 2024: 36.50% -> Jun 2024: 36.53% -> Sep 2024: 36.46% -> Dec 2024: 36.46% -> Mar 2025: 36.47% -> Jun 2025: 36.48% -> Sep 2025: 36.48% -> Dec 2025: 36.48% -> Mar 2026: 36.48% -> Jun 2026: 36.49%",
+   "rpt_pct": null,
+   "borrowings_cr": 810.0,
+   "promoter_holding": 36.49,
+   "pledge_direction": "flat",
    "ocf_3yr_cr": [
     289.0,
     688.0,
     154.0
    ],
-   "price": 1553.0,
-   "rpt_status": "NOT_SCRAPED",
-   "fii_holding": 12.75,
-   "market_cap_cr": 31891.0,
-   "rpt_pct": null,
-   "symbol": "BLUESTARCO",
-   "dii_trend": "Sep 2023: 25.24% -> Dec 2023: 24.82% -> Mar 2024: 24.69% -> Jun 2024: 23.56% -> Sep 2024: 22.84% -> Dec 2024: 22.19% -> Mar 2025: 23.13% -> Jun 2025: 23.37% -> Sep 2025: 25.32% -> Dec 2025: 26.76% -> Mar 2026: 27.78% -> Jun 2026: 28.24%",
-   "borrowings_cr": 810.0,
    "url": "https://www.screener.in/company/BLUESTARCO/consolidated/",
-   "revenue_ttm_cr": 12797.0,
-   "pledge_direction": "flat",
-   "rpt_amount_cr": null,
-   "ebit_4q_growth": 0.08014354066985646,
-   "promoter_holding": 36.49,
    "op_lev_inflecting": false,
-   "fii_trend": "Sep 2023: 14.89% -> Dec 2023: 15.38% -> Mar 2024: 15.93% -> Jun 2024: 17.04% -> Sep 2024: 18.06% -> Dec 2024: 18.48% -> Mar 2025: 16.94% -> Jun 2025: 16.21% -> Sep 2025: 16.05% -> Dec 2025: 14.66% -> Mar 2026: 13.80% -> Jun 2026: 12.75%",
-   "name": "Blue Star Ltd",
-   "free_float_cr": 20254,
-   "pledge_trend": [
-    0.0
-   ],
-   "dii_holding": 28.24,
-   "roce_abs_pct": 22.0,
-   "interest_coverage_recent": 12.09,
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "quarterly_quarters": 13,
-   "fcf_pat_ratio": 0.74,
-   "roice_pct": 19.3,
-   "promoter_trend": "Sep 2023: 36.49% -> Dec 2023: 36.50% -> Mar 2024: 36.50% -> Jun 2024: 36.53% -> Sep 2024: 36.46% -> Dec 2024: 36.46% -> Mar 2025: 36.47% -> Jun 2025: 36.48% -> Sep 2025: 36.48% -> Dec 2025: 36.48% -> Mar 2026: 36.48% -> Jun 2026: 36.49%",
-   "interest_coverage_trend": "deteriorating",
-   "op_lev_ratio": 1.3582812699222238,
-   "revenue_4q_growth": 0.05900364117841774,
-   "pat_3yr_cr": [
-    414.0,
-    591.0,
-    527.0
-   ]
+   "dii_holding": 28.24
   }
  },
  "SWIGGY": {
