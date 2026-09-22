@@ -118,12 +118,13 @@ if "!current_branch!" NEQ "main" (
 )
 echo Pushing branch !current_branch! to GitHub...
 
+REM --- Push to prospike (Dash app on Render) ---
 git push prospike main
 
 if errorlevel 1 (
     echo.
     echo ======================================================================
-    echo ERROR: GitHub push failed!
+    echo ERROR: GitHub push to prospike failed!
     echo ======================================================================
     echo Possible reasons:
     echo   - No internet connection
@@ -135,15 +136,34 @@ if errorlevel 1 (
     goto :error
 )
 
+echo Pushed to prospike (Dash / Render) successfully.
+echo.
+
+REM --- Push to origin (Streamlit live dashboard) ---
+echo Pushing to origin (Streamlit)...
+git push origin main
+
+if errorlevel 1 (
+    echo.
+    echo ======================================================================
+    echo ERROR: GitHub push to origin (Streamlit) failed!
+    echo ======================================================================
+    echo To fix: Run 'git push origin main' manually
+    echo ======================================================================
+    goto :error
+)
+
+echo Pushed to origin (Streamlit) successfully.
 echo.
 echo ======================================================================
-echo SUCCESS! DASHBOARD UPDATED
+echo SUCCESS! BOTH DASHBOARDS UPDATED
 echo ======================================================================
 echo Commit: %commit_msg%
-echo Status: Pushed to GitHub successfully
-echo URL:    https://github.com/canvachaad-cell/Pro-spike
 echo.
-echo The Dash deployment will reflect the new data immediately
+echo [prospike] https://github.com/canvachaad-cell/Pro-spike  (Dash / Render)
+echo [origin]   https://github.com/fawaz2023/trading-dashboard (Streamlit)
+echo.
+echo Both dashboards will reflect the new data immediately.
 echo ======================================================================
 goto :end_success
 
