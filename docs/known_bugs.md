@@ -617,3 +617,30 @@
 3. Injected exact company name (G G Automotive Gears Ltd), promoter holding (39.60%), pledge (0.00%), and 3yr financials into Vikram's prompt context, with strict anti-hallucination instructions.
 **FAILED ATTEMPTS**: Relying on Google Search fallback caused LLM hallucination when search returned stale or mismatched company snippets.
 **AI PROCESS**: Root cause proved empirically via scratch/debug_ggauto.py and 	est_parse_playwright.py. Verified clean compilation and 100% accurate data extraction (Mcap: 197 Cr, Promoter: 39.6%, Pledge: 0.0%, ROCE: 24.1%, FCF/PAT: 1.61).
+
+---
+
+## BUG-045 Momentum Score Page (/momentum): Restrictive Search Pool (35 Symbols vs 4,447 Universe), Red N/A Badges on Non-Linear Accounting, and Inverted Visual Hierarchy
+**STATUS**: FIXED
+**FILE**: dash_pages/momentum_score.py, dash_app_v2.py
+**SYMPTOM**:
+1. Search bar only contained 35 pre-selected symbols; 66.7% of audited market stocks (e.g. SAKSOFT, GREENPLY, SUZLON, TCS, ZOMATO, MAZDOCK, 531399) returned 'No options found' when typed in the dropdown.
+2. Operating leverage and unfiled standalone cash flows displayed as harsh red 'N/A' error badges, causing user alarm and confusion.
+3. The actionable trade verdict (Buy/Watch/Avoid) was buried at the very bottom beneath 10 rows of complex mathematical breakdown tables, violating the 3-second time-to-verdict rule.
+4. Mobile bottom navigation bar lacked a direct link to the Momentum Score page.
+**ROOT CAUSE**:
+1. _load_available_symbols() only read from ctive_signals_ranked.csv and legacy_watchlist.csv (35 unique rows), completely ignoring the 4,447 active equities in dashboard_cloud.csv.
+2. When operating leverage is mathematically undefined due to prior negative EBIT (turnaround) or flat/negative YoY sales (
+g <= 0), the UI unconditionally rendered score_str = 'N/A' with a bright red 	ext-error badge.
+3. Page layout appended 
+ecommendation_card as the final child in 
+ender_momentum_analysis.
+4. mobile_bottom_nav in dash_app_v2.py only contained 5 links (Dashboard, Inst Signals, Signals, Watchlist, Vikram).
+**FIX**:
+1. Expanded _load_available_symbols() to index all 4,447 stocks from dashboard_cloud.csv + active breakout signals, with @lru_cache for sub-millisecond dropdown rendering. Added BSE scrip code alias resolution (531399 -> GGAUTO) and demerger aliases (TATAMOTORS -> TMCV, ZOMATO -> ETERNAL).
+2. Replaced harsh red N/A badges with informative contextual neutral badges (Neutral (Turnaround / Flat Rev) or Unfiled (Standalone Micro-Cap)) with plain-English explanatory subtitles.
+3. Inverted visual hierarchy: moved 
+ecommendation_card directly under the stock selector for instant 3-second decision making, followed by Phase 1 (Vikram Gatekeeper) vs Phase 2 (Momentum Ignition) cards.
+4. Added speed Momentum Score link into mobile_bottom_nav in dash_app_v2.py.
+**FAILED ATTEMPTS**: None. Hypothesized and verified through an empirical 15-stock matrix test script.
+**AI PROCESS**: Full audit triggered via prompt_enhancer -> pre-flight checklist ix_before_touch completed -> hyper-detailed implementation plan approved by user -> empirical verification across 15 tickers passed with 100% resolution -> logged to docs/known_bugs.md.

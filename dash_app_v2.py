@@ -107,6 +107,10 @@ mobile_bottom_nav = html.Nav(
             children=[html.Span("bolt", className="material-symbols-outlined nav-icon"), html.Span("Signals")]
         ),
         dcc.Link(
+            className="mobile-nav-item", id="nav-btn-momentum", href="/momentum",
+            children=[html.Span("speed", className="material-symbols-outlined nav-icon"), html.Span("Momentum")]
+        ),
+        dcc.Link(
             className="mobile-nav-item", id="nav-btn-watchlist", href="/watchlist",
             children=[html.Span("bookmark", className="material-symbols-outlined nav-icon"), html.Span("Watchlist")]
         ),

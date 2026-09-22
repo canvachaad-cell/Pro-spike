@@ -1,49 +1,49 @@
 {
  "GREENPLY": {
-  "ts": 1789413184.5213754,
+  "ts": 1790065182.3508067,
   "data": {
-   "symbol": "GREENPLY",
-   "url": "https://www.screener.in/company/GREENPLY/consolidated/",
-   "name": "Greenply Industries Ltd",
-   "market_cap_cr": 3625.0,
-   "price": 290.0,
-   "promoter_trend": "Sep 2023: 52.12% -> Dec 2023: 51.97% -> Mar 2024: 52.00% -> Jun 2024: 52.01% -> Sep 2024: 52.01% -> Dec 2024: 51.66% -> Mar 2025: 51.69% -> Jun 2025: 51.69% -> Sep 2025: 51.69% -> Dec 2025: 51.80% -> Mar 2026: 51.90% -> Jun 2026: 51.93%",
-   "promoter_holding": 51.93,
-   "dii_trend": "Sep 2023: 32.39% -> Dec 2023: 29.76% -> Mar 2024: 30.31% -> Jun 2024: 30.33% -> Sep 2024: 30.66% -> Dec 2024: 30.91% -> Mar 2025: 31.05% -> Jun 2025: 32.41% -> Sep 2025: 32.41% -> Dec 2025: 32.12% -> Mar 2026: 31.83% -> Jun 2026: 31.42%",
-   "dii_holding": 31.42,
-   "fii_trend": "Sep 2023: 2.07% -> Dec 2023: 4.10% -> Mar 2024: 4.13% -> Jun 2024: 4.91% -> Sep 2024: 5.60% -> Dec 2024: 5.76% -> Mar 2025: 5.42% -> Jun 2025: 4.52% -> Sep 2025: 4.49% -> Dec 2025: 4.35% -> Mar 2026: 4.19% -> Jun 2026: 4.44%",
-   "fii_holding": 4.44,
-   "pledge_trend": [
-    0.0
-   ],
-   "pledge_direction": "flat",
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
    "quarterly_quarters": 13,
-   "revenue_ttm_cr": 2863.0,
-   "revenue_4q_growth": 0.14337060702875398,
-   "ebit_4q_growth": 0.297029702970297,
-   "op_lev_ratio": 2.0717614936981166,
-   "op_lev_inflecting": true,
+   "rpt_status": "NOT_APPLICABLE",
    "interest_coverage_trend": "improving",
+   "roce_abs_pct": 17.2,
+   "revenue_4q_growth": 0.14337060702875398,
+   "pledge_direction": "flat",
    "interest_coverage_recent": 6.54,
+   "name": "Greenply Industries Ltd",
+   "ebit_4q_growth": 0.297029702970297,
+   "promoter_trend": "Sep 2023: 52.12% -> Dec 2023: 51.97% -> Mar 2024: 52.00% -> Jun 2024: 52.01% -> Sep 2024: 52.01% -> Dec 2024: 51.66% -> Mar 2025: 51.69% -> Jun 2025: 51.69% -> Sep 2025: 51.69% -> Dec 2025: 51.80% -> Mar 2026: 51.90% -> Jun 2026: 51.93%",
+   "op_lev_inflecting": true,
+   "dii_holding": 31.42,
+   "symbol": "GREENPLY",
+   "fcf_pat_ratio": 2.29,
+   "fii_trend": "Sep 2023: 2.07% -> Dec 2023: 4.10% -> Mar 2024: 4.13% -> Jun 2024: 4.91% -> Sep 2024: 5.60% -> Dec 2024: 5.76% -> Mar 2025: 5.42% -> Jun 2025: 4.52% -> Sep 2025: 4.49% -> Dec 2025: 4.35% -> Mar 2026: 4.19% -> Jun 2026: 4.44%",
+   "rpt_pct": null,
+   "dii_trend": "Sep 2023: 32.39% -> Dec 2023: 29.76% -> Mar 2024: 30.31% -> Jun 2024: 30.33% -> Sep 2024: 30.66% -> Dec 2024: 30.91% -> Mar 2025: 31.05% -> Jun 2025: 32.41% -> Sep 2025: 32.41% -> Dec 2025: 32.12% -> Mar 2026: 31.83% -> Jun 2026: 31.42%",
+   "revenue_ttm_cr": 2863.0,
+   "market_cap_cr": 3662.0,
+   "url": "https://www.screener.in/company/GREENPLY/consolidated/",
    "ocf_3yr_cr": [
     111.0,
     219.0,
     247.0
    ],
+   "op_lev_ratio": 2.0717614936981166,
+   "rpt_amount_cr": null,
+   "promoter_holding": 51.93,
+   "borrowings_cr": 515.0,
    "pat_3yr_cr": [
     70.0,
     92.0,
     90.0
    ],
-   "fcf_pat_ratio": 2.29,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "pledge_trend": [
+    0.0
+   ],
+   "fii_holding": 4.44,
+   "free_float_cr": 1760,
    "roice_pct": 155.7,
-   "roce_abs_pct": 17.2,
-   "borrowings_cr": 515.0,
-   "free_float_cr": 1743,
-   "rpt_status": "NOT_SCRAPED",
-   "rpt_pct": null,
-   "rpt_amount_cr": null
+   "price": 293.0
   }
  },
  "SANJIVIN": {
@@ -274,97 +274,97 @@
   }
  },
  "SAKSOFT": {
-  "ts": 1789702166.7526586,
+  "ts": 1790065181.4301343,
   "data": {
+   "quarterly_quarters": 13,
+   "rpt_status": "NOT_APPLICABLE",
+   "interest_coverage_trend": "improving",
+   "roce_abs_pct": 22.7,
+   "revenue_4q_growth": 0.08163265306122448,
+   "pledge_direction": "flat",
+   "interest_coverage_recent": 28.88,
+   "name": "Saksoft Ltd",
+   "ebit_4q_growth": 0.18471337579617833,
+   "promoter_trend": "Sep 2023: 66.66% -> Dec 2023: 66.64% -> Mar 2024: 66.64% -> Jun 2024: 66.64% -> Sep 2024: 66.64% -> Dec 2024: 66.64% -> Mar 2025: 66.68% -> Jun 2025: 66.68% -> Sep 2025: 66.68% -> Dec 2025: 66.68% -> Mar 2026: 66.72% -> Jun 2026: 66.72%",
+   "op_lev_inflecting": true,
+   "dii_holding": 0.01,
+   "symbol": "SAKSOFT",
+   "fcf_pat_ratio": 1.18,
+   "fii_trend": "Sep 2023: 3.96% -> Dec 2023: 3.93% -> Mar 2024: 4.00% -> Jun 2024: 3.53% -> Sep 2024: 3.25% -> Dec 2024: 2.86% -> Mar 2025: 2.79% -> Jun 2025: 2.78% -> Sep 2025: 2.29% -> Dec 2025: 2.23% -> Mar 2026: 2.40% -> Jun 2026: 2.18%",
+   "rpt_pct": null,
+   "dii_trend": "Sep 2023: 0.00% -> Dec 2023: 0.03% -> Mar 2024: 0.00% -> Jun 2024: 0.00% -> Sep 2024: 0.00% -> Dec 2024: 0.00% -> Mar 2025: 0.05% -> Jun 2025: 0.00% -> Sep 2025: 0.14% -> Dec 2025: 0.14% -> Mar 2026: 0.00% -> Jun 2026: 0.01%",
+   "revenue_ttm_cr": 1007.0,
+   "market_cap_cr": 1924.0,
+   "url": "https://www.screener.in/company/SAKSOFT/consolidated/",
    "ocf_3yr_cr": [
     117.0,
     111.0,
     171.0
    ],
-   "url": "https://www.screener.in/company/SAKSOFT/consolidated/",
-   "roce_abs_pct": 22.7,
-   "symbol": "SAKSOFT",
-   "interest_coverage_trend": "improving",
-   "borrowings_cr": 44.0,
-   "rpt_status": "NOT_SCRAPED",
-   "fii_holding": 2.18,
-   "market_cap_cr": 1894.0,
-   "revenue_ttm_cr": 1007.0,
-   "ebit_4q_growth": 0.18471337579617833,
-   "roice_pct": 19.5,
-   "op_lev_inflecting": true,
-   "rpt_pct": null,
-   "dii_holding": 0.01,
-   "dii_trend": "Sep 2023: 0.00% -> Dec 2023: 0.03% -> Mar 2024: 0.00% -> Jun 2024: 0.00% -> Sep 2024: 0.00% -> Dec 2024: 0.00% -> Mar 2025: 0.05% -> Jun 2025: 0.00% -> Sep 2025: 0.14% -> Dec 2025: 0.14% -> Mar 2026: 0.00% -> Jun 2026: 0.01%",
+   "op_lev_ratio": 2.2627388535031847,
    "rpt_amount_cr": null,
-   "promoter_trend": "Sep 2023: 66.66% -> Dec 2023: 66.64% -> Mar 2024: 66.64% -> Jun 2024: 66.64% -> Sep 2024: 66.64% -> Dec 2024: 66.64% -> Mar 2025: 66.68% -> Jun 2025: 66.68% -> Sep 2025: 66.68% -> Dec 2025: 66.68% -> Mar 2026: 66.72% -> Jun 2026: 66.72%",
-   "quarterly_quarters": 13,
    "promoter_holding": 66.72,
-   "fcf_pat_ratio": 1.18,
+   "borrowings_cr": 44.0,
    "pat_3yr_cr": [
     96.0,
     109.0,
     133.0
    ],
-   "pledge_direction": "flat",
-   "free_float_cr": 630,
-   "fii_trend": "Sep 2023: 3.96% -> Dec 2023: 3.93% -> Mar 2024: 4.00% -> Jun 2024: 3.53% -> Sep 2024: 3.25% -> Dec 2024: 2.86% -> Mar 2025: 2.79% -> Jun 2025: 2.78% -> Sep 2025: 2.29% -> Dec 2025: 2.23% -> Mar 2026: 2.40% -> Jun 2026: 2.18%",
-   "price": 143.0,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
    "pledge_trend": [
     0.0
    ],
-   "revenue_4q_growth": 0.08163265306122448,
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "op_lev_ratio": 2.2627388535031847,
-   "name": "Saksoft Ltd",
-   "interest_coverage_recent": 28.88
+   "fii_holding": 2.18,
+   "free_float_cr": 640,
+   "roice_pct": 19.5,
+   "price": 145.0
   }
  },
  "EMAMILTD": {
-  "ts": 1789468025.6019373,
+  "ts": 1790065183.473702,
   "data": {
-   "symbol": "EMAMILTD",
-   "url": "https://www.screener.in/company/EMAMILTD/consolidated/",
-   "name": "Emami Ltd",
-   "market_cap_cr": 16281.0,
-   "price": 373.0,
-   "promoter_trend": "Sep 2023: 54.84% -> Dec 2023: 54.84% -> Mar 2024: 54.84% -> Jun 2024: 54.84% -> Sep 2024: 54.84% -> Dec 2024: 54.84% -> Mar 2025: 54.84% -> Jun 2025: 54.84% -> Sep 2025: 54.84% -> Dec 2025: 54.84% -> Mar 2026: 54.84% -> Jun 2026: 54.84%",
-   "promoter_holding": 54.84,
-   "dii_trend": "Sep 2023: 25.21% -> Dec 2023: 23.94% -> Mar 2024: 22.06% -> Jun 2024: 21.61% -> Sep 2024: 21.51% -> Dec 2024: 21.70% -> Mar 2025: 23.68% -> Jun 2025: 24.06% -> Sep 2025: 25.00% -> Dec 2025: 26.72% -> Mar 2026: 26.91% -> Jun 2026: 27.00%",
-   "dii_holding": 27.0,
-   "fii_trend": "Sep 2023: 11.90% -> Dec 2023: 12.86% -> Mar 2024: 13.46% -> Jun 2024: 14.02% -> Sep 2024: 14.38% -> Dec 2024: 14.11% -> Mar 2025: 12.11% -> Jun 2025: 11.89% -> Sep 2025: 10.93% -> Dec 2025: 9.03% -> Mar 2026: 8.57% -> Jun 2026: 7.87%",
-   "fii_holding": 7.87,
-   "pledge_trend": [
-    0.0
-   ],
-   "pledge_direction": "flat",
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
    "quarterly_quarters": 13,
-   "revenue_ttm_cr": 3915.0,
-   "revenue_4q_growth": 0.028368794326241134,
-   "ebit_4q_growth": -0.03857566765578635,
-   "op_lev_ratio": -1.359792284866469,
-   "op_lev_inflecting": false,
+   "rpt_status": "NOT_APPLICABLE",
    "interest_coverage_trend": "deteriorating",
+   "roce_abs_pct": 31.1,
+   "revenue_4q_growth": 0.028368794326241134,
+   "pledge_direction": "flat",
    "interest_coverage_recent": 71.62,
+   "name": "Emami Ltd",
+   "ebit_4q_growth": -0.03857566765578635,
+   "promoter_trend": "Sep 2023: 54.84% -> Dec 2023: 54.84% -> Mar 2024: 54.84% -> Jun 2024: 54.84% -> Sep 2024: 54.84% -> Dec 2024: 54.84% -> Mar 2025: 54.84% -> Jun 2025: 54.84% -> Sep 2025: 54.84% -> Dec 2025: 54.84% -> Mar 2026: 54.84% -> Jun 2026: 54.84%",
+   "op_lev_inflecting": false,
+   "dii_holding": 27.0,
+   "symbol": "EMAMILTD",
+   "fcf_pat_ratio": 1.08,
+   "fii_trend": "Sep 2023: 11.90% -> Dec 2023: 12.86% -> Mar 2024: 13.46% -> Jun 2024: 14.02% -> Sep 2024: 14.38% -> Dec 2024: 14.11% -> Mar 2025: 12.11% -> Jun 2025: 11.89% -> Sep 2025: 10.93% -> Dec 2025: 9.03% -> Mar 2026: 8.57% -> Jun 2026: 7.87%",
+   "rpt_pct": null,
+   "dii_trend": "Sep 2023: 25.21% -> Dec 2023: 23.94% -> Mar 2024: 22.06% -> Jun 2024: 21.61% -> Sep 2024: 21.51% -> Dec 2024: 21.70% -> Mar 2025: 23.68% -> Jun 2025: 24.06% -> Sep 2025: 25.00% -> Dec 2025: 26.72% -> Mar 2026: 26.91% -> Jun 2026: 27.00%",
+   "revenue_ttm_cr": 3915.0,
+   "market_cap_cr": 17030.0,
+   "url": "https://www.screener.in/company/EMAMILTD/consolidated/",
    "ocf_3yr_cr": [
     779.0,
     896.0,
     801.0
    ],
+   "op_lev_ratio": -1.359792284866469,
+   "rpt_amount_cr": null,
+   "promoter_holding": 54.84,
+   "borrowings_cr": 162.0,
    "pat_3yr_cr": [
     724.0,
     803.0,
     775.0
    ],
-   "fcf_pat_ratio": 1.08,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "pledge_trend": [
+    0.0
+   ],
+   "fii_holding": 7.87,
+   "free_float_cr": 7691,
    "roice_pct": 15.2,
-   "roce_abs_pct": 31.1,
-   "borrowings_cr": 162.0,
-   "free_float_cr": 7352,
-   "rpt_status": "NOT_FOUND",
-   "rpt_pct": null,
-   "rpt_amount_cr": null
+   "price": 390.0
   }
  },
  "HDFCBANK": {
@@ -416,50 +416,50 @@
   }
  },
  "TCS": {
-  "ts": 1789471318.4007697,
+  "ts": 1790065189.5437348,
   "data": {
-   "symbol": "TCS",
-   "url": "https://www.screener.in/company/TCS/consolidated/",
-   "name": "Tata Consultancy Services Ltd",
-   "market_cap_cr": 814070.0,
-   "price": 2250.0,
-   "promoter_trend": "Sep 2023: 72.30% -> Dec 2023: 72.41% -> Mar 2024: 71.77% -> Jun 2024: 71.77% -> Sep 2024: 71.77% -> Dec 2024: 71.77% -> Mar 2025: 71.77% -> Jun 2025: 71.77% -> Sep 2025: 71.77% -> Dec 2025: 71.77% -> Mar 2026: 71.77% -> Jun 2026: 71.77%",
-   "promoter_holding": 71.77,
-   "dii_trend": "Sep 2023: 10.01% -> Dec 2023: 10.03% -> Mar 2024: 10.61% -> Jun 2024: 11.00% -> Sep 2024: 10.86% -> Dec 2024: 10.86% -> Mar 2025: 11.49% -> Jun 2025: 11.95% -> Sep 2025: 12.64% -> Dec 2025: 12.81% -> Mar 2026: 13.34% -> Jun 2026: 13.41%",
-   "dii_holding": 13.41,
-   "fii_trend": "Sep 2023: 12.47% -> Dec 2023: 12.46% -> Mar 2024: 12.70% -> Jun 2024: 12.35% -> Sep 2024: 12.66% -> Dec 2024: 12.68% -> Mar 2025: 12.04% -> Jun 2025: 11.48% -> Sep 2025: 10.33% -> Dec 2025: 10.37% -> Mar 2026: 9.66% -> Jun 2026: 9.07%",
-   "fii_holding": 9.07,
-   "pledge_trend": [
-    0.0
-   ],
-   "pledge_direction": "flat",
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
    "quarterly_quarters": 13,
-   "revenue_ttm_cr": 275859.0,
-   "revenue_4q_growth": 0.07695160610272186,
-   "ebit_4q_growth": 0.09551907719609583,
-   "op_lev_ratio": 1.241287635615928,
-   "op_lev_inflecting": false,
+   "rpt_status": "NOT_APPLICABLE",
    "interest_coverage_trend": "deteriorating",
+   "roce_abs_pct": 61.1,
+   "revenue_4q_growth": 0.07695160610272186,
+   "pledge_direction": "flat",
    "interest_coverage_recent": 63.29,
+   "name": "Tata Consultancy Services Ltd",
+   "ebit_4q_growth": 0.09551907719609583,
+   "promoter_trend": "Sep 2023: 72.30% -> Dec 2023: 72.41% -> Mar 2024: 71.77% -> Jun 2024: 71.77% -> Sep 2024: 71.77% -> Dec 2024: 71.77% -> Mar 2025: 71.77% -> Jun 2025: 71.77% -> Sep 2025: 71.77% -> Dec 2025: 71.77% -> Mar 2026: 71.77% -> Jun 2026: 71.77%",
+   "op_lev_inflecting": false,
+   "dii_holding": 13.41,
+   "symbol": "TCS",
+   "fcf_pat_ratio": 1.01,
+   "fii_trend": "Sep 2023: 12.47% -> Dec 2023: 12.46% -> Mar 2024: 12.70% -> Jun 2024: 12.35% -> Sep 2024: 12.66% -> Dec 2024: 12.68% -> Mar 2025: 12.04% -> Jun 2025: 11.48% -> Sep 2025: 10.33% -> Dec 2025: 10.37% -> Mar 2026: 9.66% -> Jun 2026: 9.07%",
+   "rpt_pct": null,
+   "dii_trend": "Sep 2023: 10.01% -> Dec 2023: 10.03% -> Mar 2024: 10.61% -> Jun 2024: 11.00% -> Sep 2024: 10.86% -> Dec 2024: 10.86% -> Mar 2025: 11.49% -> Jun 2025: 11.95% -> Sep 2025: 12.64% -> Dec 2025: 12.81% -> Mar 2026: 13.34% -> Jun 2026: 13.41%",
+   "revenue_ttm_cr": 275859.0,
+   "market_cap_cr": 765587.0,
+   "url": "https://www.screener.in/company/TCS/consolidated/",
    "ocf_3yr_cr": [
     44338.0,
     48908.0,
     52094.0
    ],
+   "op_lev_ratio": 1.241287635615928,
+   "rpt_amount_cr": null,
+   "promoter_holding": 71.77,
+   "borrowings_cr": 11283.0,
    "pat_3yr_cr": [
     46099.0,
     48797.0,
     49454.0
    ],
-   "fcf_pat_ratio": 1.01,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "pledge_trend": [
+    0.0
+   ],
+   "fii_holding": 9.07,
+   "free_float_cr": 216125,
    "roice_pct": 64.4,
-   "roce_abs_pct": 61.1,
-   "borrowings_cr": 11283.0,
-   "free_float_cr": 229812,
-   "rpt_status": "NOT_SCRAPED",
-   "rpt_pct": null,
-   "rpt_amount_cr": null
+   "price": 2116.0
   }
  },
  "EMIL": {
@@ -1067,50 +1067,50 @@
   }
  },
  "ETERNAL": {
-  "ts": 1789624987.824367,
+  "ts": 1790066148.5225978,
   "data": {
-   "symbol": "ETERNAL",
-   "url": "https://www.screener.in/company/ETERNAL/consolidated/",
-   "name": "Eternal Ltd",
-   "market_cap_cr": 314022.0,
-   "price": 325.0,
-   "pledge_trend": [
-    0.0
-   ],
+   "roce_abs_pct": 3.4,
    "pledge_direction": "flat",
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "quarterly_quarters": 13,
-   "revenue_ttm_cr": 67408.0,
-   "revenue_4q_growth": 1.9050163764868127,
-   "ebit_4q_growth": 1.9339130434782608,
-   "op_lev_ratio": 1.0151687236645905,
-   "op_lev_inflecting": false,
-   "interest_coverage_trend": "stable",
-   "interest_coverage_recent": 3.46,
-   "ocf_3yr_cr": [
-    646.0,
-    308.0,
-    632.0
-   ],
    "pat_3yr_cr": [
     -1222.0,
     -971.0,
     351.0
    ],
-   "fcf_pat_ratio": -0.86,
-   "roice_pct": 15.5,
-   "roce_abs_pct": 3.4,
+   "ebit_4q_growth": 1.9339130434782608,
+   "op_lev_ratio": 1.0151687236645905,
+   "revenue_ttm_cr": 67408.0,
+   "op_lev_inflecting": false,
    "borrowings_cr": 4592.0,
-   "rpt_status": "NOT_FOUND",
-   "rpt_pct": null,
+   "name": "Eternal Ltd",
+   "fii_trend": "Sep 2023: 54.72% -> Dec 2023: 54.88% -> Mar 2024: 55.11% -> Jun 2024: 54.11% -> Sep 2024: 52.53% -> Dec 2024: 47.31% -> Mar 2025: 44.36% -> Jun 2025: 42.34% -> Sep 2025: 39.04% -> Dec 2025: 36.24% -> Mar 2026: 32.61% -> Jun 2026: 29.09%",
+   "free_float_cr": 326906,
+   "promoter_holding": 0.0,
+   "symbol": "ETERNAL",
+   "interest_coverage_trend": "stable",
+   "revenue_4q_growth": 1.9050163764868127,
+   "pledge_trend": [
+    0.0
+   ],
+   "market_cap_cr": 326906.0,
+   "price": 339.0,
+   "roice_pct": 15.5,
+   "dii_trend": "Sep 2023: 13.04% -> Dec 2023: 15.47% -> Mar 2024: 15.28% -> Jun 2024: 15.79% -> Sep 2024: 17.32% -> Dec 2024: 20.51% -> Mar 2025: 23.47% -> Jun 2025: 26.49% -> Sep 2025: 30.04% -> Dec 2025: 32.61% -> Mar 2026: 35.88% -> Jun 2026: 39.21%",
    "rpt_amount_cr": null,
-   "promoter_holding": null,
-   "dii_holding": null,
-   "fii_trend": null,
-   "dii_trend": null,
-   "fii_holding": null,
-   "promoter_trend": null,
-   "free_float_cr": null
+   "dii_holding": 39.21,
+   "fii_holding": 29.09,
+   "interest_coverage_recent": 3.46,
+   "promoter_trend": "0.0% (Professionally Managed / No Promoters)",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "rpt_status": "NOT_APPLICABLE",
+   "url": "https://www.screener.in/company/ETERNAL/consolidated/",
+   "rpt_pct": null,
+   "ocf_3yr_cr": [
+    646.0,
+    308.0,
+    632.0
+   ],
+   "quarterly_quarters": 13,
+   "fcf_pat_ratio": -0.86
   }
  },
  "PAYTM": {
@@ -4801,6 +4801,286 @@
    "interest_coverage_trend": "stable",
    "name": "G G Automotive Gears Ltd",
    "dii_trend": null
+  }
+ },
+ "SUZLON": {
+  "ts": 1790065186.0594575,
+  "data": {
+   "quarterly_quarters": 13,
+   "rpt_status": "NOT_APPLICABLE",
+   "interest_coverage_trend": "deteriorating",
+   "roce_abs_pct": 30.2,
+   "revenue_4q_growth": 0.4524166666666667,
+   "pledge_direction": "flat",
+   "interest_coverage_recent": 6.15,
+   "name": "Suzlon Energy Ltd",
+   "ebit_4q_growth": 0.4467881112176414,
+   "promoter_trend": "Sep 2023: 13.28% -> Dec 2023: 13.28% -> Mar 2024: 13.28% -> Jun 2024: 13.26% -> Sep 2024: 13.25% -> Dec 2024: 13.25% -> Mar 2025: 13.25% -> Jun 2025: 11.75% -> Sep 2025: 11.73% -> Dec 2025: 11.73% -> Mar 2026: 11.73% -> Jun 2026: 11.70%",
+   "op_lev_inflecting": false,
+   "dii_holding": 11.12,
+   "symbol": "SUZLON",
+   "fcf_pat_ratio": 0.4,
+   "fii_trend": "Sep 2023: 10.88% -> Dec 2023: 17.83% -> Mar 2024: 19.57% -> Jun 2024: 21.53% -> Sep 2024: 23.72% -> Dec 2024: 22.87% -> Mar 2025: 23.04% -> Jun 2025: 23.02% -> Sep 2025: 22.70% -> Dec 2025: 23.73% -> Mar 2026: 23.85% -> Jun 2026: 24.15%",
+   "rpt_pct": null,
+   "dii_trend": "Sep 2023: 9.81% -> Dec 2023: 6.16% -> Mar 2024: 6.30% -> Jun 2024: 9.16% -> Sep 2024: 9.02% -> Dec 2024: 9.31% -> Mar 2025: 8.73% -> Jun 2025: 10.17% -> Sep 2025: 10.14% -> Dec 2025: 9.23% -> Mar 2026: 9.18% -> Jun 2026: 11.12%",
+   "revenue_ttm_cr": 17429.0,
+   "market_cap_cr": 58799.0,
+   "url": "https://www.screener.in/company/SUZLON/consolidated/",
+   "ocf_3yr_cr": [
+    80.0,
+    1092.0,
+    1202.0
+   ],
+   "op_lev_ratio": 0.9875589122511874,
+   "rpt_amount_cr": null,
+   "promoter_holding": 11.7,
+   "borrowings_cr": 556.0,
+   "pat_3yr_cr": [
+    660.0,
+    2072.0,
+    3163.0
+   ],
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "pledge_trend": [
+    0.0
+   ],
+   "fii_holding": 24.15,
+   "free_float_cr": 51920,
+   "roice_pct": 31.4,
+   "price": 43.1
+  }
+ },
+ "ZOMATO": {
+  "ts": 1790065188.5542047,
+  "data": {
+   "quarterly_quarters": 13,
+   "rpt_status": "NOT_APPLICABLE",
+   "interest_coverage_trend": "stable",
+   "roce_abs_pct": 3.4,
+   "revenue_4q_growth": 1.9050163764868127,
+   "pledge_direction": "flat",
+   "interest_coverage_recent": 3.46,
+   "name": "Eternal Ltd",
+   "ebit_4q_growth": 1.9339130434782608,
+   "promoter_trend": "0.0% (Professionally Managed / No Promoters)",
+   "op_lev_inflecting": false,
+   "dii_holding": 39.21,
+   "symbol": "ZOMATO",
+   "fcf_pat_ratio": -0.86,
+   "fii_trend": "Sep 2023: 54.72% -> Dec 2023: 54.88% -> Mar 2024: 55.11% -> Jun 2024: 54.11% -> Sep 2024: 52.53% -> Dec 2024: 47.31% -> Mar 2025: 44.36% -> Jun 2025: 42.34% -> Sep 2025: 39.04% -> Dec 2025: 36.24% -> Mar 2026: 32.61% -> Jun 2026: 29.09%",
+   "rpt_pct": null,
+   "dii_trend": "Sep 2023: 13.04% -> Dec 2023: 15.47% -> Mar 2024: 15.28% -> Jun 2024: 15.79% -> Sep 2024: 17.32% -> Dec 2024: 20.51% -> Mar 2025: 23.47% -> Jun 2025: 26.49% -> Sep 2025: 30.04% -> Dec 2025: 32.61% -> Mar 2026: 35.88% -> Jun 2026: 39.21%",
+   "revenue_ttm_cr": 67408.0,
+   "market_cap_cr": 327147.0,
+   "url": "https://www.screener.in/company/ETERNAL/consolidated/",
+   "ocf_3yr_cr": [
+    646.0,
+    308.0,
+    632.0
+   ],
+   "op_lev_ratio": 1.0151687236645905,
+   "rpt_amount_cr": null,
+   "promoter_holding": 0.0,
+   "borrowings_cr": 4592.0,
+   "pat_3yr_cr": [
+    -1222.0,
+    -971.0,
+    351.0
+   ],
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "pledge_trend": [
+    0.0
+   ],
+   "fii_holding": 29.09,
+   "free_float_cr": 327147,
+   "roice_pct": 15.5,
+   "price": 339.0
+  }
+ },
+ "KALYANKJIL": {
+  "ts": 1790065190.2671273,
+  "data": {
+   "quarterly_quarters": 13,
+   "rpt_status": "NOT_APPLICABLE",
+   "interest_coverage_trend": "improving",
+   "roce_abs_pct": 20.6,
+   "revenue_4q_growth": 0.45795543612137496,
+   "pledge_direction": "flat",
+   "interest_coverage_recent": 5.99,
+   "name": "Kalyan Jewellers India Ltd",
+   "ebit_4q_growth": 0.5721153846153846,
+   "promoter_trend": "Sep 2023: 60.55% -> Dec 2023: 60.55% -> Mar 2024: 60.63% -> Jun 2024: 60.59% -> Sep 2024: 62.90% -> Dec 2024: 62.85% -> Mar 2025: 62.85% -> Jun 2025: 62.81% -> Sep 2025: 62.77% -> Dec 2025: 62.75% -> Mar 2026: 62.86% -> Jun 2026: 62.86%",
+   "op_lev_inflecting": false,
+   "dii_holding": 15.83,
+   "symbol": "KALYANKJIL",
+   "fcf_pat_ratio": 3.07,
+   "fii_trend": "Sep 2023: 26.56% -> Dec 2023: 26.21% -> Mar 2024: 21.10% -> Jun 2024: 21.19% -> Sep 2024: 15.74% -> Dec 2024: 16.37% -> Mar 2025: 16.89% -> Jun 2025: 16.83% -> Sep 2025: 14.12% -> Dec 2025: 14.11% -> Mar 2026: 14.55% -> Jun 2026: 10.82%",
+   "rpt_pct": null,
+   "dii_trend": "Sep 2023: 4.86% -> Dec 2023: 5.48% -> Mar 2024: 11.00% -> Jun 2024: 11.75% -> Sep 2024: 13.74% -> Dec 2024: 13.57% -> Mar 2025: 11.97% -> Jun 2025: 13.34% -> Sep 2025: 14.56% -> Dec 2025: 15.23% -> Mar 2026: 14.13% -> Jun 2026: 15.83%",
+   "revenue_ttm_cr": 39063.0,
+   "market_cap_cr": 60209.0,
+   "url": "https://www.screener.in/company/KALYANKJIL/consolidated/",
+   "ocf_3yr_cr": [
+    1322.0,
+    1209.0,
+    1318.0
+   ],
+   "op_lev_ratio": 1.2492817848410758,
+   "rpt_amount_cr": null,
+   "promoter_holding": 62.86,
+   "borrowings_cr": 6117.0,
+   "pat_3yr_cr": [
+    224.0,
+    432.0,
+    596.0
+   ],
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "pledge_trend": [
+    0.0
+   ],
+   "fii_holding": 10.82,
+   "free_float_cr": 22362,
+   "roice_pct": 31.1,
+   "price": 583.0
+  }
+ },
+ "MAZDOCK": {
+  "ts": 1790065191.2291381,
+  "data": {
+   "quarterly_quarters": 13,
+   "rpt_status": "NOT_APPLICABLE",
+   "interest_coverage_trend": "stable",
+   "roce_abs_pct": 22.2,
+   "revenue_4q_growth": 0.1386206307153235,
+   "pledge_direction": "flat",
+   "interest_coverage_recent": 74.79,
+   "name": "Mazagon Dock Shipbuilders Ltd",
+   "ebit_4q_growth": 0.4705546026300743,
+   "promoter_trend": "Sep 2023: 84.83% -> Dec 2023: 84.83% -> Mar 2024: 84.83% -> Jun 2024: 84.83% -> Sep 2024: 84.83% -> Dec 2024: 84.83% -> Mar 2025: 84.83% -> Jun 2025: 81.22% -> Sep 2025: 81.22% -> Dec 2025: 81.22% -> Mar 2026: 81.22% -> Jun 2026: 81.22%",
+   "op_lev_inflecting": true,
+   "dii_holding": 5.02,
+   "symbol": "MAZDOCK",
+   "fcf_pat_ratio": 0.02,
+   "fii_trend": "Sep 2023: 3.69% -> Dec 2023: 3.32% -> Mar 2024: 2.38% -> Jun 2024: 2.44% -> Sep 2024: 1.45% -> Dec 2024: 1.55% -> Mar 2025: 2.26% -> Jun 2025: 2.57% -> Sep 2025: 1.97% -> Dec 2025: 1.80% -> Mar 2026: 1.73% -> Jun 2026: 1.72%",
+   "rpt_pct": null,
+   "dii_trend": "Sep 2023: 0.39% -> Dec 2023: 0.43% -> Mar 2024: 0.66% -> Jun 2024: 0.83% -> Sep 2024: 1.00% -> Dec 2024: 1.46% -> Mar 2025: 1.69% -> Jun 2025: 5.21% -> Sep 2025: 5.65% -> Dec 2025: 5.37% -> Mar 2026: 5.09% -> Jun 2026: 5.02%",
+   "revenue_ttm_cr": 13323.0,
+   "market_cap_cr": 88984.0,
+   "url": "https://www.screener.in/company/MAZDOCK/consolidated/",
+   "ocf_3yr_cr": [
+    684.0,
+    2102.0,
+    -2654.0
+   ],
+   "op_lev_ratio": 3.3945495717475334,
+   "rpt_amount_cr": null,
+   "promoter_holding": 81.22,
+   "borrowings_cr": 447.0,
+   "pat_3yr_cr": [
+    1119.0,
+    1937.0,
+    2414.0
+   ],
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "pledge_trend": [
+    0.0
+   ],
+   "fii_holding": 1.72,
+   "free_float_cr": 16711,
+   "roice_pct": 27.0,
+   "price": 2206.0
+  }
+ },
+ "531399": {
+  "ts": 1790065192.710815,
+  "data": {
+   "quarterly_quarters": 13,
+   "rpt_status": "NOT_APPLICABLE",
+   "interest_coverage_trend": "stable",
+   "roce_abs_pct": 24.1,
+   "revenue_4q_growth": -0.10922143406546451,
+   "pledge_direction": "flat",
+   "interest_coverage_recent": 8.69,
+   "name": "G G Automotive Gears Ltd",
+   "ebit_4q_growth": -0.02632937532266399,
+   "promoter_trend": "Sep 2023: 32.80% -> Dec 2023: 36.14% -> Mar 2024: 36.14% -> Jun 2024: 36.14% -> Sep 2024: 36.49% -> Dec 2024: 36.49% -> Mar 2025: 36.49% -> Jun 2025: 39.60% -> Sep 2025: 39.60% -> Dec 2025: 39.60% -> Mar 2026: 39.60% -> Jun 2026: 39.60%",
+   "op_lev_inflecting": null,
+   "dii_holding": null,
+   "symbol": "531399",
+   "fcf_pat_ratio": 1.61,
+   "fii_trend": null,
+   "rpt_pct": null,
+   "dii_trend": null,
+   "revenue_ttm_cr": 104.22999999999999,
+   "market_cap_cr": 197.0,
+   "url": "https://www.screener.in/company/531399/",
+   "ocf_3yr_cr": [
+    12.0,
+    14.0,
+    11.0
+   ],
+   "op_lev_ratio": null,
+   "rpt_amount_cr": null,
+   "promoter_holding": 39.6,
+   "borrowings_cr": 29.0,
+   "pat_3yr_cr": [
+    4.0,
+    8.0,
+    11.0
+   ],
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "pledge_trend": [
+    0.0
+   ],
+   "fii_holding": null,
+   "free_float_cr": 119,
+   "roice_pct": 41.9,
+   "price": 197.0
+  }
+ },
+ "TMCV": {
+  "ts": 1790066146.815299,
+  "data": {
+   "roce_abs_pct": 41.5,
+   "pledge_direction": "flat",
+   "pat_3yr_cr": [
+    3195.0,
+    3030.0
+   ],
+   "ebit_4q_growth": 0.3602522129259125,
+   "op_lev_ratio": 2.3347471187917255,
+   "revenue_ttm_cr": 87197.0,
+   "op_lev_inflecting": true,
+   "borrowings_cr": 5615.0,
+   "name": "Tata Motors Ltd",
+   "fii_trend": "Dec 2025: 18.29% -> Mar 2026: 19.03% -> Jun 2026: 18.58%",
+   "free_float_cr": 93353,
+   "promoter_holding": 42.56,
+   "symbol": "TMCV",
+   "interest_coverage_trend": "improving",
+   "revenue_4q_growth": 0.15430031373691108,
+   "pledge_trend": [
+    0.0
+   ],
+   "market_cap_cr": 162522.0,
+   "price": 441.0,
+   "roice_pct": null,
+   "dii_trend": "Dec 2025: 16.91% -> Mar 2026: 17.58% -> Jun 2026: 18.19%",
+   "rpt_amount_cr": null,
+   "dii_holding": 18.19,
+   "fii_holding": 18.58,
+   "interest_coverage_recent": 16.32,
+   "promoter_trend": "Dec 2025: 42.56% -> Mar 2026: 42.56% -> Jun 2026: 42.56%",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "rpt_status": "NOT_APPLICABLE",
+   "url": "https://www.screener.in/company/TMCV/consolidated/",
+   "rpt_pct": null,
+   "ocf_3yr_cr": [
+    8547.0,
+    14981.0
+   ],
+   "quarterly_quarters": 8,
+   "fcf_pat_ratio": 3.78
   }
  }
 }
