@@ -13,6 +13,8 @@ FLEXGATE2_FILE = os.path.join("data", "sbia_flexgate2_watchlist.csv")
 SBIA_LEDGER = os.path.join("data", "sbia_ledger.csv")
 FLEXGATE_LEDGER = os.path.join("data", "flexgate_ledger.csv")
 FLEXGATE2_LEDGER = os.path.join("data", "flexgate2_ledger.csv")
+CORNER_FILE = os.path.join("data", "corner_engine_watchlist.csv")
+CORNER_LEDGER = os.path.join("data", "corner_engine_ledger.csv")
 CLOUD_FILE = os.path.join("data", "dashboard_cloud.csv")
 
 # Display caps: keep tab payloads small (Tailwind CDN JIT rescans every DOM
@@ -720,11 +722,101 @@ def _tab_flexgate2():
     ]
 
 
+def corner_table():
+    df = load_csv(CORNER_FILE)
+    if df is None:
+        return _empty_panel("Run corner_spike_scanner.py to generate the Corner Spike Watchlist.")
+    if df.empty:
+        return _empty_panel("⚠️ No stocks passed the strict Corner Spike filters today (all clean/disciplined).")
+
+    if "DATE" in df.columns:
+        df = df.assign(DATE=_fmt_date(df["DATE"]))
+
+    cols = ["SYMBOL", "ARCHETYPE", "PROMOTER_DIRECTION", "CLOSE", "STOP_LOSS", "TAKE_PROFIT", "ATR14", "ATR_PCT", "FREE_FLOAT_CR", "FLOAT_ABSORBED_PCT", "ATW", "CONVINCING_REASON"]
+    avail = [c for c in cols if c in df.columns]
+    wide = {
+        "SYMBOL": "minmax(140px, 1.4fr)",
+        "ARCHETYPE": "minmax(150px, 1.5fr)",
+        "PROMOTER_DIRECTION": "minmax(130px, 1.3fr)",
+        "STOP_LOSS": "minmax(120px, 1.2fr)",
+        "TAKE_PROFIT": "minmax(120px, 1.2fr)",
+        "CONVINCING_REASON": "minmax(200px, 2fr)",
+    }
+    tpl = _template(avail, wide)
+
+    prom_badges = {
+        "increasing": "bg-[rgba(46,204,113,0.15)] text-[#2ecc71] border border-[rgba(46,204,113,0.3)]",
+        "flat": "bg-white/5 text-on-surface-variant border border-white/10",
+        "decreasing": "bg-[rgba(231,76,60,0.15)] text-[#e74c3c] border border-[rgba(231,76,60,0.3)]",
+        "unknown": "text-on-surface-variant",
+    }
+    archetype_badges = {
+        "MICRO_CAP_SQUEEZE": "bg-[rgba(90,240,179,0.15)] text-[#5af0b3] border border-[rgba(90,240,179,0.35)]",
+        "SMALL_CAP_BREAKOUT": "bg-[rgba(142,162,255,0.15)] text-[#8ea2ff] border border-[rgba(142,162,255,0.35)]",
+    }
+
+    rows = []
+    for _, r in df.iterrows():
+        close = r.get("CLOSE")
+        cells = []
+        for c in avail:
+            if c == "SYMBOL":
+                cells.append(html.Div(str(r.get(c, "")), className="font-semibold text-on-surface"))
+            elif c == "ARCHETYPE":
+                arch = str(r.get(c, ""))
+                badge = archetype_badges.get(arch, "text-on-surface")
+                cells.append(html.Div(f"⚡ {arch.replace('_', ' ')}", className=f"px-2 py-0.5 rounded-full text-xs font-semibold w-fit {badge}"))
+            elif c == "PROMOTER_DIRECTION":
+                pdir = str(r.get(c, "")).lower()
+                badge = prom_badges.get(pdir, "text-on-surface")
+                icon = "▲ " if pdir == "increasing" else ("▼ " if pdir == "decreasing" else "▬ ")
+                cells.append(html.Div(f"{icon}{pdir.upper()}", className=f"px-2 py-0.5 rounded-full text-xs font-semibold w-fit {badge}"))
+            elif c == "STOP_LOSS":
+                cells.append(html.Div(_sl_tp_str(r.get(c), close), className="text-error font-medium"))
+            elif c == "TAKE_PROFIT":
+                cells.append(html.Div(_sl_tp_str(r.get(c), close, "+"), className="text-primary font-medium"))
+            elif c in ("CLOSE", "ATR14"):
+                cells.append(html.Div(_f(r.get(c), "{:.2f}", "₹"), className="text-on-surface"))
+            elif c == "ATR_PCT":
+                cells.append(html.Div(_f(r.get(c), "{:.2f}%"), className="text-primary font-semibold"))
+            elif c == "FREE_FLOAT_CR":
+                cells.append(html.Div(_f(r.get(c), "{:,.1f} Cr", "₹"), className="text-on-surface"))
+            elif c == "FLOAT_ABSORBED_PCT":
+                cells.append(html.Div(_f(r.get(c), "{:.2f}%"), className="text-on-surface font-semibold"))
+            elif c == "ATW":
+                cells.append(html.Div(_f(r.get(c), "{:,.0f}", "₹"), className="text-on-surface"))
+            elif c == "CONVINCING_REASON":
+                cells.append(html.Div(str(r.get(c, "-")), className="text-on-surface-variant text-xs italic"))
+            else:
+                raw = r.get(c)
+                cells.append(html.Div("-" if raw is None or pd.isna(raw) else str(raw), className="text-on-surface"))
+        rows.append(_grid_row(cells, tpl))
+
+    return _grid_table(avail, rows, min_width=1240, wide=wide)
+
+
+def _tab_corner():
+    return [
+        html.Details(
+            className="glass-panel rounded-2xl mt-6 mb-2 font-body-md",
+            style={"borderLeft": "3px solid #5af0b3"},
+            open=True,
+            children=[
+                html.Summary("⚡ Corner Spike Engine (Micro-Cap Squeeze & Small-Cap Quiet Breakout)", className="px-4 py-3 font-headline-sm text-[#5af0b3] font-semibold cursor-pointer select-none outline-none"),
+                html.P("Empirical microstructure engine combining float scarcity, founder accumulation (increasing promoter stake), real ATR14 trailing stops, and anti-crowding concurrency throttles.", className="text-on-surface-variant text-sm px-4 pb-4 mb-0 border-t border-white/10 pt-3"),
+            ],
+        ),
+        corner_table(),
+        velocity_simulation(CORNER_LEDGER, risk_pct=0.002, title="₹10L Corner Spike Simulation Status"),
+    ]
+
+
 TAB_BUILDERS = {
     "legacy": _tab_legacy,
     "alpha": _tab_alpha,
     "flexgate": _tab_flexgate,
     "flexgate2": _tab_flexgate2,
+    "corner": _tab_corner,
 }
 
 
@@ -745,6 +837,7 @@ def layout():
     alpha_count = _get_count(ALPHA_FILE)
     flexgate_count = _get_count(FLEXGATE_FILE)
     flexgate2_count = _get_count(FLEXGATE2_FILE)
+    corner_count = _get_count(CORNER_FILE)
 
     return html.Div(
         className="px-4 md:px-6 pt-6 pb-32 w-full flex flex-col gap-4 relative",
@@ -787,6 +880,7 @@ def layout():
                             dcc.Tab(label=f"🏆 SBIA Alpha{alpha_count}", value="alpha", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
                             dcc.Tab(label=f"🔭 FlexGate{flexgate_count}", value="flexgate", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
                             dcc.Tab(label=f"🤖 FlexGate 2.0{flexgate2_count}", value="flexgate2", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
+                            dcc.Tab(label=f"⚡ Corner Spike{corner_count}", value="corner", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
                             dcc.Tab(label=f"🔬 Legacy{legacy_count}", value="legacy", style=TAB_STYLE, selected_style=TAB_STYLE_SELECTED),
                         ],
                     )
