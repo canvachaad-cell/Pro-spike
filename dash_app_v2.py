@@ -289,6 +289,7 @@ def update_nav(pathname, state):
         {"name": "Verify Conditions", "icon": "check_circle", "path": "/verify-conditions"},
         {"name": "Watchlist", "icon": "bookmark", "path": "/watchlist"},
         {"name": "Win Rate", "icon": "monitoring", "path": "/win-rate"},
+        {"name": "Winner Archetypes", "icon": "emoji_events", "path": "/winner-archetypes"},
         {"name": "Data Health", "icon": "health_and_safety", "path": "/data-health"}
     ]
     base_class = "flex items-center gap-md px-sm py-md rounded-lg font-label-caps text-label-caps transition-all duration-300 ease-in-out min-h-[44px]"
