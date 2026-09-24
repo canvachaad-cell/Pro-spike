@@ -56,10 +56,16 @@ holidays = [
 # BACKFILL MISSING DATES (v4 - NOW INCLUDES BSE DELIVERY WITH DATE FIX)
 # ================================================================
 def get_missing_trading_dates(days_to_check=10):
-    """Check which trading dates are missing from NSE bhav OR BSE delivery"""
+    """Check which trading dates in the lookback window (including TODAY) are missing any of the 4 feeds:
+    1. NSE Bhav (data/nse_raw/nse_bhav_YYYYMMDD.csv)
+    2. NSE Delivery (data/nse_raw/nse_delivery_YYYYMMDD.csv)
+    3. BSE Bhav (data/bse_raw/bse_bhav_YYYYMMDD.csv)
+    4. BSE Delivery (data/bse_delivery_YYYYMMDD.csv)
+    """
     today = datetime.now()
-    missing_dates = []
-    for i in range(days_to_check, 0, -1):
+    missing_items = []
+    # Check from days_to_check days ago up to and including TODAY (i=0)
+    for i in range(days_to_check, -1, -1):
         check_date = today - timedelta(days=i)
         # Skip weekends
         if check_date.weekday() >= 5:
@@ -68,60 +74,90 @@ def get_missing_trading_dates(days_to_check=10):
         date_str_dash = check_date.strftime("%Y-%m-%d")
         if date_str_dash in holidays:
             continue
-        # Check if NSE bhav OR BSE delivery is missing
         date_str = check_date.strftime("%Y%m%d")
-        nse_pattern = f"data/nse_raw/nse_bhav_{date_str}.csv"
-        bse_deliv_pattern = f"data/bse_delivery_{date_str}.csv"
-        nse_missing = not glob.glob(nse_pattern)
-        bse_deliv_missing = not glob.glob(bse_deliv_pattern)
-        if nse_missing or bse_deliv_missing:
-            missing_dates.append(check_date)
-    return missing_dates
+        
+        # Check all 4 feeds individually
+        missing_feeds = []
+        if not os.path.exists(f"data/nse_raw/nse_bhav_{date_str}.csv"):
+            missing_feeds.append("nse_bhav")
+        if not os.path.exists(f"data/nse_raw/nse_delivery_{date_str}.csv"):
+            missing_feeds.append("nse_deliv")
+        if not os.path.exists(f"data/bse_raw/bse_bhav_{date_str}.csv"):
+            missing_feeds.append("bse_bhav")
+        if not os.path.exists(f"data/bse_delivery_{date_str}.csv"):
+            missing_feeds.append("bse_deliv")
+            
+        if missing_feeds:
+            missing_items.append({
+                "date": check_date,
+                "date_str": date_str,
+                "missing": missing_feeds
+            })
+    return missing_items
 
-def backfill_missing_dates(missing_dates):
-    """Download NSE + BSE data for all missing dates (v4 - includes BSE delivery)"""
-    if not missing_dates:
-        print("✅ No missing dates. Data is up to date.\n")
+
+def backfill_missing_dates(missing_items):
+    """Download specific missing feeds for all incomplete dates (never skips today)"""
+    if not missing_items:
+        print("✅ All 4 data feeds (NSE Bhav, NSE Delivery, BSE Bhav, BSE Delivery) are fully up to date.\n")
         return
 
     print(f"\n{'='*70}")
-    print(f"⚠️  MISSING DATA DETECTED")
+    print(f"⚠️  MISSING / PENDING DATA FEEDS DETECTED")
     print(f"{'='*70}")
-    print(f"Found {len(missing_dates)} missing trading dates:")
-    for date in missing_dates:
-        print(f"  📅 {date.strftime('%Y-%m-%d (%A)')}")
+    for item in missing_items:
+        dt = item["date"]
+        missing_str = ", ".join([f.upper() for f in item["missing"]])
+        print(f"  📅 {dt.strftime('%Y-%m-%d (%A)')}: Missing [{missing_str}]")
     print(f"{'='*70}\n")
-    print("📥 Starting backfill download...\n")
+    print("📥 Starting selective download for missing feeds...\n")
 
-    for date_obj in missing_dates:
-        date_str = date_obj.strftime("%Y%m%d")
-        print(f"🔄 Downloading: {date_obj.strftime('%Y-%m-%d')}")
+    nse_downloader = NSEDownloaderFixed()
+    bse_downloader = BSEDownloaderWorking()
+
+    for item in missing_items:
+        date_obj = item["date"]
+        date_str = item["date_str"]
+        missing = item["missing"]
+        print(f"🔄 Syncing: {date_obj.strftime('%Y-%m-%d')} (Missing: {', '.join(missing)})")
+        
+        ok_bhav = "nse_bhav" not in missing
+        ok_deliv = "nse_deliv" not in missing
+        ok_bse = "bse_bhav" not in missing
+        bse_deliv_ok = "bse_deliv" not in missing
+
         try:
-            # Download NSE Bhavcopy and Delivery
-            nse_downloader = NSEDownloaderFixed()
-            nse_downloader.download_nse_bhav_new_format(date_obj)
-            nse_downloader.download_nse_delivery(date_obj)
+            # 1. NSE Bhavcopy
+            if "nse_bhav" in missing:
+                _, ok_bhav, _ = nse_downloader.download_nse_bhav_new_format(date_obj)
 
-            # Download BSE Bhavcopy
-            bse_downloader = BSEDownloaderWorking()
-            bse_downloader.download_bse_bhav(date_obj)
+            # 2. NSE Delivery
+            if "nse_deliv" in missing:
+                _, ok_deliv, _ = nse_downloader.download_nse_delivery(date_obj)
 
+            # 3. BSE Bhavcopy
+            if "bse_bhav" in missing:
+                _, ok_bse, _ = bse_downloader.download_bse_bhav(date_obj)
 
-            # v4 FIX: Download BSE Delivery with proper DATE injection
-            out_date = date_obj.strftime("%Y%m%d")
-            df_bse_del, bse_deliv_ok = bse_downloader.download_bse_delivery(date_obj)
-            if bse_deliv_ok and df_bse_del is not None:
-                # The helper normalizes and sets DATE=YYYYMMDD
-                df_bse_del.to_csv(f"data/bse_delivery_{out_date}.csv", index=False)
+            # 4. BSE Delivery
+            if "bse_deliv" in missing:
+                df_bse_del, bse_deliv_ok = bse_downloader.download_bse_delivery(date_obj)
+                if bse_deliv_ok and df_bse_del is not None:
+                    df_bse_del.to_csv(f"data/bse_delivery_{date_str}.csv", index=False)
 
-            print(f"  ✅ NSE + BSE{'+ Delivery' if bse_deliv_ok else ''} downloaded")
+            msg = "   📊 Status:\n"
+            msg += f"      NSE Bhav:  {'✅' if ok_bhav else '⏳ Pending / Failed'}\n"
+            msg += f"      NSE Deliv: {'✅' if ok_deliv else '⏳ Pending / Failed'}\n"
+            msg += f"      BSE Bhav:  {'✅' if ok_bse else '⏳ Pending / Failed'}\n"
+            msg += f"      BSE Deliv: {'✅' if bse_deliv_ok else '⏳ Pending (Not yet uploaded by exchange)'}"
+            print(msg)
         except Exception as e:
-            print(f"  ⚠️  Error: {e}")
+            print(f"  ⚠️  Error during sync: {e}")
             continue
 
     print()
     print(f"{'='*70}")
-    print("✅ BACKFILL COMPLETE")
+    print("✅ FEED SYNCHRONIZATION COMPLETE")
     print(f"{'='*70}\n")
 
 # -------------------------------
@@ -180,111 +216,12 @@ def normalize_nse_bhav(df, date):
     return df
 
 
-# Run backfill check
+# Run 4-Feed Synchronization (NSE Bhav, NSE Deliv, BSE Bhav, BSE Deliv)
 print(f"{'='*70}")
-print("[SEARCH] CHECKING FOR MISSING DATES...")
+print("[SEARCH] CHECKING 4-FEED COMPLETENESS (NSE/BSE Bhav + Delivery)...")
 print(f"{'='*70}")
-missing_dates = get_missing_trading_dates(days_to_check=10)
-backfill_missing_dates(missing_dates)
-
-# -------------------------------
-# Step 0: Determine download window
-# -------------------------------
-if os.path.exists(Config.NSE_RAW_DIR):
-    existing = sorted([f for f in os.listdir(Config.NSE_RAW_DIR) if f.startswith("nse_bhav_")])
-    if existing:
-        fn = existing[-1]
-        try:
-            date_str = fn.replace("nse_bhav_", "").replace(".csv", "")
-            last_download_date = datetime.strptime(date_str, "%Y%m%d")
-            print(f"Last downloaded: {last_download_date.strftime('%d %b %Y')}")
-        except:
-            last_download_date = datetime.now() - timedelta(days=7)
-    else:
-        last_download_date = datetime.now() - timedelta(days=7)
-else:
-    last_download_date = datetime.now() - timedelta(days=7)
-
-start_date = last_download_date + timedelta(days=1)
-end_date = datetime.now()
-
-# -------------------------------
-# Step 1: Download missing days
-# -------------------------------
-if start_date <= end_date:
-    print(f"\nDownloading from {start_date.strftime('%d %b')} to {end_date.strftime('%d %b')}")
-    print("=" * 70)
-
-    nse_downloader = NSEDownloaderFixed()
-    bse_downloader = BSEDownloaderWorking()
-    downloaded = 0
-    cur = start_date
-
-    while cur <= end_date:
-        if cur.weekday() >= 5 or cur.strftime("%Y-%m-%d") in holidays:
-            cur += timedelta(days=1)
-            continue
-
-        print(f"[DOWNLOAD] {cur.strftime('%d %b')} - ", end="")
-
-        # NSE
-        _, ok_bhav, _ = nse_downloader.download_nse_bhav_new_format(cur)
-        _, ok_deliv, _ = nse_downloader.download_nse_delivery(cur)
-
-        # BSE bhav
-        _, ok_bse, _ = bse_downloader.download_bse_bhav(cur)
-
-        # v4 FIX: BSE delivery with proper DATE injection
-        out_date = cur.strftime("%Y%m%d")
-        df_bse_del, bse_deliv_ok = bse_downloader.download_bse_delivery(cur)
-        if bse_deliv_ok and df_bse_del is not None:
-            # The helper normalizes and sets DATE=YYYYMMDD
-            df_bse_del.to_csv(f"data/bse_delivery_{out_date}.csv", index=False)
-
-        if ok_bhav or ok_deliv or ok_bse or bse_deliv_ok:
-            msg = "✅ Download Status:\n"
-            msg += f"    NSE Bhav: {'✅' if ok_bhav else '❌'}\n"
-            msg += f"    NSE Deliv: {'✅' if ok_deliv else '❌'}\n"
-            msg += f"    BSE Bhav: {'✅' if ok_bse else '❌'}\n"
-            msg += f"    BSE Deliv: {'✅' if bse_deliv_ok else '❌'}"
-            print(msg)
-            if ok_bhav and ok_deliv and ok_bse and bse_deliv_ok: # Strictly enforce all 4 feeds to prevent NaN corruption
-                downloaded += 1
-        else:
-            print("❌ All downloads failed")
-
-        cur += timedelta(days=1)
-
-    if downloaded > 0:
-        print(f"\n{'='*70}")
-        print(f"DOWNLOAD SUMMARY")
-        print(f"{'='*70}")
-        print(f"Downloaded: {downloaded} days")
-
-        # Validate all files exist
-        print("\n📊 Validating downloads...")
-        cur = start_date
-        while cur <= end_date:
-            if cur.weekday() >= 5 or cur.strftime("%Y-%m-%d") in holidays:
-                cur += timedelta(days=1)
-                continue
-            date_str = cur.strftime("%Y%m%d")
-            nse_exists = os.path.exists(f"data/nse_raw/nse_bhav_{date_str}.csv")
-            bse_exists = os.path.exists(f"data/bse_raw/bse_bhav_{date_str}.csv")
-            nse_deliv_exists = os.path.exists(f"data/nse_raw/nse_delivery_{date_str}.csv")
-            bse_deliv_exists = os.path.exists(f"data/bse_delivery_{date_str}.csv")
-            
-            status = "✅" if (nse_exists and nse_deliv_exists and bse_exists and bse_deliv_exists) else "⚠️ "
-            msg = f"{status} {cur.strftime('%d %b')}: "
-            msg += f"NSE={'✓' if nse_exists else '✗'} | "
-            msg += f"BSE={'✓' if bse_exists else '✗'} | "
-            msg += f"NSE Deliv={'✓' if nse_deliv_exists else '✗'} | "
-            msg += f"BSE Deliv={'✓' if bse_deliv_exists else '✗'}"
-            print(msg)
-            cur += timedelta(days=1)
-        print(f"{'='*70}\n")
-else:
-    print("\n✅ Already up to date!")
+missing_items = get_missing_trading_dates(days_to_check=10)
+backfill_missing_dates(missing_items)
 
 # -------------------------------
 # Step 2: Load NSE bhav
