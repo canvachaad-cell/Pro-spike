@@ -2330,36 +2330,36 @@
   }
  },
  "MARBLE": {
-  "ts": 1789709579.543989,
+  "ts": 1790076086.2308095,
   "data": {
-   "op_lev_ratio": 0.8423604446462748,
-   "rpt_amount_cr": null,
+   "pledge_direction": "flat",
+   "quarterly_quarters": 8,
    "promoter_holding": 39.99,
-   "promoter_trend": "Sep 2023: 32.28% -> Dec 2023: 32.28% -> Mar 2024: 32.28% -> Jun 2024: 32.28% -> Sep 2024: 37.23% -> Dec 2024: 37.23% -> Mar 2025: 37.23% -> Jun 2025: 35.82% -> Sep 2025: 35.83% -> Dec 2025: 35.45% -> Mar 2026: 40.20% -> Jun 2026: 39.99%",
-   "borrowings_cr": 126.0,
-   "rpt_status": "NOT_SCRAPED",
-   "symbol": "MARBLE",
-   "fcf_pat_ratio": -3.82,
-   "revenue_4q_growth": 0.6391255425172802,
-   "dii_holding": 1.13,
-   "fii_trend": null,
-   "url": "https://www.screener.in/company/531281/consolidated/",
    "fii_holding": null,
-   "roce_abs_pct": 12.5,
-   "ebit_4q_growth": 0.5383740761796477,
    "interest_coverage_trend": "improving",
+   "fii_trend": null,
+   "price": 169.0,
+   "roice_pct": null,
+   "op_lev_inflecting": false,
+   "dii_trend": "Sep 2023: 2.43% -> Dec 2023: 2.43% -> Mar 2024: 2.43% -> Jun 2024: 2.43% -> Sep 2024: 1.29% -> Dec 2024: 1.29% -> Mar 2025: 1.29% -> Jun 2025: 1.24% -> Sep 2025: 1.24% -> Dec 2025: 1.23% -> Mar 2026: 1.14% -> Jun 2026: 1.13%",
+   "free_float_cr": 264,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "revenue_4q_growth": 0.6391255425172802,
+   "op_lev_ratio": 0.8423604446462748,
+   "symbol": "MARBLE",
    "pat_3yr_cr": [
     2.0,
     9.0
    ],
-   "dii_trend": "Sep 2023: 2.43% -> Dec 2023: 2.43% -> Mar 2024: 2.43% -> Jun 2024: 2.43% -> Sep 2024: 1.29% -> Dec 2024: 1.29% -> Mar 2025: 1.29% -> Jun 2025: 1.24% -> Sep 2025: 1.24% -> Dec 2025: 1.23% -> Mar 2026: 1.14% -> Jun 2026: 1.13%",
-   "rpt_pct": null,
-   "op_lev_inflecting": false,
-   "quarterly_quarters": 8,
-   "revenue_ttm_cr": 101.97,
-   "price": 175.0,
+   "roce_abs_pct": 12.5,
+   "ebit_4q_growth": 0.5383740761796477,
+   "market_cap_cr": 440.0,
+   "dii_holding": 1.13,
    "name": "Marble City India Ltd",
-   "free_float_cr": 273,
+   "interest_coverage_recent": 1.85,
+   "revenue_ttm_cr": 101.97,
+   "rpt_pct": null,
+   "rpt_amount_cr": null,
    "pledge_trend": [
     0.0
    ],
@@ -2367,11 +2367,11 @@
     -22.0,
     -20.0
    ],
-   "market_cap_cr": 455.0,
-   "interest_coverage_recent": 1.85,
-   "pledge_direction": "flat",
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "roice_pct": null
+   "url": "https://www.screener.in/company/531281/consolidated/",
+   "promoter_trend": "Sep 2023: 32.28% -> Dec 2023: 32.28% -> Mar 2024: 32.28% -> Jun 2024: 32.28% -> Sep 2024: 37.23% -> Dec 2024: 37.23% -> Mar 2025: 37.23% -> Jun 2025: 35.82% -> Sep 2025: 35.83% -> Dec 2025: 35.45% -> Mar 2026: 40.20% -> Jun 2026: 39.99%",
+   "fcf_pat_ratio": -3.82,
+   "rpt_status": "NOT_APPLICABLE",
+   "borrowings_cr": 126.0
   }
  },
  "JBCHEPHARM": {
@@ -4663,50 +4663,50 @@
   }
  },
  "MGEL": {
-  "ts": 1790003097.7384746,
+  "ts": 1790257603.2857592,
   "data": {
-   "rpt_pct": null,
-   "dii_trend": "Sep 2023: 0.05% -> Dec 2023: 0.05% -> Mar 2024: 0.05% -> Jun 2024: 0.00% -> Sep 2024: 0.00% -> Dec 2024: 0.00% -> Mar 2025: 0.00% -> Jun 2025: 0.00% -> Sep 2025: 0.00% -> Dec 2025: 0.00% -> Mar 2026: 0.00% -> Jun 2026: 0.00%",
+   "fii_trend": "Sep 2023: 0.07% -> Dec 2023: 0.00% -> Mar 2024: 0.00% -> Jun 2024: 0.00% -> Sep 2024: 0.00% -> Dec 2024: 0.00% -> Mar 2025: 0.00% -> Jun 2025: 0.11% -> Sep 2025: 0.72% -> Dec 2025: 0.17% -> Mar 2026: 0.18% -> Jun 2026: 0.09%",
+   "price": 15.6,
    "dii_holding": 0.0,
-   "rpt_amount_cr": null,
    "interest_coverage_trend": "improving",
    "fii_holding": 0.09,
-   "free_float_cr": 144,
-   "fii_trend": "Sep 2023: 0.07% -> Dec 2023: 0.00% -> Mar 2024: 0.00% -> Jun 2024: 0.00% -> Sep 2024: 0.00% -> Dec 2024: 0.00% -> Mar 2025: 0.00% -> Jun 2025: 0.11% -> Sep 2025: 0.72% -> Dec 2025: 0.17% -> Mar 2026: 0.18% -> Jun 2026: 0.09%",
-   "interest_coverage_recent": 2.03,
-   "name": "Mangalam Global Enterprise Ltd",
-   "promoter_trend": "Sep 2023: 74.99% -> Dec 2023: 74.99% -> Mar 2024: 74.99% -> Jun 2024: 72.01% -> Sep 2024: 72.01% -> Dec 2024: 72.01% -> Mar 2025: 72.01% -> Jun 2025: 71.16% -> Sep 2025: 71.47% -> Dec 2025: 71.47% -> Mar 2026: 72.39% -> Jun 2026: 72.39%",
-   "price": 15.8,
-   "rpt_status": "NOT_APPLICABLE",
-   "pledge_trend": [
-    0.0
-   ],
    "pat_3yr_cr": [
     20.0,
     23.0,
     45.0
    ],
-   "fcf_pat_ratio": 0.53,
    "url": "https://www.screener.in/company/MGEL/consolidated/",
-   "roce_abs_pct": 13.4,
-   "borrowings_cr": 215.0,
-   "symbol": "MGEL",
-   "roice_pct": 29.7,
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "promoter_holding": 72.39,
+   "dii_trend": "Sep 2023: 0.05% -> Dec 2023: 0.05% -> Mar 2024: 0.05% -> Jun 2024: 0.00% -> Sep 2024: 0.00% -> Dec 2024: 0.00% -> Mar 2025: 0.00% -> Jun 2025: 0.00% -> Sep 2025: 0.00% -> Dec 2025: 0.00% -> Mar 2026: 0.00% -> Jun 2026: 0.00%",
+   "fcf_pat_ratio": 0.53,
    "op_lev_ratio": 1.0995486940793697,
-   "op_lev_inflecting": false,
-   "pledge_direction": "flat",
-   "market_cap_cr": 522.0,
-   "ebit_4q_growth": 0.4549804262722925,
+   "free_float_cr": 143,
+   "roice_pct": 29.7,
    "revenue_4q_growth": 0.4137883376354137,
-   "quarterly_quarters": 13,
    "ocf_3yr_cr": [
     40.0,
     -39.0,
     46.0
    ],
-   "revenue_ttm_cr": 3477.99
+   "market_cap_cr": 517.0,
+   "rpt_status": "NOT_APPLICABLE",
+   "promoter_holding": 72.39,
+   "rpt_pct": null,
+   "borrowings_cr": 215.0,
+   "name": "Mangalam Global Enterprise Ltd",
+   "ebit_4q_growth": 0.4549804262722925,
+   "quarterly_quarters": 13,
+   "pledge_direction": "flat",
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "rpt_amount_cr": null,
+   "pledge_trend": [
+    0.0
+   ],
+   "roce_abs_pct": 13.4,
+   "promoter_trend": "Sep 2023: 74.99% -> Dec 2023: 74.99% -> Mar 2024: 74.99% -> Jun 2024: 72.01% -> Sep 2024: 72.01% -> Dec 2024: 72.01% -> Mar 2025: 72.01% -> Jun 2025: 71.16% -> Sep 2025: 71.47% -> Dec 2025: 71.47% -> Mar 2026: 72.39% -> Jun 2026: 72.39%",
+   "interest_coverage_recent": 2.03,
+   "op_lev_inflecting": false,
+   "revenue_ttm_cr": 3477.99,
+   "symbol": "MGEL"
   }
  },
  "TLL": {
@@ -4757,50 +4757,50 @@
   }
  },
  "GGAUTO": {
-  "ts": 1790062894.324168,
+  "ts": 1790170882.0235934,
   "data": {
-   "rpt_amount_cr": null,
-   "ebit_4q_growth": -0.02632937532266399,
-   "market_cap_cr": 197.0,
+   "free_float_cr": 120,
+   "url": "https://www.screener.in/company/531399/",
+   "pledge_trend": [
+    0.0
+   ],
+   "roce_abs_pct": 24.1,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "op_lev_inflecting": null,
+   "rpt_status": "NOT_APPLICABLE",
+   "fii_holding": null,
    "interest_coverage_recent": 8.69,
+   "rpt_amount_cr": null,
+   "fcf_pat_ratio": 1.61,
+   "dii_holding": null,
+   "interest_coverage_trend": "stable",
+   "op_lev_ratio": null,
+   "borrowings_cr": 29.0,
    "ocf_3yr_cr": [
     12.0,
     14.0,
     11.0
    ],
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "symbol": "GGAUTO",
-   "rpt_status": "NOT_APPLICABLE",
-   "rpt_pct": null,
-   "promoter_trend": "Sep 2023: 32.80% -> Dec 2023: 36.14% -> Mar 2024: 36.14% -> Jun 2024: 36.14% -> Sep 2024: 36.49% -> Dec 2024: 36.49% -> Mar 2025: 36.49% -> Jun 2025: 39.60% -> Sep 2025: 39.60% -> Dec 2025: 39.60% -> Mar 2026: 39.60% -> Jun 2026: 39.60%",
-   "pledge_trend": [
-    0.0
-   ],
-   "op_lev_ratio": null,
-   "revenue_ttm_cr": 104.22999999999999,
-   "roce_abs_pct": 24.1,
-   "promoter_holding": 39.6,
-   "op_lev_inflecting": null,
+   "name": "G G Automotive Gears Ltd",
+   "dii_trend": null,
+   "price": 198.0,
    "pat_3yr_cr": [
     4.0,
     8.0,
     11.0
    ],
-   "free_float_cr": 119,
-   "dii_holding": null,
-   "roice_pct": 41.9,
-   "pledge_direction": "flat",
-   "price": 197.0,
-   "borrowings_cr": 29.0,
    "revenue_4q_growth": -0.10922143406546451,
-   "url": "https://www.screener.in/company/531399/",
-   "fii_holding": null,
-   "fcf_pat_ratio": 1.61,
+   "symbol": "GGAUTO",
+   "roice_pct": 41.9,
+   "ebit_4q_growth": -0.02632937532266399,
+   "market_cap_cr": 198.0,
+   "pledge_direction": "flat",
+   "promoter_holding": 39.6,
+   "rpt_pct": null,
    "quarterly_quarters": 13,
    "fii_trend": null,
-   "interest_coverage_trend": "stable",
-   "name": "G G Automotive Gears Ltd",
-   "dii_trend": null
+   "promoter_trend": "Sep 2023: 32.80% -> Dec 2023: 36.14% -> Mar 2024: 36.14% -> Jun 2024: 36.14% -> Sep 2024: 36.49% -> Dec 2024: 36.49% -> Mar 2025: 36.49% -> Jun 2025: 39.60% -> Sep 2025: 39.60% -> Dec 2025: 39.60% -> Mar 2026: 39.60% -> Jun 2026: 39.60%",
+   "revenue_ttm_cr": 104.22999999999999
   }
  },
  "SUZLON": {
@@ -5826,6 +5826,147 @@
    "roice_pct": -13.6,
    "revenue_ttm_cr": 232.0,
    "rpt_amount_cr": null
+  }
+ },
+ "MAXIMUS": {
+  "ts": 1790085167.3725367,
+  "data": {
+   "pledge_direction": "flat",
+   "quarterly_quarters": 13,
+   "promoter_holding": 57.58,
+   "fii_holding": null,
+   "interest_coverage_trend": "deteriorating",
+   "fii_trend": null,
+   "price": 15.0,
+   "roice_pct": 5.9,
+   "op_lev_inflecting": false,
+   "dii_trend": null,
+   "free_float_cr": 87,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "revenue_4q_growth": 0.3057588291441297,
+   "op_lev_ratio": 0.07976954899621878,
+   "symbol": "MAXIMUS",
+   "pat_3yr_cr": [
+    8.0,
+    9.0,
+    9.0
+   ],
+   "roce_abs_pct": 11.1,
+   "ebit_4q_growth": 0.024390243902439143,
+   "market_cap_cr": 204.0,
+   "dii_holding": null,
+   "name": "Maximus International Ltd",
+   "interest_coverage_recent": 3.14,
+   "revenue_ttm_cr": 205.2,
+   "rpt_pct": null,
+   "rpt_amount_cr": null,
+   "pledge_trend": [
+    0.0
+   ],
+   "ocf_3yr_cr": [
+    -8.0,
+    -15.0,
+    -8.0
+   ],
+   "url": "https://www.screener.in/company/540401/consolidated/",
+   "promoter_trend": "Sep 2023: 62.65% -> Dec 2023: 62.31% -> Mar 2024: 62.31% -> Jun 2024: 61.45% -> Sep 2024: 61.45% -> Dec 2024: 57.58% -> Mar 2025: 57.58% -> Jun 2025: 57.58% -> Sep 2025: 57.58% -> Dec 2025: 57.58% -> Mar 2026: 57.58% -> Jun 2026: 57.58%",
+   "fcf_pat_ratio": -1.19,
+   "rpt_status": "NOT_APPLICABLE",
+   "borrowings_cr": 39.0
+  }
+ },
+ "MITCON": {
+  "ts": 1790170859.3824272,
+  "data": {
+   "free_float_cr": 144,
+   "url": "https://www.screener.in/company/MITCON/consolidated/",
+   "pledge_trend": [
+    0.0
+   ],
+   "roce_abs_pct": 12.1,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "op_lev_inflecting": false,
+   "rpt_status": "NOT_APPLICABLE",
+   "fii_holding": 20.08,
+   "interest_coverage_recent": 3.19,
+   "rpt_amount_cr": null,
+   "fcf_pat_ratio": 2.82,
+   "dii_holding": 1.72,
+   "interest_coverage_trend": "improving",
+   "op_lev_ratio": 0.3606554926207315,
+   "borrowings_cr": 99.0,
+   "ocf_3yr_cr": [
+    24.0,
+    21.0,
+    17.0
+   ],
+   "name": "Mitcon Consultancy & Engineering Services Ltd",
+   "dii_trend": "Sep 2023: 3.43% -> Dec 2023: 3.43% -> Mar 2024: 3.42% -> Jun 2024: 2.23% -> Sep 2024: 2.23% -> Dec 2024: 2.23% -> Mar 2025: 2.23% -> Jun 2025: 2.23% -> Sep 2025: 1.72% -> Dec 2025: 1.72% -> Mar 2026: 1.72% -> Jun 2026: 1.72%",
+   "price": 82.6,
+   "pat_3yr_cr": [
+    6.0,
+    7.0,
+    9.0
+   ],
+   "revenue_4q_growth": 0.4978262798332001,
+   "symbol": "MITCON",
+   "roice_pct": 37.5,
+   "ebit_4q_growth": 0.1795437821927889,
+   "market_cap_cr": 144.0,
+   "pledge_direction": "flat",
+   "promoter_holding": 0.0,
+   "rpt_pct": null,
+   "quarterly_quarters": 13,
+   "fii_trend": "Sep 2023: 16.85% -> Dec 2023: 16.85% -> Mar 2024: 16.85% -> Jun 2024: 16.84% -> Sep 2024: 17.21% -> Dec 2024: 17.21% -> Mar 2025: 17.33% -> Jun 2025: 17.94% -> Sep 2025: 18.21% -> Dec 2025: 18.21% -> Mar 2026: 18.24% -> Jun 2026: 20.08%",
+   "promoter_trend": "0.0% (Professionally Managed / No Promoters)",
+   "revenue_ttm_cr": 168.82
+  }
+ },
+ "NATHBIOGEN": {
+  "ts": 1790170860.250462,
+  "data": {
+   "free_float_cr": 154,
+   "url": "https://www.screener.in/company/NATHBIOGEN/consolidated/",
+   "pledge_trend": [
+    0.0
+   ],
+   "roce_abs_pct": 6.4,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "op_lev_inflecting": false,
+   "rpt_status": "NOT_APPLICABLE",
+   "fii_holding": 0.26,
+   "interest_coverage_recent": 2.96,
+   "rpt_amount_cr": null,
+   "fcf_pat_ratio": 10.0,
+   "dii_holding": 0.01,
+   "interest_coverage_trend": "deteriorating",
+   "op_lev_ratio": 0.7941176470588235,
+   "borrowings_cr": 138.0,
+   "ocf_3yr_cr": [
+    75.0,
+    18.0,
+    -13.0
+   ],
+   "name": "Nath Bio-Genes (India) Ltd",
+   "dii_trend": "Sep 2023: 4.37% -> Dec 2023: 4.37% -> Mar 2024: 4.37% -> Jun 2024: 4.37% -> Sep 2024: 4.37% -> Dec 2024: 4.37% -> Mar 2025: 3.94% -> Jun 2025: 2.25% -> Sep 2025: 0.76% -> Dec 2025: 0.01% -> Mar 2026: 0.01% -> Jun 2026: 0.01%",
+   "price": 148.0,
+   "pat_3yr_cr": [
+    -67.0,
+    35.0,
+    40.0
+   ],
+   "revenue_4q_growth": 0.20987654320987653,
+   "symbol": "NATHBIOGEN",
+   "roice_pct": 2.1,
+   "ebit_4q_growth": 0.16666666666666666,
+   "market_cap_cr": 283.0,
+   "pledge_direction": "flat",
+   "promoter_holding": 45.59,
+   "rpt_pct": null,
+   "quarterly_quarters": 13,
+   "fii_trend": "Sep 2023: 0.22% -> Dec 2023: 0.32% -> Mar 2024: 0.27% -> Jun 2024: 0.21% -> Sep 2024: 0.18% -> Dec 2024: 0.19% -> Mar 2025: 0.21% -> Jun 2025: 0.41% -> Sep 2025: 0.32% -> Dec 2025: 0.31% -> Mar 2026: 0.22% -> Jun 2026: 0.26%",
+   "promoter_trend": "Sep 2023: 45.59% -> Dec 2023: 45.59% -> Mar 2024: 45.59% -> Jun 2024: 45.59% -> Sep 2024: 45.59% -> Dec 2024: 45.59% -> Mar 2025: 45.59% -> Jun 2025: 45.59% -> Sep 2025: 45.59% -> Dec 2025: 45.59% -> Mar 2026: 45.59% -> Jun 2026: 45.59%",
+   "revenue_ttm_cr": 490.0
   }
  }
 }

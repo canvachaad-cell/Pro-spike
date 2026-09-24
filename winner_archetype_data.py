@@ -106,14 +106,21 @@ def _derive_watchlist_fallback(df: pd.DataFrame) -> pd.DataFrame:
     def check_q80_proxy(r):
         deliv = r.get("DELIV_PER", np.nan)
         atr_pct = r.get("ATR_PCT", np.nan)
-        if pd.isna(deliv) or deliv > 80.0:
+        if pd.isna(deliv) or deliv > 80.0 or deliv < 50.0:
             return False
         return atr_pct >= 3.4 if pd.notna(atr_pct) else False
 
+    def get_proxy_deliv_grade(d):
+        if pd.isna(d) or d < 50.0:
+            return "RETAIL"
+        if 60.0 <= d <= 75.0:
+            return "A-GRADE"
+        if (50.0 <= d < 60.0) or (75.0 < d <= 80.0):
+            return "B-GRADE"
+        return "C-GRADE"
+
     df["QUALITY_80"] = df.apply(check_q80_proxy, axis=1)
-    df["DELIV_GRADE"] = df.get("DELIV_PER", pd.Series(50.0, index=df.index)).apply(
-        lambda d: "A-GRADE" if d < 65 else ("B-GRADE" if d <= 80 else "C-GRADE")
-    )
+    df["DELIV_GRADE"] = df.get("DELIV_PER", pd.Series(50.0, index=df.index)).apply(get_proxy_deliv_grade)
     df["RULE3_SCORE"] = 75.0
 
     return _ensure_derived(df)

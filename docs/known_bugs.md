@@ -585,18 +585,18 @@
 **AI PROCESS**: Executed with strict adherence to `fix_before_touch` protocol and approved implementation plan. Verified via `python -m py_compile`, `python -X utf8 check_pipeline.py`, full unit test suite (`pytest tests/`, 45/45 passed in 5.98s), and confirmed Dash page registry integration and programmatic callback rendering.
 ---
 
-## BUG-043 � Vikram "Infinite Thinking" Regression: No Global Deadline + Single Unguarded Loader-Clear + No-Op Latency Gate
+## BUG-043 � Vikram "Infinite Thinking" Regression: No Global Deadline + Single Unguarded Loader-Clear + No-Op Latency Gate
 **STATUS**: FIXED (PR-2 -> PR-1 -> PR-3 -> PR-4)
 **FILE**: dash_pages/_vikram_callback.py, config/vikram_runtime.json, 	ests/audit_vikram_latency.spec.js
 **SYMPTOM**: Vikram spinner never clears; input permanently disabled; requires hard page reload to recover. This is occurrence #8 of the same failure family (previous: BUG-016, 018, 022, 026, 030, 031, 036, 038).
 **ROOT CAUSE**:
-1. **No end-to-end budget**: sk_vikram() has zero monotonic() / deadline tracking. Worst-case execution � 202s (4 screener variants � 10s pre-pool + 19s context pool + 90s static model loop + 38s probe).
+1. **No end-to-end budget**: sk_vikram() has zero monotonic() / deadline tracking. Worst-case execution � 202s (4 screener variants � 10s pre-pool + 19s context pool + 90s static model loop + 38s probe).
 2. **Single unguarded loader-clear**: esolve_message() calls sk_vikram() at L1446 with no 	ry/except. Any exception from ThreadPoolExecutor (thread exhaustion), uild_risk_architecture_context() (called synchronously, unguarded), or any future uncaught callsite -> Dash 500 -> disabled=True and _loader_bubble() permanently stuck.
-3. **No-op regression gate**: 	ests/audit_vikram_latency.spec.js L41 only asserts 	oBeEnabled({ timeout: 90000 }). No latency threshold assertion exists. BUG-038 ledger entry claims "verified <4.5s" � this assertion was **never in the committed file**. All 8 previous "FIXED" entries passed a gate that tolerates a 90-second hang.
+3. **No-op regression gate**: 	ests/audit_vikram_latency.spec.js L41 only asserts 	oBeEnabled({ timeout: 90000 }). No latency threshold assertion exists. BUG-038 ledger entry claims "verified <4.5s" � this assertion was **never in the committed file**. All 8 previous "FIXED" entries passed a gate that tolerates a 90-second hang.
 **FIX**:
-1. (PR-2) Wrapped sk_vikram(...) call in esolve_message with 	ry/except Exception � inputs are **always** re-enabled, even on unhandled exceptions. Fail-loudly print retained per AGENTS.md.
+1. (PR-2) Wrapped sk_vikram(...) call in esolve_message with 	ry/except Exception � inputs are **always** re-enabled, even on unhandled exceptions. Fail-loudly print retained per AGENTS.md.
 2. (PR-1) Added MAX_TOTAL_S = 45 constant. Added 4 deadline checkpoints (A: before classify, B: after context, C: in static model loop, D: before probe). Passed absolute deadline into _probe_dynamic_fallback replacing its internal probe_start + PROBE_TOTAL_TIMEOUT. Raised pi_timeout_ms from 15000 -> 25000 to resolve the BUG-022/BUG-038 contradiction.
-3. (PR-3) Capped screener name-search to 2 variants � 5s (was 4 � 10s = 40s). Moved _classify_query into the thread pool to run concurrently with uild_engine_signals.
+3. (PR-3) Capped screener name-search to 2 variants � 5s (was 4 � 10s = 40s). Moved _classify_query into the thread pool to run concurrently with uild_engine_signals.
 4. (PR-4) Added real latency assertions to 	ests/audit_vikram_latency.spec.js: expect(t1).toBeLessThan(15), expect(t2).toBeLessThan(50), expect(t3).toBeLessThan(50), loader-dots count assertion, recovery 	oBeEnabled timeout reduced from 90s to 55s.
 **FAILED ATTEMPTS**: See BUG-022 (15s api_timeout regression), BUG-038 (fake 4.5s assertion).
 **AI PROCESS**: DEMONCORE: DEEP_AUDIT -> grounded every finding against live source code -> prioritized PR-2 (recovery) before PR-1 (budget) -> verified that PR-3 preserves @lru_cache thread safety -> added falsifiable test assertions.
@@ -688,3 +688,467 @@ ecommendation_card directly under the stock selector for instant 3-second decisi
 4. Validated across a 20-stock random sample drawn from all six platform screeners (SBIA Alpha, FlexGate 2.0, FlexGate Base, Legacy Screener, Active Ranked, and Cloud Universe) with 100% pass rate.
 **FAILED ATTEMPTS**: None. Identified and proven via Demon Core ROOT_CAUSE audit.
 **AI PROCESS**: Traced query pipeline from tokenizer to classification to prompt assembly. Verified with empirical 20-stock matrix test and live Gemini inference.
+
+
+## BUG-052: Signal Re-Entry Asymmetry & Overlapping Active Trade Stacking Trap
+**SYMPTOM**:
+1. When a stock stops out (HIT_SL or MOMENTUM_LOST in loss), the screener frequently re-triggered it 3-10 days later. Re-entering immediately after a loss produced an 86.7% failure rate across 15 historical repeat entries, draining -Rs 26,368 from realized PnL (ALKEM, GNFC, JSWCEMENT, LAURUSLABS, TORNTPHARM suffered double SL hits; RPPINFRA suffered 4 consecutive loss cuts).
+2. The ledger allowed duplicate ACTIVE trade stacking on the exact same symbol (24 overlapping active trades occurred historically, averaging a degraded 37.5% win rate and +0.075R return while doubling drawdown exposure).
+**ROOT CAUSE**:
+ledger_manager.py (both update_sbia_ledger and update_flexgate_ledger) checked only (SYMBOL == sym) & (ENTRY_DATE == dt) uniqueness. It lacked an active state guard ((sym_trades['STATUS'] == 'ACTIVE').any()) and contained zero historical outcome memory regarding whether the symbol's previous closed trade was a win or loss.
+**FIX**:
+1. Implemented check_signal_eligibility(ledger_df, sym, trigger_dt, cooldown_days=14) in ledger_manager.py.
+2. Rule 1A (Max 1 Active Position): Rejects new signals on any symbol currently ACTIVE to prevent duplicate risk stacking.
+3. Rule 1B (Conditional Post-Loss Lockout): Blocks re-entry for 14 calendar days if the symbol's most recent closed trade was a LOSS (HIT_SL or MOMENTUM_LOST in negative PnL).
+4. Rule 1C (Winning Continuation Preserved): Freely permits re-entry if the prior trade was a WIN (HIT_TP or MOMENTUM_LOST in positive PnL), preserving the +Rs 19,914 streak alpha (MANORAMA, HCG, SHANKARA, TIERRA).
+5. Hooked into both update_sbia_ledger and update_flexgate_ledger.
+**FAILED ATTEMPTS**: Blanket 14-day cooldown for all repeat signals was evaluated and rejected; empirical testing proved it would forfeit +Rs 19,914 in winning streak continuation.
+**AI PROCESS**: Replayed chronological ledger sequence in scratch/verify_deepseek_claims.py and unit tested 7 scenarios in scratch/test_reentry_gate.py with 100% pass rate.
+
+---
+
+## BUG-053: `conviction_scorer.classify()` Promotes NaN Market Caps Into The Small-Cap Cohort
+**STATUS**: OPEN (not fixed - CRITICAL signal-logic blast radius, awaiting explicit approval)
+**FILE**: `conviction_scorer.py` - `classify()`
+**DISCOVERED BY**: `scratch/verify_smallcap_veto_winner_audit.py` (integrity gate 5), 2026-09-23
+**SYMPTOM**:
+`classify(market_cap_cr)` guards only `is None`. A pandas/numpy `NaN` is not `None`, and both
+`NaN >= 20000.0` and `NaN >= 7000.0` evaluate to `False`, so execution falls through to
+`return "S"`. Unmapped tickers are therefore labelled **Small-Cap** instead of `U` (unknown).
+**IMPACT MEASURED**: 4 of 119 baseline rows (ABSL10BANK, GROWWLIQID, MOCAPITAL, TATSILV) and
+**29 of 189 universe rows** (also ADON, BFSI, BRIGHT, DHANWEL, ENERGYINF, GILT5BETA,
+GOELCONS, GROWWCHEM, HRS, ITADD, ...) - predominantly ETFs and recent listings with no market
+cap in the fundamental cache. Every such name is silently pulled into the "< Rs 7,000 Cr"
+cohort, contaminating small-cap stratification and any small-cap-only statistic or veto
+policy that keys off the class.
+**ROOT CAUSE**: Missing NaN guard in a function whose contract already models "unknown"
+(`return "U"`) but only for `None`.
+**RECOMMENDED FIX** (not applied): guard `NaN` the same way as `None` and return `"U"`.
+**FAILED ATTEMPTS**: None - the defect was proven by the audit harness's loud gate, which
+raises whenever `classify(market_cap_cr)` disagrees with the logged `stock_class`. The harness
+now uses a documented read-only wrapper that maps NaN to `U`, so the defect is contained for
+analysis purposes while production remains untouched.
+**AI PROCESS**: Built the deterministic 119/189 cohorts, ran `classify_audited()` vs the
+logged `stock_class` as an equality gate. First run: 115/119 agreement, 4 mismatches, all
+ETFs. Isolated the NaN branch, measured the blast radius across both ledgers, and reported
+rather than patched, per the `AGENTS.md` rule that signal-logic edits require approval.
+
+---
+
+## BUG-054: NSE Delivery Files Named One Day Ahead Of Their Contents
+**STATUS**: OPEN (downloader; mitigated in `scratch/verify_smallcap_veto_winner_audit.py`)
+**FILE**: `data/nse_raw/nse_delivery_*.csv` (producer: NSE downloader path)
+**DISCOVERED BY**: `scratch/verify_smallcap_veto_winner_audit.py` (NSE panel builder), 2026-09-23
+**SYMPTOM**: 10 of 188 NSE delivery files in 2026 hold the **previous trading day's** rows -
+the filename date equals the row's `DATE1` plus one calendar day:
+`20260115 -> 20260114`, `20260126 -> 20260123`, `20260303 -> 20260302`, `20260326 -> 20260325`,
+`20260331 -> 20260330`, `20260403 -> 20260402`, `20260414 -> 20260413`, `20260501 -> 20260430`,
+`20260528 -> 20260527`, `20260626 -> 20260625`.
+**ROOT CAUSE**: The downloader names the output from the requested date while NSE serves the
+most recent settled bhavcopy. The correctly-named file for the same date also exists, so the
+data is **duplicated, not lost**.
+**IMPACT**: Any consumer that trusts the **filename** to date rows will mis-date ~10 sessions
+and will double-count `(SYMBOL, DATE)` keys. The `data/bse_delivery_*` and `data/bse_raw/*`
+corpora were scanned and have **zero** such mismatches - this is NSE-only.
+**MITIGATION IN HARNESS**: Rows are keyed on their own authoritative `DATE1` (not the
+filename); the mismatch is printed loudly; and a value-conflict gate raises if any
+`(SYMBOL, DATE)` key carries divergent `CLOSE_PRICE` or `DELIV_QTY` across duplicate sources.
+**FAILED ATTEMPTS**: Initially the harness raised on any filename/row-date mismatch, which
+aborted the audit. That was too blunt: the row date is authoritative and the overlap is
+resolvable, so the check was demoted to a loud warning plus a stricter value-conflict gate.
+**AI PROCESS**: Scanned all 188 NSE files for filename-vs-`DATE1` disagreement, found the
+consistent "+1 day" pattern, confirmed the correctly-named twin file exists, then re-designed
+the panel builder to key on row dates.
+
+---
+
+## BUG-055: NSE Bhavcopy Encodes Blank Delivery Quantity As `' -'`
+**STATUS**: FIXED (in `scratch/verify_smallcap_veto_winner_audit.py`)
+**FILE**: `data/nse_raw/nse_delivery_*.csv` columns `DELIV_QTY` / `DELIV_PER`
+**DISCOVERED BY**: `scratch/verify_smallcap_veto_winner_audit.py`, 2026-09-23
+**SYMPTOM**: A `float()` / `pd.to_numeric()` cast over `DELIV_QTY` or `DELIV_PER` raises on the
+literal string `' -'` (space-dash). Observed **188 times** across the 2026 NSE files - one row
+each in `DELIV_QTY` and `DELIV_PER`. The harness's strict numeric coercion aborted the first
+full run with `unparseable numeric values [' -']`.
+**ROOT CAUSE**: NSE writes a blank/missing delivery figure as a human-readable dash rather
+than an empty field. Same family as BUG-027 (silent delivery failure produces NaNs).
+**FIX**: Added a `MISSING_TOKENS` set (`nan, none, null, '', -, --, n.a., na, nil`) to the
+harness's `series_opt_float()`. Dash-shaped values become `NaN` and are **counted and printed**
+via `report_missing()` - never zero-filled, because a zero delivery quantity is a materially
+different (and false) observation.
+**FAILED ATTEMPTS**: **Zero-filling was explicitly rejected** - it would fabricate real
+delivery activity for those rows and silently inflate any delivery-based statistic.
+**AI PROCESS**: Captured the aborting exception, enumerated every non-numeric token across all
+seven numeric NSE columns to prove `' -'` was the only offender, then introduced an explicit
+missing-marker list plus a coverage report so the coercion is visible rather than silent.
+
+---
+
+## BUG-056: Duplicate `(SYMBOL, DATE)` Rows From Non-EQ Series Corrupt NSE Panel Joins
+**STATUS**: FIXED (in `scratch/verify_smallcap_veto_winner_audit.py`)
+**FILE**: `data/nse_raw/nse_delivery_*.csv` (`SERIES` column)
+**DISCOVERED BY**: `scratch/verify_smallcap_veto_winner_audit.py` (value-conflict gate), 2026-09-23
+**SYMPTOM**: The NSE panel carried **two different rows for the same symbol and date**, which
+broke any `(SYMBOL, DATE)` keyed lookup. Reproduced examples:
+`AARTISURF 2026-06-29` - `EQ` close **Rs 370.50** (DELIV_QTY 1,570) vs `P1` close **Rs 244.35**
+(DELIV_QTY 1);
+`IIFL 2026-09-16` - `EQ` (DELIV_QTY 628,420) vs `T0` (DELIV_QTY 5,000).
+**ROOT CAUSE**: `nse_raw` retains every traded series, not just the equity series. Mixing them
+corrupts price, volume and delivery fields for the affected symbol-dates.
+**FIX**: Filter to `SERIES == 'EQ'` - the established convention already used by
+`scratch/verify_deepseek_claims.py:37`. 55,225 non-EQ rows are dropped from the audit window
+and the count is printed. A pre-existing codebase-wide convention now has an explicit
+contamination record behind it.
+**FAILED ATTEMPTS**: Naive `drop_duplicates(keep="last")` was tried first and **rejected** - it
+would have silently kept whichever series happened to be read last, so a symbol's price could
+change depending on file ordering.
+**AI PROCESS**: Added a `groupby((SYMBOL, DATE)).nunique()` conflict gate that raises on any
+divergent `CLOSE_PRICE` / `DELIV_QTY`. It fired on exactly 2 keys, both traced to `SERIES`
+spread, which pointed straight at the `EQ` filter used elsewhere in the repo.
+
+---
+
+## BUG-057: `ENTRY_AI_PROB` Is Systematically Miscalibrated (over-confident by 20-42 pp)
+**STATUS**: OPEN (confirmed defect; no code changed - model artefact, recalibration needs approval)
+**FILE**: the FlexGate RF win-probability producer for `data/*_ledger.csv` `ENTRY_AI_PROB`
+**DISCOVERED BY**: `scratch/verify_smallcap_round2_angles.py` (Tier A, block A4), 2026-09-23
+**SYMPTOM**: `ENTRY_AI_PROB` ranks acceptably but its *level* is wrong in every bucket. Over
+the full 189-trade universe (53 tagged winners / 136 tagged losers):
+- AUC **0.624** (p = 0.0082), Spearman rho vs `return_pct` **+0.255** (p = 0.0004)
+  -> the score genuinely discriminates.
+- Brier(model) **0.3266** vs Brier(base rate) **0.2018** -> the model is **worse than**
+  simply quoting the base rate.
+- Hosmer-Lemeshow **chi2 = 125.79, df = 3, p = 0.0000** -> conclusively miscalibrated.
+- Every predicted bucket over-predicts by **12 to 42 percentage points**:
+  predicted 26.4% -> actual 14.3%; 36.9% -> **0.0%**; 49.1% -> **11.1%**;
+  65.6% -> 32.5%; 75.9% -> **34.2%**.
+- Strict `< Rs 7,000 Cr` subset reproduces it: Brier 0.2692 vs 0.2495 base,
+  HL chi2 = 13.55, df = 3, p = 0.0036.
+**ROOT CAUSE (scope)**: a *calibration* defect, NOT a *discrimination* defect. The ordinal
+information is real (quartile win rates 12.5% -> 30.0% -> 35.6% -> 34.8%, Fisher top-vs-bottom
+p = 0.0274); only the probability LEVEL is inflated. Consistent with training
+class-balance / threshold shifting without a post-hoc probability calibration step.
+**IMPACT**: `ENTRY_AI_PROB` is surfaced in the UI as a win probability. A displayed "76%"
+print is empirically associated with a ~34% realised win rate. Any sizing, ranking or
+user-facing claim that reads the absolute number is misled. Ranking use is unaffected.
+**RECOMMENDED FIX (not applied)**: add an isotonic or Platt recalibration layer fitted on the
+closed-trade ledger (out-of-fold), and display the calibrated value. No model retrain needed.
+**FAILED ATTEMPTS**: n/a - this is the first time the column was tested against outcomes.
+Round 1 only reported *median levels* descriptively; it never checked calibration.
+**AI PROCESS**: Joined each trade to its own engine ledger on `(SYMBOL, ENTRY_DATE, engine)`
+to avoid fan-out, then ran AUC (derived from the Mann-Whitney U statistic), Spearman, a Brier
+comparison against the base rate, a 5-bucket calibration table and a Hosmer-Lemeshow test -
+the standard battery for a probability output, which had never been applied to this column.
+
+---
+
+## BUG-058: `N_CONCURRENT` Signal-Crowding Effect Is Unmodelled (signals fired in bursts lose)
+**STATUS**: OPEN (confirmed effect; no production change - needs approval)
+**FILE**: signal-density gating in the screener / `ledger_manager.py` eligibility path
+**DISCOVERED BY**: `scratch/verify_smallcap_round2_angles.py` (Angle 2), 2026-09-23
+**SYMPTOM**: Outcome depends on how many cohort trades trigger within +/-3 sessions of each
+other, independently of WHEN they trigger:
+- full 189 universe: low-density quartile (<= 14 concurrent peers, n=49) win rate **40.8%**,
+  mean return **+1.12%**; high-density quartile (>= 57 peers, n=51) win rate **17.6%**,
+  mean return **-1.23%**; Fisher exact **p = 0.0150**.
+- strict small-cap: 58.8% vs 36.4% win rate (n=17 vs n=22), Fisher p = 0.2057 - same
+  direction, underpowered.
+**ROOT CAUSE**: no signal-density / crowding control exists anywhere in the eligibility path.
+Only re-entry rules are enforced (see BUG-052: max-1-active and post-loss lockout).
+**IMPORTANT CONTRAST**: this is NOT a calendar/period effect. Temporal-concentration
+permutation tests (10,000 seeded draws) return p = 0.9850 / 0.9272 on the strict small-cap
+cohort and p = 0.9883 / 0.2502 on the full universe, i.e. winners are NOT clustered in time
+beyond chance. The edge is therefore not "a good month"; it is degraded by simultaneous
+signal bursts.
+**RECOMMENDED FIX (not applied)**: evaluate a max-signals-per-window throttle (or a rank
+cap on same-week triggers) as a paper experiment before any production wiring.
+**FAILED ATTEMPTS**: a period-based cooldown would be the intuitive fix and is explicitly
+NOT supported by the data - the permutation null rejects temporal clustering.
+**AI PROCESS**: Built `N_CONCURRENT_3D` from the panel-derived trading calendar, bucketed
+win rates by concurrency, and cross-checked against a permutation null on the entry-date
+multiset to separate a crowding effect from a period effect.
+
+---
+
+## BUG-059: Win-Probability Models Trained On A Single Month, With A Same-Month "Holdout" (no walk-forward)
+**STATUS**: OPEN (confirmed root cause; no code changed - retraining plan needs approval)
+**FILE**: training data `data/ml/train.csv` + `data/ml/holdout.csv` (producers: `ml_data_prep.py`,
+`train_ml_model.py`); consumers `calculate_active_signals.py`, `flexgate_2_scanner.py`
+**DISCOVERED BY**: AI-probability weight audit, 2026-09-23 (extends BUG-057)
+**SYMPTOM**: `ENTRY_AI_PROB` over-predicts by 20-42 pp pooled, and the error grows monotonically with
+distance from the training window:
+| Entry month | n | mean AI_PROB | ACTUAL win % |
+| :--- | ---: | ---: | ---: |
+| 2026-07 (**training window**) | 7 | 69.09 | **85.7** |
+| 2026-08 | 53 | 67.24 | **45.3** |
+| 2026-09 | 5 | **73.74** (most confident) | **20.0** (worst) |
+The model is *conservative* in-sample (85.7% actual vs ~69% predicted) and over-confident by ~54 pp
+out-of-sample, while its confidence stays essentially FLAT across all three months. It assigns its
+highest monthly confidence to its worst month.
+**ROOT CAUSE**:
+1. `ml_data_prep.py:67-78` builds the "temporal holdout" as `df.sort_values('ENTRY_DATE').iloc[train_size:]`
+   - i.e. the **tail of the same month**, not a separate regime. Not a genuine out-of-sample test.
+2. The combined training corpus is **82 rows spanning ONE calendar month** (2026-07-01..2026-07-31,
+   56 symbols): train 66 rows @ 44.1% `IS_PROFITABLE`, holdout 16 rows @ **75.0%**. A 31 pp gap
+   between train and holdout base rates is a distribution shift, not validation.
+3. No walk-forward / rolling retraining exists anywhere. Round-2 Angle 2 independently established
+   that **July 2026 was the single best month in the sample** (small-cap win rate 85.7%, vs Aug 45.3%,
+   Sep 20.0) - so the model was fit to the best month and then applied to the worst.
+**IMPACT**: The `AI_WIN_PROBABILITY >= 60.0` entry gate (BUG-060) is driven by a stale model. This
+SUPERSEDES the BUG-057 recommendation of "recalibrate only, no retrain" - monotone rescaling cannot
+repair a model whose RANKING degrades out-of-sample (September's highest-probability names won 20%).
+**RECOMMENDED FIX (not applied)**: retrain on a rolling 3-6 month window with walk-forward validation,
+reporting out-of-sample AUC and calibration per fold; recalibrate only after that.
+**FAILED ATTEMPTS**: Recall/recalibration-only (the Round-2 BUG-057 plan) - withdrawn, because the
+failure mode is ranking degradation, not scale drift.
+**AI PROCESS**: Read the actual shipped pickles to get real `feature_importances_`, traced the feature
+construction to `train_ml_model.py`, found `data/ml/*.csv` dates, then joined the ledger's
+`ENTRY_AI_PROB` to realised outcomes by month to measure the out-of-sample decay directly.
+
+---
+
+## BUG-060: One Column Name, Two Models, Three Scales - And A 100% Non-Binding Gate
+**STATUS**: OPEN (confirmed; no code changed)
+**FILE**: `calculate_active_signals.py:187-198` and `:345-361`; `flexgate_2_scanner.py:218-233`
+**DISCOVERED BY**: AI-probability weight audit, 2026-09-23
+**SYMPTOM**:
+1. `AI_WIN_PROBABILITY` / `ENTRY_AI_PROB` is written by **two different models**: `shadow_box_model.pkl`
+   (3 features: SIS, Whale_Density, Implied_Trades; 100 trees, depth 4) on the SBIA/legacy path, and
+   `flexgate_rf_model.pkl` (8 features; 500 trees, depth 7) on the FlexGate 2.0 path. Both persist into
+   the same ledger column, so the column is not on a single scale:
+   | ledger | rows | prob sd | min | max | `>=60` pass rate | small-cap actual win % |
+   | :--- | ---: | ---: | ---: | ---: | ---: | ---: |
+   | `sbia_ledger.csv` | 135 | 6.69 | 60.43 | 83.42 | **135/135 = 100%** | 60.0 |
+   | `flexgate2_ledger.csv` | 21 | **1.56** | 69.65 | 74.70 | **21/21 = 100%** | 22.2 |
+   | `flexgate_ledger.csv` | 79 | 17.01 | 18.60 | 81.18 | 34/79 = 43% | 18.2 |
+2. The gate is **100% non-binding** for two of three engines - every ledger row already passes it,
+   because the gate IS the entry criterion. It therefore survives only as a *sort key*, while the UI
+   presents it as a quality filter.
+3. The gate's label is wrong: on the 65 strict small-caps, `>=60` names win **52.6%** (not 60%);
+   `<60` names win 12.5% (mean -5.00%). Raising to `>=75` gives 78.6% actual (n=14, underpowered).
+4. `flexgate2_ledger.csv` probs span only 69.65-74.70 (sd 1.56) - a near-constant score cannot be a
+   functioning probability, yet that engine's small-caps won 22.2%.
+**IMPACT**: Any sizing, ranking or user-facing claim reading the absolute number is misled, and the
+"AI-approved" badge is effectively meaningless on the SBIA and FlexGate 2 engines. Separately, the
+engine-level spread in realised win rate (60.0% vs 22.2% vs 18.2%) matters far more than the score.
+**RECOMMENDED FIX (not applied)**: persist a model id/hash + version with each score; namespace the
+column per engine; re-derive the gate threshold per engine after BUG-059 is fixed.
+**FAILED ATTEMPTS**: n/a - first time the column was traced across engines.
+**AI PROCESS**: Read both pickles, confirmed `n_features_in_` and `feature_names_in_` differ, joined
+the column to `engine` and measured pass rates plus realised win rates per engine.
+
+---
+
+## BUG-061: Reciprocal-Duplicate Features Allocate 61.5% Of Model Weight To Duplicated, Non-Predictive Input
+**STATUS**: OPEN (confirmed by algebraic identity; no code changed)
+**FILE**: `train_ml_model.py:15-23`, `flexgate_2_scanner.py:183-213`; models `shadow_box_model.pkl`,
+`flexgate_rf_model.pkl`; diagnostics `ml_ablation_study.py`, `ml_data_prep.py:55-65`
+**DISCOVERED BY**: AI-probability weight audit, 2026-09-23
+**SYMPTOM**:
+1. **`Whale_Density` and `Implied_Trades` are exact reciprocals**:
+   `Whale_Density = (ATW / DELIVERY_TURNOVER) * 100000` and `Implied_Trades = DELIVERY_TURNOVER / ATW`,
+   i.e. `Implied_Trades = 100000 / Whale_Density`. They are the same information occupying two feature
+   slots. In `shadow_box_model.pkl` they carry 0.3532 and 0.3118 - **0.6650 of the model's total weight
+   on one input ratio.**
+2. **Proof from the repo's own ablation** (`ablation_output.json`): Test C (`SIS` + `Whale_Density`) and
+   Test D (`SIS` + `Implied_Trades`) are **bit-identical to 16 decimal places**
+   (accuracy 0.6573529411764707, precision 0.679047619047619, F1 0.6106959706959707). Identical
+   results are only possible if the two inputs carry identical information.
+3. **`SIS` alone scores 0.5007 accuracy - a coin flip.**
+4. **`SIS` and `STABILITY_SCORE` overlap by construction**: `SIS = (STABILITY+1)^0.50 * (FOOTPRINT+1)^0.30
+   * (MOMENTUM+1)^0.20 - 1`. In `flexgate_rf_model.pkl` they carry 0.1198 + 0.1320 = **0.2518**.
+5. In `flexgate_rf_model.pkl`, the ATW/DT family (`WHALE_PCTL` 0.1228 + `Implied_Trades` 0.1230 +
+   `Phase1_ATW_Ratio` 0.1177) totals **0.3635**, and with the STABILITY/SIS block totals **0.6153 =
+   61.5% of total weight**. All importances sit within 0.1124-0.1493 - a near-uniform profile
+   (`1/8 = 0.125`), the signature of a forest splitting on noise.
+6. **Both existing guard-rails missed it.** VIF reported 1.95 / 1.28 / 1.67 (all "fine") because VIF
+   measures *linear* collinearity and `1/x` is non-linear; `ml_data_prep.py`'s "drop if abs(corr) > 0.75"
+   rule never fired because the observed Pearson correlation is only -0.325 for a reciprocal pair.
+**IMPACT**: The model spends most of its capacity on duplicated information that independently fails
+predictive tests: `WHALE_DENSITY` AUC 0.466 (p 0.467), `IMPLIED_TRADES` AUC 0.460 (p 0.398),
+`SIS` AUC 0.319 (p 0.063, inverted; quartile win % 29 -> 14 -> 20 -> 7), relative `ATW_Z60` p 0.665.
+Meanwhile `ATR_Pct` - the one feature that independently verifies (AUC 0.655, p 0.0011) - holds only
+0.1493. **The weight allocation is inverted relative to the evidence.**
+**RECOMMENDED FIX (not applied)**: keep ONE of `Whale_Density` / `Implied_Trades` / `WHALE_PCTL`; drop
+`SIS` or `STABILITY_SCORE` (not both); replace the correlation/VIF guard with a rank-correlation check
+on `1/x` transforms or an explicit algebraic-duplicate test.
+**FAILED ATTEMPTS**: VIF and the `abs(corr) > 0.75` drop rule - both passed the redundant pair.
+**AI PROCESS**: Loaded both shipped pickles with joblib to read real `feature_importances_`, traced each
+feature name back to its construction line, derived the reciprocal identity algebraically, then
+confirmed it empirically via the bit-identical ablation results and cross-checked each family against
+the Round-1/Round-2 independent predictive tests.
+
+---
+
+## BUG-062: Corner Spike Scanner 8-Defect Cascade (Dead Code, Constant ATR, Veto Bypass)
+**STATUS**: FIXED
+**FILE**: `corner_spike_scanner.py`, `dash_pages/institutional_signals.py`
+**DISCOVERED BY**: DeepSeek v4 & Demon Core PLAN_DEEP Audit, 2026-09-23
+**SYMPTOM**:
+1. Small-Cap Breakout was dead code (100% rejected) due to a 30x population mismatch (`high_volume_peers > 35` evaluated against 1,175 market stocks).
+2. ATR14 was fabricated as `close * 0.035` on 100% of picks because `combined_dashboard_live.csv` lacked an ATR column, hardcoding stops to -6.3% and TP to +25%.
+3. Fundamental vetoes were bypassed, admitting `NOVUS` (FCF/PAT 5.0x divergence) at #2.
+4. Late-stage volume exhaustion traps (>85% delivery) were admitted (NATFIT 100%, NBIFIN 97.7%, MGEL 95.6%).
+5. Alphabetical sorting prioritized `SMALL_CAP` over `MICRO_CAP`.
+**ROOT CAUSE**: The scanner's plumbing was well-built, but its risk/ranking rules were hardcoded with naive fallbacks and disconnected from `conviction_scorer.py`.
+**FIX**:
+1. Refactored `calculate_real_atr14` to compute genuine 14-day True Range via `yfinance` with fallback to `data/bse_raw/` panels (no fake constants).
+2. Fixed concurrency throttle to evaluate active candidate breakout alerts ($\le 35$).
+3. Integrated `check_fcf_veto` and `check_pledge_veto` from `conviction_scorer.py` (quarantining `NOVUS`).
+4. Added volume sweet spot filter `50.0% <= DELIV_PER <= 85.0%` to reject exhaustion.
+5. Added 45-day run-up deduplication check.
+6. Grounded ranking hierarchy in empirical audit proof: `PROMOTER_DIRECTION` (`increasing` [90% win rate] > `flat` > `decreasing`) $\to$ real `ATR_Pct` $\to$ float scarcity.
+7. Deployed dedicated `⚡ Corner Spike` tab into `dash_pages/institutional_signals.py` with full watchlist table and ₹10L paper ledger simulation.
+**FAILED ATTEMPTS**: None (cured at root cause in one pass).
+**AI PROCESS**: Validated DeepSeek audit mathematically, mapped blast radius in DEMONCORE: PLAN_DEEP, refactored scanner with zero blast radius to legacy engines, and validated with clean compilation and render tests.
+
+---
+
+## BUG-063: Corner Spike Watchlist Emptied by Overly Aggressive Exclusions
+**STATUS**: FIXED  
+**FILE**: `corner_spike_scanner.py`, `dash_pages/institutional_signals.py`  
+**DISCOVERED BY**: User & Demon Core Audit, 2026-09-24  
+**SYMPTOM**: The Corner Spike Watchlist displayed *"No stocks passed the strict Corner Spike filters today"* while the paper trading simulation ledger below tracked 5 trades (`GUJJUBHAI`, `NATFIT`, `MGEL`, `NOVUS`, `NBIFIN`).  
+**ROOT CAUSE**:  
+1. Hard `continue` statements dropped all candidates if delivery $>85\%$ (`MGEL`, `NATFIT`, `NBIFIN`), if FCF/PAT divergence occurred (`GUJJUBHAI` -0.57x, `NOVUS` 5.0x), or if a run-up happened in the last 45 days (`NOVUS`).  
+2. `INPUT_FILE` pointed strictly to `data/combined_dashboard_live.csv` (which stores only the latest session, `2026-09-23`), returning zero rows when querying the trade entry date `2026-09-22`.  
+**FIX**: Implemented **Option B** (Transparent Risk Advisory Badges):  
+1. Loaded and deduplicated market data across both `combined_dashboard_live.csv` and `winner_archetypes_ranked.csv`, allowing historical backtest dates (`2026-09-22`) to resolve cleanly.  
+2. Converted soft risk factors (delivery $>85\%$, FCF divergence, prior run-up) into styled advisory badges (`⚠️ High Deliv`, `⚠️ FCF Divergence`, `⚠️ Prior Runner`) while keeping hard vetoes strictly on fatal structural hazards (promoter dumping, pledge $>25\%$, float $>₹250\text{ Cr}$, market cap $\ge ₹7,000\text{ Cr}$, or failed ATR).  
+3. Ranked candidates via Founder Conviction Hierarchy: `PROMOTER_DIRECTION` (`increasing` > `flat` > `decreasing`) $\to$ `ARCHETYPE` $\to$ `CLEAN_SETUP` $\to$ Float Absorption $\to$ Real ATR-14.  
+4. Elevated founder-accumulation powerhouse **`GUJJUBHAI`** (+36.4% promoter accumulation jump to 64.1%) to **Rank #1** with real ATR-14 trailing risk parameters.  
+5. Updated `dash_pages/institutional_signals.py` to render `RISK_FLAGS` badges cleanly in the UI.  
+**FAILED ATTEMPTS**: Binary hard-drop approach (Option A) which created an empty watchlist while the ledger tracked trades.  
+**AI PROCESS**: Recomputed all metrics against raw exchange bhavcopies, presented user with trade-off analysis, implemented Option B, verified with `py_compile`, executed scanner, and confirmed HTTP 200 on Dash endpoint.
+
+---
+
+## BUG-064: Corner Spike Redundant Risk Flags in Convincing Reason & Table Number Wrapping
+**STATUS**: FIXED  
+**FILE**: `corner_spike_scanner.py`, `dash_pages/institutional_signals.py`  
+**DISCOVERED BY**: User UI Audit, 2026-09-24  
+**SYMPTOM**: 
+1. `CONVINCING_REASON` duplicated cautionary warning flags (e.g. `⚠️ FCF Divergence (-0.6x) — Founder Buying...`) even though a dedicated `RISK_FLAGS` column already isolated them.
+2. In the Dash UI table, numbers and column headers suffered severe text-wrapping (e.g. `114.95` wrapping into multiple lines; `FLOAT_ABSORBED_PCT` wrapping into 6 lines).
+**ROOT CAUSE**: 
+1. In `corner_spike_scanner.py`, lines 423 & 456 conditionally prepended `candidate["RISK_FLAGS"]` to `candidate["CONVINCING_REASON"]`.
+2. In `dash_pages/institutional_signals.py`, numeric columns (`CLOSE`, `STOP_LOSS`, `TAKE_PROFIT`, `ATR_PCT`, `FREE_FLOAT_CR`, `FLOAT_ABSORBED_PCT`, `ATW`) lacked explicit CSS Grid min-width allocations in the `wide` dict and lacked `whitespace-nowrap font-mono tabular-nums` CSS rules. Furthermore, header names were raw snake_case database identifiers without clean display aliases.
+**FIX**: 
+1. In `corner_spike_scanner.py`, removed risk prepending from `CONVINCING_REASON`, strictly reserving it for the positive buying thesis (founder accumulation, float scarcity, whale ticket size).
+2. In `dash_pages/institutional_signals.py`:
+   - Updated `_grid_table()` to support an optional `labels` mapping for clean human-friendly headers (`FLOAT (CR)`, `ABSORBED %`, `WHALE TICKET`, `BUY THESIS`).
+   - Grouped columns into 4 logical reading clusters (Asset & Promoter $\to$ Execution & Stops $\to$ Microstructure Scarcity $\to$ Governance & Thesis).
+   - Assigned explicit min-widths to all 12 columns in CSS Grid `wide` dict and increased table container `min_width` to 1,650px.
+   - Added `whitespace-nowrap font-mono tabular-nums` to all monetary and percentage cells.
+   - Added 3 summary KPI chips to the header banner (`🟢 5 Active Setups`, `👑 #1 Conviction: GUJJUBHAI`, `🛡️ Real ATR-14 Volatility Stops`).
+**FAILED ATTEMPTS**: None (cured at root cause using `/fix_before_touch` protocol).  
+**AI PROCESS**: Full blast radius mapping, syntax checks, regeneration of `data/corner_engine_watchlist.csv` for `2026-09-22`, pytest 45/45 test suite verification, and Dash server component verification.
+
+---
+
+## BUG-065: Corner Spike Single-Day Isolation & Missing Pipeline Integration
+**STATUS**: FIXED  
+**FILE**: `auto_update_smart.py`, `corner_spike_scanner.py`, `dash_pages/institutional_signals.py`  
+**DISCOVERED BY**: User inquiry, 2026-09-24  
+**SYMPTOM**: 
+1. No signals updated for yesterday (2026-09-23) because `corner_spike_scanner.py` was not integrated into `auto_update_smart.py`.
+2. Running the scanner on subsequent dates wiped out existing open active trades (`GUJJUBHAI`, `NATFIT`, `NOVUS`, etc.) from `data/corner_engine_watchlist.csv` because the watchlist only stored single-day triggers rather than all currently open positions.
+**ROOT CAUSE**: 
+1. `auto_update_smart.py:735-738` only called `calculate_active_signals.py` and `flexgate_2_scanner.py`.
+2. `corner_spike_scanner.py` wrote only the current date's candidate pool to `WATCHLIST_FILE`, rather than preserving all `STATUS == 'ACTIVE'` positions from `corner_engine_ledger.csv`.
+**FIX**: 
+1. Added `run_metrics_engine("Corner Spike", "corner_spike_scanner.py")` to `auto_update_smart.py`.
+2. Re-architected `corner_spike_scanner.py`:
+   - `update_paper_ledger()` now monitors the daily price path of all open active trades, triggering `HIT_TP` or `HIT_SL` when targets or stops are hit.
+   - Built a multi-day active watchlist that retains all `STATUS == 'ACTIVE'` positions from the ledger, refreshes their latest closing prices, and appends newly qualified setups.
+3. Updated `_tab_corner()` in `dash_pages/institutional_signals.py` to dynamically compute and display the active setup count.
+4. Executed scanner for `2026-09-23`, seamlessly tracking 6 active setups (`GUJJUBHAI` #1 at ₹119.30, `NATFIT`, `NOVUS`, `MGEL`, new setup `NATHBIOGEN` at ₹148.02, `NBIFIN`).
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: Full `fix_before_touch` checklist, blast radius analysis, automated test suite verification (45/45 passing), and Dash component check.
+
+---
+
+## BUG-066: Corner Spike Gate Table Alignment, Pledge Cache Key Bug, and Offline ATR Fallback
+**STATUS**: FIXED  
+**FILE**: `corner_spike_scanner.py` (L83-108, L145-151, L174-228, L260, L322-331, L341-350, L414-430, L514-533)  
+**DISCOVERED BY**: DeepSeek independent code audit / User verification, 2026-09-24  
+**SYMPTOM**: 
+1. Gate Audit Table showed non-binding / 0 drops for Archetype Mechanics, with row labels and candidate counters shifted by one position across all gates.
+2. Fatal promoter pledge (>25%) never dropped toxic stocks because pledge percentage was always evaluated as 0.0% (`promoter_pledge_pct` was missing in cache).
+3. Offline ATR calculation was restricted to BSE bhavcopies, failing on NSE candidates when online yfinance missed or when reading raw bhavcopies with leading header spaces.
+4. Small-cap concurrency counted broad market alerts rather than specifically small-cap breakout cohort alerts.
+5. Fundamental cache only loaded 144 entries instead of merging both cache files (178 unique tickers).
+**ROOT CAUSE**: 
+1. In `print_gate_audit_table`, rows were mapped with an offset: G1 used Raw Universe label for liquidity drops, shifting each subsequent gate by 1 row, and passed a hardcoded `0` for archetype drops.
+2. In `data/fundamental_cache.json`, pledge data is stored as `pledge_trend` (list of floats, e.g. `[100.0]`) and `pledge_direction` (string). The scanner erroneously checked `fund_entry.get("promoter_pledge_pct")` and passed `pledge_trend` as `pledge_dir`.
+3. In `data/nse_raw/nse_delivery_*.csv`, column headers have leading whitespaces (`' DATE1'`, `' HIGH_PRICE'`, etc.), causing `KeyError: 'DATE1'`.
+4. `active_concurrency` evaluated broad market volume alerts without small-cap cohort scoping.
+5. `data/fundamental_analysis_cache.json` (86 tickers) was unmerged.
+**FIX**: 
+1. Aligned Gate Audit Table to exact 6 sequential 1:1 gates: G1 Basic Liquidity, G2 Institutional Deliv, G3 Micro/Small Cap, G4 Governance, G5 Archetype Mechanics, G6 Real ATR-14 Volatility. Archetype drops are now measured directly (`cnt_gov - cnt_arch = 23` drops).
+2. Corrected pledge extraction: `pledge_trend[-1]` and `pledge_direction`. Fatal pledge (>25%) immediately triggers hard drop at Governance gate (`INDOBORAX` 100%, `RPPINFRA` 26.8%, `SAGCEM` 30.0%, `WINDMACHIN` 48.8% rejected). FCF/PAT divergence maintained as advisory warning badge (`⚠️ FCF Divergence`).
+3. Added `compute_offline_atr()` supporting both BSE and NSE raw continuous bhavcopies with whitespace-stripped column parsing.
+4. Scoped concurrency to small-cap cohort alerts (`smallcap_concurrency <= 35`).
+5. Merged both `fundamental_cache.json` and `fundamental_analysis_cache.json` (178 unique tickers).
+6. Added `data/flexgate_ledger.csv` to runup checks.
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: Full `fix_before_touch` protocol, blast radius mapping, syntax checks, empirical scanner execution for `2026-09-23`, and pytest suite (45/45 passing).
+
+---
+
+## BUG-067: Premature "Already up to date" Short-Circuit & Missing Delivery Synchronization
+**STATUS**: FIXED  
+**FILE**: `auto_update_smart.py` (L58-126, L183-189)  
+**DISCOVERED BY**: User inquiry / Mimo check report, 2026-09-24  
+**SYMPTOM**: 
+1. `auto_update_smart.py` reported `✅ Already up to date!` and refused to download today's delivery data, leaving `nse_deliv_date` and `bse_deliv_date` stuck at yesterday (`2026-09-23`) while bhavcopies were updated to today (`2026-09-24`).
+2. When the pipeline was run a second time after 6:00 PM, it skipped checking if NSE delivery or BSE delivery had become available on the exchange servers.
+**ROOT CAUSE**: 
+1. In `get_missing_trading_dates()`, the lookback loop `for i in range(days_to_check, 0, -1)` stopped at $i=1$ (yesterday) and completely excluded $i=0$ (today). Furthermore, it only checked `nse_bhav` and `bse_deliv`, ignoring `nse_deliv` and `bse_bhav`.
+2. In redundant `Step 0`, `last_download_date` was calculated solely from `nse_bhav_` files. Because `nse_bhav_20260924.csv` had downloaded at 16:52, `start_date` was set to tomorrow (`2026-09-25`), which made `start_date <= end_date` false and bypassed `Step 1` entirely with a premature `✅ Already up to date!`.
+**FIX**: 
+1. Re-architected `get_missing_trading_dates()` to check $i=0$ (today) and evaluate all 4 feeds individually: `nse_bhav`, `nse_deliv`, `bse_bhav`, `bse_deliv`.
+2. Updated `backfill_missing_dates()` to selectively fetch only missing feeds without re-downloading files already on disk.
+3. Eliminated the redundant and flawed `Step 0 / Step 1` block in `auto_update_smart.py`.
+4. Verified execution: Running the pipeline immediately detected missing `nse_deliv` for `2026-09-24`, downloaded **352 KB / 3,492 rows**, and updated `data/data_status.json` so `nse_deliv_date = 24 Sep 2026`. Accurately logs `bse_deliv` as pending exchange upload (BSE typically uploads after 19:30 IST).
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: Full `fix_before_touch` protocol, empirical downloader test, execution verification, Dash app restart, and bug logging.
+
+---
+
+## BUG-068: Winner Archetypes Raw Universe Leak, Unbounded Delivery Tiers, and Mobile Viewport Squeezing
+**STATUS**: FIXED  
+**FILE**: `rank_archetypes.py`, `winner_archetype_data.py`, `dash_pages/winner_archetypes.py`  
+**DISCOVERED BY**: User inquiry / Architecture review, 2026-09-24  
+**SYMPTOM**: 
+1. `/winner-archetypes` scored all 4,337 raw exchange equities from `combined_dashboard_live.csv` rather than focusing on high-conviction screened institutional setups (~175 symbols).
+2. Tickers with only 11% delivery volume were awarded "A-GRADE" badges because `DELIV_PER < 65%` lacked a lower floor, creating an illusion of institutional accumulation on retail chop.
+3. Mobile layout on phones had redundant nested outer margins, squished metric tiles, and awkward text wrapping across card zones.
+**ROOT CAUSE**: 
+1. `rank_archetypes.py:237` ingested the unfiltered live dashboard CSV rather than collecting symbols that passed institutional scanners (`sbia_ledger.csv`, `sbia_alpha_watchlist.csv`, `corner_engine_watchlist.csv`, `flexgate_ledger.csv`, etc.).
+2. Delivery grading evaluated `d < 65.0` as `A-GRADE` without enforcing the empirical institutional sweet spot ($\ge 50\%$).
+3. Empirical analysis of the historical Rule 3 cohort showed all 25 winning trades ($80\%$ win rate, +₹62,986 PnL) had delivery between $54.32\%$ and $76.55\%$ (zero trades $<50\%$).
+4. `dash_pages/winner_archetypes.py` used desktop-only fixed padding (`px-[16px] md:px-[24px]` nested inside `dash_app_v2.py` outer margins) and lacked mobile breakpoint font sizing.
+**FIX**: 
+1. Rewired `rank_archetypes.py` to aggregate all unique symbols across active institutional watchlists and trade ledgers ($178$ symbols tracked).
+2. Enforced strict delivery tiers aligned with historical evidence:
+   - `< 50.0%`: `RETAIL` (gray badge)
+   - `60.0% – 75.0%`: `A-GRADE` (institutional sweet spot, emerald)
+   - `50.0% – 60.0%` or `75.0% – 80.0%`: `B-GRADE` (cyan)
+   - `> 80.0%`: `C-GRADE` (exhaustion trap, amber)
+3. Updated `check_quality_80()` in both `rank_archetypes.py` and `winner_archetype_data.py` to require $50\% \le \text{DELIV\_PER} \le 80\%$.
+4. Verified that self-reconciliation anchor in `rank_archetypes.py` still perfectly passes ($N=25$, Win Rate $80.0\%$, PnL ₹62,986).
+5. Enhanced mobile responsiveness in `dash_pages/winner_archetypes.py`:
+   - Replaced nested padding with adaptive `px-2 sm:px-4 md:px-6`
+   - Added responsive typography (`text-[20px] sm:text-[24px]`)
+   - Optimized metric badge tiles with `grid-cols-3 gap-1.5 sm:gap-2`
+   - Added `overflow-x-auto hide-scrollbar touch-pan-x` to archetype tab switcher.
+6. Verified with pytest (45/45 passing) and Dash live HTTP 200 checks.
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: Full `fix_before_touch` protocol, empirical data verification of the 25-trade cohort delivery distribution, and automated regression testing.
+
+
+
+
+
+

@@ -80,28 +80,28 @@ ARCHETYPE_STYLES = {
 # Helper UI Components
 def _stat_tile(label, value, accent="text-on-surface", icon=None, sub_text=None):
     return html.Div(
-        className="glass-panel rounded-2xl p-5 flex flex-col justify-between border border-white/5",
+        className="glass-panel rounded-xl sm:rounded-2xl p-3.5 sm:p-5 flex flex-col justify-between border border-white/5",
         children=[
             html.Div(
                 className="flex items-center justify-between",
                 children=[
                     html.Div(
                         label,
-                        className="font-label-sm text-[10px] font-bold text-on-surface-variant uppercase tracking-widest",
+                        className="font-label-sm text-[9px] sm:text-[10px] font-bold text-on-surface-variant uppercase tracking-widest",
                     ),
                     html.Span(
                         icon,
-                        className="material-symbols-outlined text-[18px] text-on-surface-variant",
+                        className="material-symbols-outlined text-[16px] sm:text-[18px] text-on-surface-variant",
                     ) if icon else None,
                 ],
             ),
             html.Div(
                 str(value),
-                className=f"font-headline-md text-[24px] font-semibold {accent} mt-2 tracking-tight",
+                className=f"font-headline-md text-[20px] sm:text-[24px] font-semibold {accent} mt-1.5 sm:mt-2 tracking-tight",
             ),
             html.Div(
                 sub_text,
-                className="text-[11px] text-on-surface-variant mt-1 font-body-sm",
+                className="text-[10px] sm:text-[11px] text-on-surface-variant mt-0.5 sm:mt-1 font-body-sm truncate",
             ) if sub_text else None,
         ],
     )
@@ -129,7 +129,7 @@ def _tier_chip(mktcap_cr):
 
 def _empty_panel(msg):
     return html.Div(
-        className="col-span-full glass-panel rounded-2xl p-12 text-center flex flex-col items-center justify-center gap-3 border border-white/5",
+        className="col-span-full glass-panel rounded-2xl p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-3 border border-white/5",
         children=[
             html.Span("inventory_2", className="material-symbols-outlined text-[36px] text-on-surface-variant"),
             html.P(msg, className="text-on-surface-variant text-sm font-body-md"),
@@ -162,30 +162,30 @@ def _kpi_hud(signals_df, radar_df):
         className="w-full",
         children=[
             html.Div(
-                className="glass-panel rounded-2xl p-6 mb-6 border border-white/10 shadow-xl",
+                className="glass-panel rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 border border-white/10 shadow-xl",
                 children=[
                     # Header row
                     html.Div(
-                        className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6",
+                        className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6",
                         children=[
                             html.Div(
                                 children=[
                                     html.Div(
-                                        className="flex items-center gap-3",
+                                        className="flex items-center gap-2 sm:gap-3 flex-wrap",
                                         children=[
                                             html.H1(
                                                 "Winner Archetypes",
-                                                className="font-display-lg text-[30px] md:text-[36px] font-bold text-on-surface tracking-tight",
+                                                className="font-display-lg text-[24px] sm:text-[30px] md:text-[36px] font-bold text-on-surface tracking-tight",
                                             ),
                                             html.Span(
                                                 "80% WIN RATE QUALITY GATE",
-                                                className="hidden sm:inline-block bg-primary/10 text-primary border border-primary/30 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full",
+                                                className="inline-block bg-primary/10 text-primary border border-primary/30 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full",
                                             ),
                                         ],
                                     ),
                                     html.P(
-                                        "SBIA Alpha Engine · Rule 3: tier ≠ LARGE (<₹20K Cr) · DELIV ≤ 80% · Tier-Conditional ATR (MID ≥ 3.15%)",
-                                        className="font-body-md text-on-surface-variant text-sm mt-1",
+                                        "SBIA Alpha Engine · Rule 3: tier ≠ LARGE (<₹20K Cr) · DELIV 50%–80% · Tier-Conditional ATR (MID ≥ 3.15%)",
+                                        className="font-body-md text-on-surface-variant text-xs sm:text-sm mt-1",
                                     ),
                                 ]
                             ),
@@ -194,11 +194,11 @@ def _kpi_hud(signals_df, radar_df):
                                 children=[
                                     html.Span(
                                         f"🏆 {source_name}",
-                                        className="bg-secondary/10 text-secondary border border-secondary/30 text-[11px] font-semibold px-3 py-1 rounded-full whitespace-nowrap",
+                                        className="bg-secondary/10 text-secondary border border-secondary/30 text-[10px] sm:text-[11px] font-semibold px-2.5 sm:px-3 py-1 rounded-full whitespace-nowrap",
                                     ),
                                     html.Span(
                                         f"📅 {as_of_str}",
-                                        className="bg-white/5 text-on-surface-variant border border-white/10 text-[11px] font-mono px-3 py-1 rounded-full whitespace-nowrap",
+                                        className="bg-white/5 text-on-surface-variant border border-white/10 text-[10px] sm:text-[11px] font-mono px-2.5 sm:px-3 py-1 rounded-full whitespace-nowrap",
                                     ),
                                 ],
                             ),
@@ -206,14 +206,14 @@ def _kpi_hud(signals_df, radar_df):
                     ),
                     # Stat Tiles Grid
                     html.Div(
-                        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5",
+                        className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-5",
                         children=[
                             _stat_tile(
                                 "Universe Scored",
                                 f"{total_signals:,}",
                                 accent="text-secondary",
                                 icon="filter_list",
-                                sub_text="full equities coverage",
+                                sub_text="screened setups tracked",
                             ),
                             _stat_tile(
                                 "80% Quality Tier",
@@ -240,36 +240,36 @@ def _kpi_hud(signals_df, radar_df):
                     ),
                     # Rule Pills & Grounded Caption
                     html.Div(
-                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-white/5",
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pt-3 sm:pt-4 border-t border-white/5",
                         children=[
                             html.Div(
-                                className="flex flex-wrap items-center gap-2",
+                                className="flex flex-wrap items-center gap-1.5 sm:gap-2",
                                 children=[
                                     html.Span(
-                                        "Rule 3 Specification:",
-                                        className="text-[11px] font-bold text-on-surface uppercase tracking-wider mr-1",
+                                        "Rule 3 Spec:",
+                                        className="text-[10px] sm:text-[11px] font-bold text-on-surface uppercase tracking-wider mr-1",
                                     ),
                                     html.Span(
                                         "⚙️ tier ≠ LARGE (<₹20K Cr)",
-                                        className="bg-white/5 border border-white/10 text-on-surface text-[10px] font-mono px-2.5 py-1 rounded-lg",
+                                        className="bg-white/5 border border-white/10 text-on-surface text-[9px] sm:text-[10px] font-mono px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg",
                                     ),
                                     html.Span(
                                         "⚙️ MID → ATR% ≥ 3.15%",
-                                        className="bg-white/5 border border-white/10 text-on-surface text-[10px] font-mono px-2.5 py-1 rounded-lg",
+                                        className="bg-white/5 border border-white/10 text-on-surface text-[9px] sm:text-[10px] font-mono px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg",
                                     ),
                                     html.Span(
                                         "⚙️ MICRO / SMALLISH → Ungated",
-                                        className="bg-white/5 border border-white/10 text-emerald-300 text-[10px] font-mono px-2.5 py-1 rounded-lg",
+                                        className="bg-white/5 border border-white/10 text-emerald-300 text-[9px] sm:text-[10px] font-mono px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg",
                                     ),
                                     html.Span(
-                                        "✅ DELIV_PER ≤ 80%",
-                                        className="bg-primary/10 border border-primary/30 text-primary text-[10px] font-mono px-2.5 py-1 rounded-lg",
+                                        "✅ DELIV 50%–80%",
+                                        className="bg-primary/10 border border-primary/30 text-primary text-[9px] sm:text-[10px] font-mono px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg",
                                     ),
                                 ],
                             ),
                             html.Div(
                                 "Verified: 80.0% win · 0.840R · +₹62,985 PnL · n=25 [MID=11 SMALLISH=9 MICRO=5]",
-                                className="text-[11px] text-on-surface-variant/80 italic font-mono",
+                                className="text-[10px] sm:text-[11px] text-on-surface-variant/80 italic font-mono",
                             ),
                         ],
                     ),
@@ -291,6 +291,14 @@ def _ticker_card(row):
     deliv_grade = str(row.get("DELIV_GRADE", "UNKNOWN")).strip()
 
     # Zone 1: Symbol Line
+    deliv_grade_badges = {
+        "A-GRADE": "bg-primary/15 text-primary border-primary/40",
+        "B-GRADE": "bg-secondary/15 text-secondary border-secondary/30",
+        "C-GRADE": "bg-amber-500/15 text-amber-400 border-amber-500/30",
+        "RETAIL": "bg-white/5 text-on-surface-variant border-outline-variant/30",
+    }
+    deliv_badge_cls = deliv_grade_badges.get(deliv_grade, "bg-white/5 text-on-surface-variant border-outline-variant/30")
+
     symbol_line = html.Div(
         className="flex justify-between items-start gap-2",
         children=[
@@ -298,29 +306,29 @@ def _ticker_card(row):
                 children=[
                     html.Span(
                         sym,
-                        className="font-headline-md text-[22px] md:text-[24px] font-bold text-on-surface tracking-tight block",
+                        className="font-headline-md text-[20px] sm:text-[24px] font-bold text-on-surface tracking-tight block",
                     ),
                     html.Span(
                         f"{exch} · ₹{close_val:,.2f}",
-                        className="font-mono text-[12px] text-on-surface-variant mt-0.5 block",
+                        className="font-mono text-[11px] sm:text-[12px] text-on-surface-variant mt-0.5 block",
                     ),
                 ]
             ),
             html.Div(
-                className="flex flex-wrap gap-1.5 justify-end items-center max-w-[65%]",
+                className="flex flex-wrap gap-1 sm:gap-1.5 justify-end items-center max-w-[70%]",
                 children=[
                     html.Span(
                         style_spec["badge"],
-                        className=f"text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border {style_spec['badge_cls']}",
+                        className=f"text-[9px] font-bold uppercase tracking-widest px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border {style_spec['badge_cls']}",
                     ),
                     html.Span(
                         "🏆 80% TIER",
-                        className="bg-primary/15 text-primary border border-primary/40 text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full",
+                        className="bg-primary/15 text-primary border border-primary/40 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 sm:py-1 rounded-full",
                     ) if is_quality else None,
                     html.Span(
                         deliv_grade,
-                        className="bg-secondary/15 text-secondary border border-secondary/30 text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full",
-                    ) if deliv_grade in ("A-GRADE", "B-GRADE") else None,
+                        className=f"text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 sm:py-1 rounded-full border {deliv_badge_cls}",
+                    ) if deliv_grade != "UNKNOWN" else None,
                     _tier_chip(row.get("MKTCAP_CR")),
                 ],
             ),
@@ -337,7 +345,7 @@ def _ticker_card(row):
     curr_fill = min(max((close_val - sl_val) / span * 100, 0), 100)
 
     range_bar = html.Div(
-        className="flex flex-col gap-1.5 bg-black/20 p-2.5 rounded-xl border border-white/5",
+        className="flex flex-col gap-1 sm:gap-1.5 bg-black/20 p-2 sm:p-2.5 rounded-xl border border-white/5",
         children=[
             html.Div(
                 className="relative h-2 rounded-full bg-white/10 overflow-hidden",
@@ -360,7 +368,7 @@ def _ticker_card(row):
                 ],
             ),
             html.Div(
-                className="flex justify-between items-center text-[10px] font-mono text-on-surface-variant px-0.5",
+                className="flex justify-between items-center text-[9px] sm:text-[10px] font-mono text-on-surface-variant px-0.5",
                 children=[
                     html.Span(f"SL ₹{sl_val:,.1f}", className="text-error font-medium"),
                     html.Span(f"ENTRY ₹{entry_val:,.1f}", className="text-on-surface-variant"),
@@ -375,33 +383,40 @@ def _ticker_card(row):
     atr_color = "text-primary" if atr_pct >= 3.15 else "text-on-surface-variant"
 
     deliv_per = float(row.get("DELIV_PER", 0.0)) if pd.notna(row.get("DELIV_PER")) else 0.0
-    deliv_color = "text-primary" if deliv_per < 65.0 else ("text-secondary" if deliv_per <= 80.0 else "text-amber-400")
+    if deliv_per < 50.0:
+        deliv_color = "text-on-surface-variant"
+    elif 60.0 <= deliv_per <= 75.0:
+        deliv_color = "text-primary"
+    elif (50.0 <= deliv_per < 60.0) or (75.0 < deliv_per <= 80.0):
+        deliv_color = "text-secondary"
+    else:
+        deliv_color = "text-amber-400"
 
     whd = float(row.get("Whale_Density", 0.0)) if pd.notna(row.get("Whale_Density")) else 0.0
     whd_color = "text-secondary" if whd >= 12.0 else "text-on-surface-variant"
 
     badge_row = html.Div(
-        className="grid grid-cols-3 gap-2",
+        className="grid grid-cols-3 gap-1.5 sm:gap-2",
         children=[
             html.Div(
-                className="bg-white/5 rounded-xl p-2.5 flex flex-col gap-0.5 border border-white/5",
+                className="bg-white/5 rounded-lg sm:rounded-xl p-2 sm:p-2.5 flex flex-col gap-0.5 border border-white/5",
                 children=[
-                    html.Div("ATR14 %", className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold"),
-                    html.Div(f"{atr_pct:.2f}%" if atr_pct > 0 else "—", className=f"text-[14px] font-mono font-semibold {atr_color}"),
+                    html.Div("ATR14 %", className="text-[8px] sm:text-[9px] uppercase tracking-widest text-on-surface-variant font-bold"),
+                    html.Div(f"{atr_pct:.2f}%" if atr_pct > 0 else "—", className=f"text-[12px] sm:text-[14px] font-mono font-semibold {atr_color}"),
                 ],
             ),
             html.Div(
-                className="bg-white/5 rounded-xl p-2.5 flex flex-col gap-0.5 border border-white/5",
+                className="bg-white/5 rounded-lg sm:rounded-xl p-2 sm:p-2.5 flex flex-col gap-0.5 border border-white/5",
                 children=[
-                    html.Div("DELIVERY %", className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold"),
-                    html.Div(f"{deliv_per:.1f}%" if deliv_per > 0 else "—", className=f"text-[14px] font-mono font-semibold {deliv_color}"),
+                    html.Div("DELIVERY %", className="text-[8px] sm:text-[9px] uppercase tracking-widest text-on-surface-variant font-bold"),
+                    html.Div(f"{deliv_per:.1f}%" if deliv_per > 0 else "—", className=f"text-[12px] sm:text-[14px] font-mono font-semibold {deliv_color}"),
                 ],
             ),
             html.Div(
-                className="bg-white/5 rounded-xl p-2.5 flex flex-col gap-0.5 border border-white/5",
+                className="bg-white/5 rounded-lg sm:rounded-xl p-2 sm:p-2.5 flex flex-col gap-0.5 border border-white/5",
                 children=[
-                    html.Div("WHALE DENSITY", className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold"),
-                    html.Div(f"{whd:.1f}x" if whd > 0 else "—", className=f"text-[14px] font-mono font-semibold {whd_color}"),
+                    html.Div("WHALE DENSITY", className="text-[8px] sm:text-[9px] uppercase tracking-widest text-on-surface-variant font-bold"),
+                    html.Div(f"{whd:.1f}x" if whd > 0 else "—", className=f"text-[12px] sm:text-[14px] font-mono font-semibold {whd_color}"),
                 ],
             ),
         ],
@@ -413,9 +428,9 @@ def _ticker_card(row):
     prob_text_accent = "text-primary" if ai_prob >= 75.0 else ("text-secondary" if ai_prob >= 60.0 else "text-on-surface-variant")
 
     ai_bar = html.Div(
-        className="flex items-center gap-3 px-1",
+        className="flex items-center gap-2 sm:gap-3 px-1",
         children=[
-            html.Span("AI WIN PROB", className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold whitespace-nowrap"),
+            html.Span("AI WIN PROB", className="text-[8px] sm:text-[9px] uppercase tracking-widest text-on-surface-variant font-bold whitespace-nowrap"),
             html.Div(
                 className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden",
                 children=[
@@ -425,27 +440,27 @@ def _ticker_card(row):
                     )
                 ],
             ),
-            html.Span(f"{ai_prob:.0f}%", className=f"font-mono text-[12px] font-semibold {prob_text_accent}"),
+            html.Span(f"{ai_prob:.0f}%", className=f"font-mono text-[11px] sm:text-[12px] font-semibold {prob_text_accent}"),
         ],
     )
 
     # Zone 5: Execution Route Footer
     exec_route = html.Div(
-        className="flex items-center gap-2 border-t border-white/10 pt-3 mt-1",
+        className="flex items-center gap-2 border-t border-white/10 pt-2.5 sm:pt-3 mt-1",
         children=[
             html.Span(
                 style_spec["route_icon"],
-                className="material-symbols-outlined text-[16px] text-primary flex-shrink-0",
+                className="material-symbols-outlined text-[15px] sm:text-[16px] text-primary flex-shrink-0",
             ),
             html.Span(
                 style_spec["route_text"],
-                className="text-[11px] font-medium text-on-surface-variant leading-tight",
+                className="text-[10px] sm:text-[11px] font-medium text-on-surface-variant leading-tight",
             ),
         ],
     )
 
     return html.Article(
-        className="glass-panel rounded-2xl p-5 flex flex-col gap-4 border transition-all duration-200 ease-in-out hover:shadow-[0_0_24px_rgba(174,198,255,0.12)] hover:scale-[1.01]",
+        className="glass-panel rounded-xl sm:rounded-2xl p-4 sm:p-5 flex flex-col gap-3 sm:gap-4 border transition-all duration-200 ease-in-out hover:shadow-[0_0_24px_rgba(174,198,255,0.12)] hover:scale-[1.01]",
         style={"borderColor": style_spec["border"]},
         tabIndex="0",
         role="article",
@@ -476,32 +491,32 @@ def _archetype_switcher_shell():
     )
 
     return html.Section(
-        className="w-full flex flex-col gap-5",
+        className="w-full flex flex-col gap-4 sm:gap-5",
         children=[
             html.Div(
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3",
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3",
                 children=[
                     html.Div(
                         children=[
                             html.H2(
                                 "Execution Archetype Switcher",
-                                className="font-headline-lg text-[22px] font-bold text-on-surface tracking-tight",
+                                className="font-headline-lg text-[18px] sm:text-[22px] font-bold text-on-surface tracking-tight",
                             ),
                             html.P(
                                 "Segmented execution routes: 2R Fixed TP for Clean Runners vs 10-Day Momentum Bank for Compounders.",
-                                className="text-on-surface-variant text-sm font-body-md",
+                                className="text-on-surface-variant text-xs sm:text-sm font-body-md",
                             ),
                         ]
                     ),
                 ],
             ),
             html.Div(
-                className="overflow-x-auto pb-1 flex",
+                className="w-full overflow-x-auto hide-scrollbar touch-pan-x pb-1 flex",
                 children=[tabs],
             ),
             html.Div(
                 id="archetype-card-grid",
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5",
+                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5",
                 children=[_empty_panel("Loading signals...")],
             ),
         ],
@@ -673,11 +688,11 @@ def _reentry_radar(radar_df):
                 children=[
                     html.H2(
                         "14-Day Outcome-Conditional Re-Entry Radar",
-                        className="font-headline-lg text-[22px] font-bold text-on-surface tracking-tight",
+                        className="font-headline-lg text-[18px] sm:text-[22px] font-bold text-on-surface tracking-tight",
                     ),
                     html.P(
                         "Asymmetric Re-Entry Edge: Block repeat trades after a LOSS (13.3% win, -₹26,368). Allow repeats immediately after a WIN (57.1% win, +₹19,914).",
-                        className="text-on-surface-variant text-sm font-body-md mt-0.5",
+                        className="text-on-surface-variant text-xs sm:text-sm font-body-md mt-0.5",
                     ),
                 ]
             ),
@@ -754,7 +769,7 @@ def layout():
     radar_df = wad.build_radar_df(ledger_raw, today) if ledger_raw is not None else pd.DataFrame()
 
     return html.Div(
-        className="flex flex-col w-full px-[16px] md:px-[24px] py-[24px] max-w-[1600px] mx-auto gap-8",
+        className="flex flex-col w-full px-2 sm:px-4 md:px-6 py-4 sm:py-6 max-w-[1600px] mx-auto gap-6 sm:gap-8",
         children=[
             _kpi_hud(signals_df, radar_df),
             _archetype_switcher_shell(),

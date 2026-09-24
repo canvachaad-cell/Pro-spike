@@ -150,7 +150,7 @@ def run_self_reconciliation(mc: dict):
     def is_rule3(row):
         if row["TIER"] == "LARGE":
             return False
-        if pd.isna(row["DELIV_PER"]) or row["DELIV_PER"] > 80:
+        if pd.isna(row["DELIV_PER"]) or row["DELIV_PER"] > 80.0 or row["DELIV_PER"] < 50.0:
             return False
         if row["TIER"] == "MID":
             return row["ATR_PCT"] >= 3.15
@@ -233,7 +233,29 @@ def score_universe():
     ).replace(0, np.nan)
     latest_snap["VWAP_DIV"] = (latest_snap["CLOSE_PRICE"] / latest_snap["AVG_PRICE"].replace(0, np.nan) - 1) * 100
 
-    # 2. Load universe (UNIVERSE_FILE or WATCHLIST_FILE fallback)
+    # 2. Collect all historical symbols that passed through our institutional screeners
+    screened_sources = [
+        "data/sbia_ledger.csv",
+        "data/sbia_alpha_watchlist.csv",
+        "data/corner_engine_watchlist.csv",
+        "data/corner_engine_ledger.csv",
+        "data/flexgate_ledger.csv",
+        "data/flexgate2_ledger.csv",
+        "data/sbia_flexgate_watchlist.csv",
+        "data/sbia_flexgate2_watchlist.csv",
+        "data/legacy_watchlist.csv",
+    ]
+    screened_syms = set()
+    for s_path in screened_sources:
+        if os.path.exists(s_path):
+            try:
+                s_df = pd.read_csv(s_path)
+                if "SYMBOL" in s_df.columns:
+                    screened_syms.update(s_df["SYMBOL"].dropna().astype(str).str.strip().unique())
+            except Exception:
+                pass
+
+    # 3. Load universe (UNIVERSE_FILE or WATCHLIST_FILE fallback)
     if os.path.exists(UNIVERSE_FILE):
         u_df = pd.read_csv(UNIVERSE_FILE)
     elif os.path.exists(WATCHLIST_FILE):
@@ -251,6 +273,10 @@ def score_universe():
 
     # Filter out non-equity symbols
     u_df = u_df[~u_df["SYMBOL"].str.contains(NON_EQUITY_PATTERNS, regex=True, na=False)].copy()
+
+    # Restrict to symbols that have passed through institutional screeners
+    if screened_syms:
+        u_df = u_df[u_df["SYMBOL"].isin(screened_syms)].copy()
 
     # Load today's watchlist if present to inherit AI model probability & existing targets
     wl_map = {}
@@ -304,7 +330,7 @@ def score_universe():
     def check_quality_80(r):
         if r["TIER"] == "LARGE":
             return False
-        if pd.isna(r["DELIV_PER"]) or r["DELIV_PER"] > 80:
+        if pd.isna(r["DELIV_PER"]) or r["DELIV_PER"] > 80.0 or r["DELIV_PER"] < 50.0:
             return False
         if r["TIER"] == "MID":
             return r["ATR_PCT"] >= 3.15
@@ -314,13 +340,15 @@ def score_universe():
 
     merged["QUALITY_80"] = merged.apply(check_quality_80, axis=1)
 
-    # Delivery Grade: A (<65%), B (65-80%), C (>80%)
+    # Delivery Grade: Sweet Spot A (60-75%), B (50-60% or 75-80%), C (>80%), RETAIL (<50%)
     def get_deliv_grade(d):
         if pd.isna(d):
             return "UNKNOWN"
-        if d < 65.0:
+        if d < 50.0:
+            return "RETAIL"
+        if 60.0 <= d <= 75.0:
             return "A-GRADE"
-        if d <= 80.0:
+        if (50.0 <= d < 60.0) or (75.0 < d <= 80.0):
             return "B-GRADE"
         return "C-GRADE"
 
@@ -341,7 +369,7 @@ def score_universe():
                 return "GRIND_COMPOUNDER"
             return "UNCLASSIFIED"
         else:
-            if atr_pct >= 3.4 and deliv <= 80 and whd < 20.0:
+            if atr_pct >= 3.4 and 50.0 <= deliv <= 80.0 and whd < 20.0:
                 return "CLEAN_RUNNER"
             if whd >= 12.0 and deliv >= 55.0:
                 return "GRIND_COMPOUNDER"
@@ -373,8 +401,8 @@ def score_universe():
     merged["RANKED_DATE"] = datetime.date.today().strftime("%Y-%m-%d")
 
     # Sort
-    grade_order = {"A-GRADE": 0, "B-GRADE": 1, "C-GRADE": 2, "UNKNOWN": 3}
-    merged["_g_order"] = merged["DELIV_GRADE"].map(grade_order)
+    grade_order = {"A-GRADE": 0, "B-GRADE": 1, "C-GRADE": 2, "RETAIL": 3, "UNKNOWN": 4}
+    merged["_g_order"] = merged["DELIV_GRADE"].map(grade_order).fillna(5)
     merged = merged.sort_values(
         by=["QUALITY_80", "_g_order", "RULE3_SCORE"],
         ascending=[False, True, False]
