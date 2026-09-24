@@ -734,8 +734,9 @@ try:
 
     ok_a = run_metrics_engine("Legacy Institutional", "calculate_active_signals.py")
     ok_b = run_metrics_engine("FlexGate 2.0 ML", "flexgate_2_scanner.py")
-    if not (ok_a and ok_b):
-        print(f"🚨 METRICS ENGINES FAILED — data/active_signals_ranked.csv and/or ledgers may be stale. See {METRICS_LOG}.")
+    ok_c = run_metrics_engine("Corner Spike", "corner_spike_scanner.py")
+    if not (ok_a and ok_b and ok_c):
+        print(f"🚨 METRICS ENGINES FAILED — data/active_signals_ranked.csv, ledgers, or corner_engine_watchlist may be stale. See {METRICS_LOG}.")
         
     # Freshness Check
     import pandas as pd

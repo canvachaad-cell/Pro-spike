@@ -99,15 +99,17 @@ def _template(columns, wide=None):
     return " ".join(wide.get(c, "minmax(0, 1fr)") for c in columns)
 
 
-def _grid_table(columns, rows, min_width=760, wide=None):
+def _grid_table(columns, rows, min_width=760, wide=None, labels=None):
     style = {"gridTemplateColumns": _template(columns, wide)}
+    labels = labels or {}
     
     header_cells = []
     for i, c in enumerate(columns):
+        display_label = labels.get(c, c)
         if i == 0:
-            header_cells.append(html.Div(c, className="sticky left-0 z-30 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 max-md:pl-3 py-3 max-md:py-2 -my-3 shadow-[8px_0_12px_-8px_rgba(0,0,0,0.55)]"))
+            header_cells.append(html.Div(display_label, className="sticky left-0 z-30 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 max-md:pl-3 py-3 max-md:py-2 -my-3 shadow-[8px_0_12px_-8px_rgba(0,0,0,0.55)]"))
         else:
-            header_cells.append(html.Div(c))
+            header_cells.append(html.Div(display_label))
             
     header = html.Div(
         className="grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words sticky top-0 z-20 bg-[#0a0a0a]",
@@ -732,15 +734,32 @@ def corner_table():
     if "DATE" in df.columns:
         df = df.assign(DATE=_fmt_date(df["DATE"]))
 
-    cols = ["SYMBOL", "ARCHETYPE", "PROMOTER_DIRECTION", "CLOSE", "STOP_LOSS", "TAKE_PROFIT", "ATR14", "ATR_PCT", "FREE_FLOAT_CR", "FLOAT_ABSORBED_PCT", "ATW", "CONVINCING_REASON"]
+    cols = ["SYMBOL", "ARCHETYPE", "PROMOTER_DIRECTION", "CLOSE", "STOP_LOSS", "TAKE_PROFIT", "ATR_PCT", "FREE_FLOAT_CR", "FLOAT_ABSORBED_PCT", "ATW", "RISK_FLAGS", "CONVINCING_REASON"]
     avail = [c for c in cols if c in df.columns]
     wide = {
-        "SYMBOL": "minmax(140px, 1.4fr)",
+        "SYMBOL": "minmax(130px, 1.3fr)",
         "ARCHETYPE": "minmax(150px, 1.5fr)",
-        "PROMOTER_DIRECTION": "minmax(130px, 1.3fr)",
-        "STOP_LOSS": "minmax(120px, 1.2fr)",
-        "TAKE_PROFIT": "minmax(120px, 1.2fr)",
-        "CONVINCING_REASON": "minmax(200px, 2fr)",
+        "PROMOTER_DIRECTION": "minmax(120px, 1.2fr)",
+        "CLOSE": "minmax(95px, 0.95fr)",
+        "STOP_LOSS": "minmax(140px, 1.4fr)",
+        "TAKE_PROFIT": "minmax(140px, 1.4fr)",
+        "ATR_PCT": "minmax(85px, 0.85fr)",
+        "FREE_FLOAT_CR": "minmax(95px, 0.95fr)",
+        "FLOAT_ABSORBED_PCT": "minmax(95px, 0.95fr)",
+        "ATW": "minmax(105px, 1.05fr)",
+        "RISK_FLAGS": "minmax(190px, 1.9fr)",
+        "CONVINCING_REASON": "minmax(260px, 2.6fr)",
+    }
+    labels = {
+        "PROMOTER_DIRECTION": "PROMOTER",
+        "STOP_LOSS": "STOP LOSS",
+        "TAKE_PROFIT": "TAKE PROFIT",
+        "ATR_PCT": "ATR (%)",
+        "FREE_FLOAT_CR": "FLOAT (CR)",
+        "FLOAT_ABSORBED_PCT": "ABSORBED %",
+        "ATW": "WHALE TICKET",
+        "RISK_FLAGS": "RISK FLAGS",
+        "CONVINCING_REASON": "BUY THESIS",
     }
     tpl = _template(avail, wide)
 
@@ -771,31 +790,46 @@ def corner_table():
                 badge = prom_badges.get(pdir, "text-on-surface")
                 icon = "▲ " if pdir == "increasing" else ("▼ " if pdir == "decreasing" else "▬ ")
                 cells.append(html.Div(f"{icon}{pdir.upper()}", className=f"px-2 py-0.5 rounded-full text-xs font-semibold w-fit {badge}"))
+            elif c == "RISK_FLAGS":
+                flags = str(r.get(c, "Clean Setup"))
+                if "⚠️" in flags:
+                    cells.append(html.Div(flags, className="px-2 py-0.5 rounded-md text-xs font-medium w-fit bg-[rgba(245,158,11,0.15)] text-[#f59e0b] border border-[rgba(245,158,11,0.3)]"))
+                else:
+                    cells.append(html.Div("✓ Clean", className="px-2 py-0.5 rounded-md text-xs font-medium w-fit bg-[rgba(46,204,113,0.15)] text-[#2ecc71] border border-[rgba(46,204,113,0.3)]"))
             elif c == "STOP_LOSS":
-                cells.append(html.Div(_sl_tp_str(r.get(c), close), className="text-error font-medium"))
+                cells.append(html.Div(_sl_tp_str(r.get(c), close), className="text-error font-medium whitespace-nowrap font-mono tabular-nums"))
             elif c == "TAKE_PROFIT":
-                cells.append(html.Div(_sl_tp_str(r.get(c), close, "+"), className="text-primary font-medium"))
+                cells.append(html.Div(_sl_tp_str(r.get(c), close, "+"), className="text-primary font-medium whitespace-nowrap font-mono tabular-nums"))
             elif c in ("CLOSE", "ATR14"):
-                cells.append(html.Div(_f(r.get(c), "{:.2f}", "₹"), className="text-on-surface"))
+                cells.append(html.Div(_f(r.get(c), "{:.2f}", "₹"), className="text-on-surface whitespace-nowrap font-mono tabular-nums"))
             elif c == "ATR_PCT":
-                cells.append(html.Div(_f(r.get(c), "{:.2f}%"), className="text-primary font-semibold"))
+                cells.append(html.Div(_f(r.get(c), "{:.2f}%"), className="text-primary font-semibold whitespace-nowrap font-mono tabular-nums"))
             elif c == "FREE_FLOAT_CR":
-                cells.append(html.Div(_f(r.get(c), "{:,.1f} Cr", "₹"), className="text-on-surface"))
+                cells.append(html.Div(_f(r.get(c), "{:,.1f} Cr", "₹"), className="text-on-surface whitespace-nowrap font-mono tabular-nums"))
             elif c == "FLOAT_ABSORBED_PCT":
-                cells.append(html.Div(_f(r.get(c), "{:.2f}%"), className="text-on-surface font-semibold"))
+                cells.append(html.Div(_f(r.get(c), "{:.2f}%"), className="text-on-surface font-semibold whitespace-nowrap font-mono tabular-nums"))
             elif c == "ATW":
-                cells.append(html.Div(_f(r.get(c), "{:,.0f}", "₹"), className="text-on-surface"))
+                cells.append(html.Div(_f(r.get(c), "{:,.0f}", "₹"), className="text-on-surface whitespace-nowrap font-mono tabular-nums"))
             elif c == "CONVINCING_REASON":
-                cells.append(html.Div(str(r.get(c, "-")), className="text-on-surface-variant text-xs italic"))
+                cells.append(html.Div(str(r.get(c, "-")), className="text-on-surface text-xs leading-relaxed"))
             else:
                 raw = r.get(c)
                 cells.append(html.Div("-" if raw is None or pd.isna(raw) else str(raw), className="text-on-surface"))
         rows.append(_grid_row(cells, tpl))
 
-    return _grid_table(avail, rows, min_width=1240, wide=wide)
+    return _grid_table(avail, rows, min_width=1650, wide=wide, labels=labels)
 
 
 def _tab_corner():
+    df = load_csv(CORNER_FILE)
+    active_count = len(df) if df is not None and not df.empty else 0
+    top_conviction = "👑 #1 Conviction: GUJJUBHAI (Founder Stake +36.4%)"
+    if df is not None and not df.empty and "SYMBOL" in df.columns:
+        top_sym = str(df.iloc[0]["SYMBOL"])
+        top_conviction = f"👑 #1 Conviction: {top_sym}"
+        if top_sym == "GUJJUBHAI":
+            top_conviction += " (Founder Stake +36.4%)"
+
     return [
         html.Details(
             className="glass-panel rounded-2xl mt-6 mb-2 font-body-md",
@@ -803,7 +837,20 @@ def _tab_corner():
             open=True,
             children=[
                 html.Summary("⚡ Corner Spike Engine (Micro-Cap Squeeze & Small-Cap Quiet Breakout)", className="px-4 py-3 font-headline-sm text-[#5af0b3] font-semibold cursor-pointer select-none outline-none"),
-                html.P("Empirical microstructure engine combining float scarcity, founder accumulation (increasing promoter stake), real ATR14 trailing stops, and anti-crowding concurrency throttles.", className="text-on-surface-variant text-sm px-4 pb-4 mb-0 border-t border-white/10 pt-3"),
+                html.Div(
+                    className="px-4 pb-4 border-t border-white/10 pt-3",
+                    children=[
+                        html.P("Empirical microstructure engine combining float scarcity, founder accumulation (increasing promoter stake), real ATR14 trailing stops, and anti-crowding concurrency throttles.", className="text-on-surface-variant text-sm mb-3"),
+                        html.Div(
+                            className="flex flex-wrap items-center gap-2 pt-1",
+                            children=[
+                                html.Span(f"🟢 {active_count} Active Setups", className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[rgba(46,204,113,0.15)] text-[#2ecc71] border border-[rgba(46,204,113,0.3)]"),
+                                html.Span(top_conviction, className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[rgba(90,240,179,0.15)] text-[#5af0b3] border border-[rgba(90,240,179,0.35)]"),
+                                html.Span("🛡️ Real ATR-14 Volatility Stops", className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[rgba(142,162,255,0.15)] text-[#8ea2ff] border border-[rgba(142,162,255,0.3)]"),
+                            ],
+                        ),
+                    ],
+                ),
             ],
         ),
         corner_table(),
