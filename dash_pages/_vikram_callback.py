@@ -1536,8 +1536,8 @@ def ask_vikram(question, history):
 # Dash callbacks (registered on import from dash_app_v2)
 # ---------------------------------------------------------------------------
 
-PANEL_HIDDEN_STYLE = {"transform": "translateX(100%)", "transition": "transform 0.3s ease"}
-PANEL_SHOWN_STYLE = {"transform": "translateX(0)", "transition": "transform 0.3s ease"}
+PANEL_HIDDEN_STYLE = {"transform": "translateX(100%)", "transition": "transform 0.3s ease", "pointerEvents": "none"}
+PANEL_SHOWN_STYLE = {"transform": "translateX(0)", "transition": "transform 0.3s ease", "pointerEvents": "auto"}
 
 _USER_BUBBLE = "self-end max-w-[85%] bg-primary/15 border border-primary/30 text-on-surface rounded-xl rounded-br-sm px-3 py-2 text-sm font-body-md whitespace-pre-wrap"
 _VIKRAM_BUBBLE = "self-start max-w-[95%] bg-white/5 border border-outline-variant/60 text-on-surface rounded-xl rounded-bl-sm px-4 py-3 text-sm font-body-md leading-relaxed"
@@ -1616,9 +1616,14 @@ def _loader_bubble():
     prevent_initial_call=True,
 )
 def vikram_panel_visibility(trigger_clicks, close_clicks, mobile_clicks, backdrop_clicks):
-    if dash.ctx.triggered_id in ("vikram-close", "vikram-backdrop"):
+    triggered = dash.ctx.triggered_id
+    if triggered in ("vikram-close", "vikram-backdrop"):
         return PANEL_HIDDEN_STYLE, ""
-    return PANEL_SHOWN_STYLE, "open"
+    if triggered in ("vikram-trigger", "mobile-vikram-tab"):
+        clicks = trigger_clicks if triggered == "vikram-trigger" else mobile_clicks
+        if clicks:
+            return PANEL_SHOWN_STYLE, "open"
+    return PANEL_HIDDEN_STYLE, ""
 
 
 @dash.callback(

@@ -1147,6 +1147,29 @@ the Round-1/Round-2 independent predictive tests.
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: Full `fix_before_touch` protocol, empirical data verification of the 25-trade cohort delivery distribution, and automated regression testing.
 
+---
+
+## BUG-069: Missing Mobile Winner Archetypes Navigation & Vikram Slide-In Panel Click Interception
+**STATUS**: FIXED  
+**FILE**: `dash_app_v2.py`, `dash_pages/_vikram_callback.py`, `assets/style.css`  
+**DISCOVERED BY**: User inquiry ("i dont see winners archtype in mobile you check yourself in mobil eversion"), 2026-09-25  
+**SYMPTOM**: 
+1. The Winner Archetypes module (`/winner-archetypes`) was unreachable from mobile devices because the fixed mobile bottom navigation bar only included 5 links (Dashboard, Inst Signals, Signals, Momentum, Watchlist) + Vikram, omitting Archetypes.
+2. Clicking mobile bottom navigation tabs was completely blocked on page load with Playwright reporting: `<input ... id="vikram-input" ...> subtree intercepts pointer events`.
+**ROOT CAUSE**: 
+1. `dash_app_v2.py` hardcoded a static 5-item mobile nav without Archetypes.
+2. In `dash_pages/_vikram_callback.py:1618`, `vikram_panel_visibility` had an unconditioned fallback `return PANEL_SHOWN_STYLE, "open"` when any trigger other than close/backdrop fired. When mobile bottom nav items were dynamically rendered via `update_nav()`, Dash dispatched an event for `#mobile-vikram-tab`, triggering `vikram_panel_visibility` on startup and rendering the 633px tall slide-in panel over the bottom navigation bar (`y=789` directly overlapping bottom nav at `y=778`).
+**FIX**: 
+1. Added `Archetypes` (`#nav-btn-archetypes`, `emoji_events`, `/winner-archetypes`) to `MOBILE_PRIMARY_LINKS` in `dash_app_v2.py`.
+2. Created a mobile top header (`mobile_top_header`) with brand logo and hamburger drawer button (`#mobile-drawer-toggle`), backed by a sliding bento-grid drawer (`mobile_drawer`) exposing all 9 platform modules.
+3. Updated `update_nav()` to dynamically update `mobile-bottom-nav` with `.active` styling based on current `pathname`.
+4. Fixed `vikram_panel_visibility` in `_vikram_callback.py` to require `if clicks:` before showing the panel, and set `pointerEvents: none` on `PANEL_HIDDEN_STYLE`.
+5. Added `visibility: hidden; pointer-events: none;` in `assets/style.css` for `#vikram-panel` when not open, and compacted `.mobile-nav-item` padding and font size (8.5px) so all 6 items fit without label truncation.
+6. Verified with Playwright mobile emulation (390x844 viewport): clean load without open backdrops, `#nav-btn-archetypes` click transitions to `/winner-archetypes`, renders 30 cards, highlights active state, and drawer toggle opens all 9 modules cleanly. All 45 pytest tests pass.
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: Playwright mobile emulation inspection, bounding-box collision analysis of Vikram input, `fix_before_touch` report, targeted patch, visual screenshot validation, and pytest verification.
+
+
 
 
 

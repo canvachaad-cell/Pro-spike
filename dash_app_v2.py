@@ -91,36 +91,113 @@ sidebar = html.Nav(
     ]
 )
 
-mobile_bottom_nav = html.Nav(
-    className="mobile-bottom-nav",
-    children=[
-        dcc.Link(
-            className="mobile-nav-item", id="nav-btn-dashboard", href="/",
-            children=[html.Span("leaderboard", className="material-symbols-outlined nav-icon"), html.Span("Dashboard")]
-        ),
-        dcc.Link(
-            className="mobile-nav-item", id="nav-btn-inst-signals", href="/institutional-signals",
-            children=[html.Span("shield", className="material-symbols-outlined nav-icon"), html.Span("Inst. Signals")]
-        ),
-        dcc.Link(
-            className="mobile-nav-item", id="nav-btn-signals", href="/signals",
-            children=[html.Span("bolt", className="material-symbols-outlined nav-icon"), html.Span("Signals")]
-        ),
-        dcc.Link(
-            className="mobile-nav-item", id="nav-btn-momentum", href="/momentum",
-            children=[html.Span("speed", className="material-symbols-outlined nav-icon"), html.Span("Momentum")]
-        ),
-        dcc.Link(
-            className="mobile-nav-item", id="nav-btn-watchlist", href="/watchlist",
-            children=[html.Span("bookmark", className="material-symbols-outlined nav-icon"), html.Span("Watchlist")]
-        ),
+NAV_LINKS = [
+    {"name": "Dashboard", "icon": "leaderboard", "path": "/"},
+    {"name": "Winner Archetypes", "icon": "emoji_events", "path": "/winner-archetypes"},
+    {"name": "Institutional Signals", "icon": "shield", "path": "/institutional-signals"},
+    {"name": "Signals", "icon": "bolt", "path": "/signals"},
+    {"name": "Momentum Score", "icon": "speed", "path": "/momentum"},
+    {"name": "Watchlist", "icon": "bookmark", "path": "/watchlist"},
+    {"name": "Win Rate", "icon": "monitoring", "path": "/win-rate"},
+    {"name": "Verify Conditions", "icon": "check_circle", "path": "/verify-conditions"},
+    {"name": "Data Health", "icon": "health_and_safety", "path": "/data-health"}
+]
+
+MOBILE_PRIMARY_LINKS = [
+    {"id": "nav-btn-dashboard", "name": "Dashboard", "icon": "leaderboard", "path": "/"},
+    {"id": "nav-btn-archetypes", "name": "Archetypes", "icon": "emoji_events", "path": "/winner-archetypes"},
+    {"id": "nav-btn-inst-signals", "name": "Inst.", "icon": "shield", "path": "/institutional-signals"},
+    {"id": "nav-btn-signals", "name": "Signals", "icon": "bolt", "path": "/signals"},
+    {"id": "nav-btn-watchlist", "name": "Watchlist", "icon": "bookmark", "path": "/watchlist"},
+]
+
+
+def build_mobile_nav(pathname="/"):
+    links = []
+    for item in MOBILE_PRIMARY_LINKS:
+        is_active = (pathname == item["path"])
+        cls = "mobile-nav-item active" if is_active else "mobile-nav-item"
+        links.append(
+            dcc.Link(
+                id=item["id"],
+                className=cls,
+                href=item["path"],
+                children=[
+                    html.Span(item["icon"], className="material-symbols-outlined nav-icon"),
+                    html.Span(item["name"])
+                ]
+            )
+        )
+    links.append(
         html.Div(
             id="mobile-vikram-tab",
             role="button",
             tabIndex="0",
             **{"aria-label": "Open Vikram AI"},
             className="mobile-nav-item cursor-pointer",
-            children=[html.Span("smart_toy", className="material-symbols-outlined nav-icon"), html.Span("Vikram")]
+            children=[
+                html.Span("smart_toy", className="material-symbols-outlined nav-icon"),
+                html.Span("Vikram")
+            ]
+        )
+    )
+    return links
+
+
+mobile_bottom_nav = html.Nav(
+    id="mobile-bottom-nav",
+    className="mobile-bottom-nav",
+    children=build_mobile_nav("/")
+)
+
+mobile_top_header = html.Header(
+    className="flex md:hidden justify-between items-center px-4 sticky top-0 z-40 bg-surface/90 backdrop-blur-xl h-14 border-b border-white/5",
+    children=[
+        dcc.Link(
+            href="/",
+            className="flex items-center gap-2 no-underline text-on-surface",
+            children=[
+                html.Span("emoji_events", className="material-symbols-outlined text-primary text-xl"),
+                html.Div("Pro Spike", className="font-headline-sm text-base font-bold text-primary tracking-tight"),
+                html.Span("LIVE", className="text-[9px] font-mono font-bold bg-primary/10 text-primary border border-primary/30 px-1.5 py-0.5 rounded"),
+            ]
+        ),
+        html.Button(
+            id="mobile-drawer-toggle",
+            title="Open all navigation pages",
+            **{"aria-label": "Open all navigation pages"},
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-on-surface-variant transition-colors border border-white/10",
+            children=[DashIconify(icon="material-symbols:menu", width=22, height=22, id="mobile-drawer-icon")]
+        )
+    ]
+)
+
+mobile_drawer = html.Div(
+    id="mobile-menu-drawer",
+    className="p-5 flex flex-col gap-3",
+    children=[
+        html.Div(
+            className="flex items-center justify-between pb-3 border-b border-white/10",
+            children=[
+                html.Div(
+                    className="flex items-center gap-2",
+                    children=[
+                        html.Span("menu_book", className="material-symbols-outlined text-primary text-base"),
+                        html.Span("All Platform Modules", className="font-headline-sm text-sm font-bold text-on-surface uppercase tracking-wider"),
+                    ]
+                ),
+                html.Button(
+                    id="mobile-drawer-close",
+                    title="Close navigation",
+                    **{"aria-label": "Close navigation"},
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-on-surface-variant hover:text-white",
+                    children=[DashIconify(icon="material-symbols:close", width=18, height=18)]
+                )
+            ]
+        ),
+        html.Div(
+            id="mobile-drawer-links",
+            className="grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto py-1",
         )
     ]
 )
@@ -170,6 +247,8 @@ app.layout = html.Div(
         dcc.Store(id="sidebar-state", data={"collapsed": False}),
         sidebar,
         mobile_bottom_nav,
+        html.Div(id="mobile-drawer-backdrop", **{"aria-hidden": "true"}),
+        mobile_drawer,
 
         # Floating Command Bar — opens the Vikram AI panel
         html.Div(
@@ -198,7 +277,7 @@ app.layout = html.Div(
         html.Aside(
             id="vikram-panel",
             className="fixed top-0 right-0 h-[100dvh] w-full md:w-[400px] z-[999] flex flex-col bg-surface-container-low/95 backdrop-blur-2xl border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)] max-md:top-auto max-md:bottom-0 max-md:left-0 max-md:h-[75dvh] max-md:rounded-t-2xl max-md:border-x-0 max-md:border-t",
-            style={"transform": "translateX(100%)", "transition": "transform 0.3s ease"},
+            style={"transform": "translateX(100%)", "transition": "transform 0.3s ease", "pointerEvents": "none"},
             children=[
                 # Drag handle - mobile bottom-sheet affordance (hidden on md+)
                 html.Div(className="md:hidden w-10 h-1 rounded-full bg-white/20 mx-auto mt-2 flex-shrink-0"),
@@ -255,6 +334,7 @@ app.layout = html.Div(
             style={"display": "flex", "flexDirection": "column", "minWidth": "0", "overflow": "hidden"},
             children=[
                 dcc.Location(id="url", refresh=False),
+                mobile_top_header,
                 top_navbar,
                 html.Div(
                     style={"flex": "1", "overflowY": "auto"},
@@ -276,22 +356,12 @@ app.layout = html.Div(
 
 @app.callback(
     Output("sidebar-nav-links", "children"),
+    Output("mobile-bottom-nav", "children"),
     Input("url", "pathname"),
     Input("sidebar-state", "data")
 )
 def update_nav(pathname, state):
     collapsed = state.get("collapsed", False) if state else False
-    NAV_LINKS = [
-        {"name": "Dashboard", "icon": "leaderboard", "path": "/"},
-        {"name": "Signals", "icon": "bolt", "path": "/signals"},
-        {"name": "Momentum Score", "icon": "speed", "path": "/momentum"},
-        {"name": "Institutional Signals", "icon": "shield", "path": "/institutional-signals"},
-        {"name": "Verify Conditions", "icon": "check_circle", "path": "/verify-conditions"},
-        {"name": "Watchlist", "icon": "bookmark", "path": "/watchlist"},
-        {"name": "Win Rate", "icon": "monitoring", "path": "/win-rate"},
-        {"name": "Winner Archetypes", "icon": "emoji_events", "path": "/winner-archetypes"},
-        {"name": "Data Health", "icon": "health_and_safety", "path": "/data-health"}
-    ]
     base_class = "flex items-center gap-md px-sm py-md rounded-lg font-label-caps text-label-caps transition-all duration-300 ease-in-out min-h-[44px]"
     active_class = " text-secondary bg-secondary-container/10 border-transparent shadow-[0_0_20px_rgba(174,198,255,0.15)]"
     inactive_class = " text-on-surface-variant hover:text-secondary hover:bg-white/5"
@@ -311,7 +381,51 @@ def update_nav(pathname, state):
                 ]
             )
         )
-    return items_html
+
+    mobile_items = build_mobile_nav(pathname or "/")
+    return items_html, mobile_items
+
+
+@app.callback(
+    Output("mobile-drawer-backdrop", "className"),
+    Output("mobile-drawer-links", "children"),
+    Input("mobile-drawer-toggle", "n_clicks"),
+    Input("mobile-drawer-close", "n_clicks"),
+    Input("mobile-drawer-backdrop", "n_clicks"),
+    Input("url", "pathname"),
+    State("mobile-drawer-backdrop", "className"),
+    prevent_initial_call=True
+)
+def toggle_mobile_drawer(toggle_clicks, close_clicks, backdrop_clicks, pathname, current_cls):
+    triggered = dash.ctx.triggered_id
+    if triggered in ("mobile-drawer-close", "mobile-drawer-backdrop", "url"):
+        return "", dash.no_update
+
+    drawer_items = []
+    for item in NAV_LINKS:
+        is_active = (pathname == item["path"])
+        item_cls = (
+            "flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all "
+            + (
+                "bg-primary/15 border-primary/40 text-primary shadow-[0_0_12px_rgba(90,240,179,0.2)]"
+                if is_active
+                else "bg-white/5 border-white/5 text-on-surface-variant hover:bg-white/10 hover:text-white"
+            )
+        )
+        drawer_items.append(
+            dcc.Link(
+                href=item["path"],
+                className=item_cls,
+                children=[
+                    html.Span(item["icon"], className="material-symbols-outlined text-[18px] flex-shrink-0"),
+                    html.Span(item["name"], className="truncate")
+                ]
+            )
+        )
+
+    is_open = "open" in (current_cls or "")
+    new_cls = "" if is_open else "open"
+    return new_cls, drawer_items
 
 @app.callback(
     Output("main-layout", "className"),

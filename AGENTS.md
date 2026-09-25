@@ -69,6 +69,9 @@ All run inside `Pro-spike` root directory:
 - `DEMONCORE: DEEP_AUDIT` → reset, invoke deep_audit subagent. Deeply audit a specific part of the app for bugs, destructive risks, security, and tech debt.
 - If ROOT_CAUSE unresolved after 2 passes → invoke `/boost` with failure-classification table attached.
 
+**TRIGGER: `perfect: <text>`**
+- `perfect: <text>` → invoke prompt_enhancer in Mode B. Generates a dense, ultra-compact 1-paragraph context-anchored prompt for instant copy-pasting.
+
 **TRIGGER: `FULL_TEST`**
 - `FULL_TEST` → invoke full_test subagent. Runs a complete end-to-end QA sweep of the app via browser automation.
 
