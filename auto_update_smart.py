@@ -682,8 +682,10 @@ try:
     ok_a = run_metrics_engine("Legacy Institutional", "calculate_active_signals.py")
     ok_b = run_metrics_engine("FlexGate 2.0 ML", "flexgate_2_scanner.py")
     ok_c = run_metrics_engine("Corner Spike", "corner_spike_scanner.py")
-    if not (ok_a and ok_b and ok_c):
-        print(f"🚨 METRICS ENGINES FAILED — data/active_signals_ranked.csv, ledgers, or corner_engine_watchlist may be stale. See {METRICS_LOG}.")
+    ok_d = run_metrics_engine("Winner Archetypes", "rank_archetypes.py")
+    if not (ok_a and ok_b and ok_c and ok_d):
+        print(f"🚨 METRICS ENGINES FAILED — active_signals, ledgers, corner_engine, or winner_archetypes may be stale. See {METRICS_LOG}.")
+
         
     # Freshness Check
     import pandas as pd

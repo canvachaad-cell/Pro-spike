@@ -278,16 +278,48 @@ def score_universe():
     if screened_syms:
         u_df = u_df[u_df["SYMBOL"].isin(screened_syms)].copy()
 
-    # Load today's watchlist if present to inherit AI model probability & existing targets
-    wl_map = {}
-    if os.path.exists(WATCHLIST_FILE):
-        try:
-            wl = pd.read_csv(WATCHLIST_FILE)
-            for _, r in wl.iterrows():
-                sym = str(r["SYMBOL"]).strip()
-                wl_map[sym] = r.to_dict()
-        except Exception:
-            pass
+    # Load multi-source AI model probabilities and trade parameters
+    # Priority order: Today's active breakout signals -> active ranked signals -> flexgate watchlists -> ledgers
+    ai_prob_sources = [
+        ("data/sbia_alpha_watchlist.csv", "AI_WIN_PROBABILITY", "ENTRY_PRICE", "STOP_LOSS", "TAKE_PROFIT"),
+        ("data/active_signals_ranked.csv", "AI_WIN_PROBABILITY", "ENTRY_PRICE", "STOP_LOSS", "TAKE_PROFIT"),
+        ("data/signal_scores_today.csv", "AI_WIN_PROBABILITY", "ENTRY_PRICE", "STOP_LOSS", "TAKE_PROFIT"),
+        ("data/sbia_flexgate2_watchlist.csv", "AI_WIN_PROBABILITY", "ENTRY_PRICE", "STOP_LOSS", "TAKE_PROFIT"),
+        ("data/sbia_flexgate_watchlist.csv", "AI_WIN_PROBABILITY", "ENTRY_PRICE", "STOP_LOSS", "TAKE_PROFIT"),
+        ("data/legacy_watchlist.csv", "AI_WIN_PROBABILITY", "ENTRY_PRICE", "STOP_LOSS", "TAKE_PROFIT"),
+        ("data/sbia_ledger.csv", "ENTRY_AI_PROB", "ENTRY_PRICE", "STOP_LOSS", "TAKE_PROFIT"),
+        ("data/flexgate2_ledger.csv", "ENTRY_AI_PROB", "ENTRY_PRICE", "STOP_LOSS", "TAKE_PROFIT"),
+        ("data/flexgate_ledger.csv", "ENTRY_AI_PROB", "ENTRY_PRICE", "STOP_LOSS", "TAKE_PROFIT"),
+    ]
+
+    prob_map = {}
+    param_map = {}
+    # Iterate in reverse order so higher-priority sources overwrite lower-priority
+    for path, prob_col, entry_col, sl_col, tp_col in reversed(ai_prob_sources):
+        if os.path.exists(path):
+            try:
+                src_df = pd.read_csv(path)
+                if "SYMBOL" in src_df.columns:
+                    for _, r in src_df.iterrows():
+                        sym = str(r["SYMBOL"]).strip()
+                        if prob_col in r and pd.notna(r[prob_col]):
+                            try:
+                                pval = float(r[prob_col])
+                                if pval > 0:
+                                    prob_map[sym] = round(pval, 2)
+                            except (ValueError, TypeError):
+                                pass
+                        params = {}
+                        for target_col, col_key in [("ENTRY_PRICE", entry_col), ("STOP_LOSS", sl_col), ("TAKE_PROFIT", tp_col)]:
+                            if col_key in r and pd.notna(r[col_key]):
+                                try:
+                                    params[target_col] = float(r[col_key])
+                                except (ValueError, TypeError):
+                                    pass
+                        if params:
+                            param_map.setdefault(sym, {}).update(params)
+            except Exception:
+                pass
 
     # Merge latest snapshot metrics
     cols_from_snap = ["SYMBOL", "OPEN_PRICE", "HIGH_PRICE", "LOW_PRICE", "CLOSE_PRICE", "AVG_PRICE", "DELIV_QTY", "CDH", "VWAP_DIV", "ATR14"]
@@ -305,15 +337,13 @@ def score_universe():
     if "Whale_Density" not in merged.columns:
         merged["Whale_Density"] = merged.get("WHALE_DENSITY", np.nan)
 
-    # Fill in from watchlist map
-    def fill_from_wl(row, col_name, default=np.nan):
-        sym = row["SYMBOL"]
-        if sym in wl_map and col_name in wl_map[sym] and pd.notna(wl_map[sym][col_name]):
-            return wl_map[sym][col_name]
-        return row.get(col_name, default)
-
-    for col in ["AI_WIN_PROBABILITY", "ENTRY_PRICE", "STOP_LOSS", "TAKE_PROFIT"]:
-        merged[col] = merged.apply(lambda r: fill_from_wl(r, col), axis=1)
+    # Map AI win probability and execution levels from institutional ledgers & watchlists
+    merged["AI_WIN_PROBABILITY"] = merged["SYMBOL"].map(prob_map)
+    for target_col in ["ENTRY_PRICE", "STOP_LOSS", "TAKE_PROFIT"]:
+        merged[target_col] = merged.apply(
+            lambda r: param_map.get(r["SYMBOL"], {}).get(target_col, np.nan),
+            axis=1
+        )
 
     # Market Cap & Tier
     merged["MKTCAP_CR"] = merged["SYMBOL"].str.upper().map(mc)
@@ -378,6 +408,8 @@ def score_universe():
     merged["ARCHETYPE"] = merged.apply(get_archetype, axis=1)
 
     # Missing targets fallback (1.5 ATR risk, 3.0 ATR reward = 2R)
+    # Dynamic fallback to cohort median rather than hardcoded dummy value
+    cohort_median_ai = round(float(merged["AI_WIN_PROBABILITY"].dropna().median() if not merged["AI_WIN_PROBABILITY"].dropna().empty else 65.0), 2)
     for idx, row in merged.iterrows():
         close = row["CLOSE"] if pd.notna(row["CLOSE"]) and row["CLOSE"] > 0 else 100.0
         atr = row["ATR14"] if pd.notna(row["ATR14"]) and row["ATR14"] > 0 else close * 0.035
@@ -388,7 +420,7 @@ def score_universe():
         if pd.isna(row["TAKE_PROFIT"]):
             merged.at[idx, "TAKE_PROFIT"] = round(close + 3.0 * atr, 2)
         if pd.isna(row["AI_WIN_PROBABILITY"]):
-            merged.at[idx, "AI_WIN_PROBABILITY"] = 55.0
+            merged.at[idx, "AI_WIN_PROBABILITY"] = cohort_median_ai
 
     # Rule 3 Composite Score (0-100)
     atr_norm = np.clip((merged["ATR_PCT"].fillna(3.0) - 3.0) / 5.0, 0, 1) * 30.0
