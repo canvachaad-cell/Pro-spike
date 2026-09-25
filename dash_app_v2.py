@@ -124,18 +124,42 @@ def serve_ai_catalog():
     import json
     catalog = json.dumps({
         "specVersion": "1.0",
-        "name": "Pro Spike",
-        "description": "Indian stock market quantitative signals and analytics",
         "entries": [
             {
-                "name": "Market Dashboard",
-                "description": "High-level market overview and 12-condition breakout signals",
-                "url": "http://127.0.0.1:8050/"
+                "identifier": "urn:air:prospike:finance:dashboard",
+                "displayName": "Pro Spike Market Dashboard",
+                "description": "High-level Indian equity market overview and 12-condition quantitative breakout signals.",
+                "type": "application/agent-card+json",
+                "url": "http://127.0.0.1:8050/",
+                "representativeQueries": [
+                    "Indian stock market breakout signals",
+                    "NSE institutional accumulation dashboard",
+                    "BSE delivery volume surge screener"
+                ]
             },
             {
-                "name": "Institutional Signals",
-                "description": "SBIA Alpha, FlexGate, FlexGate 2.0, and Corner Spike scanners",
-                "url": "http://127.0.0.1:8050/institutional-signals"
+                "identifier": "urn:air:prospike:finance:institutional-signals",
+                "displayName": "Institutional Signals & Alpha Scanners",
+                "description": "SBIA Alpha, FlexGate, FlexGate 2.0, and Corner Spike institutional quantitative scanners.",
+                "type": "application/agent-card+json",
+                "url": "http://127.0.0.1:8050/institutional-signals",
+                "representativeQueries": [
+                    "Institutional edge stock signals NSE",
+                    "FlexGate 2.0 conviction scorer",
+                    "Corner spike institutional volume tracking"
+                ]
+            },
+            {
+                "identifier": "urn:air:prospike:finance:winner-archetypes",
+                "displayName": "Winner Archetypes Screener",
+                "description": "Historical multi-bagger archetype classification and screening engine.",
+                "type": "application/agent-card+json",
+                "url": "http://127.0.0.1:8050/winner-archetypes",
+                "representativeQueries": [
+                    "Multi-bagger stock archetypes India",
+                    "Growth compounder stock screener NSE",
+                    "Cyclical turnaround institutional stocks"
+                ]
             }
         ]
     })

@@ -1195,7 +1195,44 @@ the Round-1/Round-2 independent predictive tests.
 4. Updated test specs (`tests/vikram_panel.spec.js` and `tests/audit_vikram_stlnetwork.spec.js`) to support `#mobile-vikram-fab`.
 5. Verified empirically via Playwright audit (`scratch/audit_mobile_view.py`) across iPhone 14 (390x844) and iPhone SE (375x667): 100% of checks passed without overflow, zero bounding box collision, clean drawer toggle on "More" tap, and instant Vikram bottom sheet open/close via FAB tap. All 45 pytest tests pass.
 **FAILED ATTEMPTS**: None.  
-**AI PROCESS**: Playwright automated mobile audit, DEEP_AUDIT trace of Dash component mounting semantics, `fix_before_touch` report, targeted patch, and regression suite execution.
+
+---
+
+## BUG-071: Mobile Performance, SEO 83 & Agentic Discovery Deficiencies in Lighthouse Mobile Audit
+**STATUS**: FIXED  
+**FILE**: `dash_app_v2.py`, `dash_pages/dashboard.py`  
+**DISCOVERED BY**: Lighthouse Mobile Audit, 2026-09-25  
+**SYMPTOM**: 
+1. Mobile Lighthouse SEO score was depressed to 83/100 due to two severe audit failures:
+   - "Document does not have a meta description": Dash 2.x `register_page` inserted `<meta name="description" content="">` before the custom head tag, causing Lighthouse to flag an empty meta description.
+   - "robots.txt is not valid": Crawlers fetching `/robots.txt` received 63 HTML syntax errors because Dash's single-page router intercepted the request and returned the 404 HTML document instead of plain text.
+2. Agentic Discovery score was 50/100:
+   - Missing `/llms.txt` returning Dash 404 HTML.
+   - Missing `/.well-known/ai-catalog.json` returning 404 HTML, failing ARD specification.
+3. Mobile Performance was 37/100 due to uncompressed static assets (2,696 KiB uncompressed payload) and high initial document latency without resource preconnects.
+**ROOT CAUSE**: 
+1. The underlying Flask WSGI application (`app.server`) did not register explicit raw routes for search engine crawlers (`/robots.txt`) or AI discovery protocols (`/llms.txt`, `/.well-known/ai-catalog.json`), delegating all requests to Dash's SPA layout handler.
+2. In `dash_pages/dashboard.py:12`, `dash.register_page()` did not supply an explicit `description` parameter, triggering Dash's automatic fallback injection of an empty `<meta name="description" content="">`.
+3. Flask WSGI server did not compress responses on the fly, transmitting large bundles uncompressed.
+4. ARD schema validation required RFC 8141 URN patterns (`urn:air:<publisher>:<namespace>:<agent-name>`), standard discovery media types (`application/agent-card+json`), representative queries (2-5), and forbade arbitrary root-level properties (`name`, `description`).
+**FIX**: 
+1. **Zero-Dependency WSGI Compression**: Implemented `GzipMiddleware` wrapping `app.server.wsgi_app` in `dash_app_v2.py`, compressing CSS, JS, JSON, and text responses over 500 bytes on the fly (cutting CSS payload by 77.3% and total transfer size by over 1 MB).
+2. **Resource Hints & Meta Descriptions**: Injected `<link rel="preconnect">` and `<link rel="dns-prefetch">` for Google Fonts into `app.index_string`, and explicitly specified `description="Pro Spike: Quantitative trading dashboard for NSE/BSE institutional accumulation, delivery volume signals, and portfolio analytics."` in `dash_pages/dashboard.py`.
+3. **Dedicated Crawler & AI Endpoints**:
+   - Registered `@server.route('/robots.txt')` returning valid `text/plain` 200 OK with `Allow: /` and sitemap directive.
+   - Registered `@server.route('/llms.txt')` returning valid `text/markdown` 200 OK with platform architecture and module URLs.
+   - Registered `@server.route('/.well-known/ai-catalog.json')` returning RFC 8141 ARD-compliant JSON with URN identifiers (`urn:air:prospike:finance:...`), `application/agent-card+json` media types, and vector index representative queries.
+4. **Empirical Verification**:
+   - Lighthouse Mobile Audit v5 achieved:
+     - **SEO**: 100/100 (Up from 83)
+     - **Accessibility**: 100/100
+     - **Best Practices**: 100/100
+     - **Agentic Browsing**: 100/100 (Up from 50)
+     - **Performance**: 65/100 (Payload reduced from 2,696 KiB to 1,692 KiB).
+   - Endpoints verified with HTTP 200 responses, clean content types, and valid schema structures.
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: Full `fix_before_touch` protocol execution, WSGI compression middleware implementation, Flask static routing interception, ARD schema compliance refinement, multi-round Lighthouse mobile audits, and dual-remote push constraint verification.
+
 
 
 
