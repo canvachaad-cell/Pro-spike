@@ -16,7 +16,7 @@ test.describe('BUG-032 Vikram mobile bottom-sheet + backdrop', () => {
     let box = await panel.boundingBox();
     expect(Math.abs(box.y - vh)).toBeLessThan(30);
 
-    await page.locator('#mobile-vikram-tab').click();
+    await page.locator('#mobile-vikram-fab, #mobile-vikram-tab').first().click();
     await page.waitForTimeout(1200);
     box = await panel.boundingBox();
     expect(box.height).toBeLessThanOrEqual(0.85 * vh);

@@ -1169,6 +1169,35 @@ the Round-1/Round-2 independent predictive tests.
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: Playwright mobile emulation inspection, bounding-box collision analysis of Vikram input, `fix_before_touch` report, targeted patch, visual screenshot validation, and pytest verification.
 
+---
+
+## BUG-070: Mobile Drawer Auto-Opening on Load via Dynamic `#mobile-nav-more` Dash Trigger & FAB Elevation
+**STATUS**: FIXED  
+**FILE**: `dash_app_v2.py`, `assets/vikram_interactions.js`, `tests/vikram_panel.spec.js`, `tests/audit_vikram_stlnetwork.spec.js`  
+**DISCOVERED BY**: Playwright mobile view audit, 2026-09-25  
+**SYMPTOM**: 
+1. On mobile viewports (iPhone 14 / iPhone SE), on cold load the "All Platform Modules" drawer was wide open across the top half of the screen, and `<div class="open" id="mobile-drawer-backdrop">` intercepted all pointer events across the entire screen, blocking taps on bottom nav and the Vikram FAB (`playwright._impl._errors.TimeoutError: Page.click: Timeout 30000ms exceeded`).
+2. Vikram AI floating action button (FAB) was styled with `z-[100]`, which was below `.mobile-bottom-nav` (`z-index: 200`).
+3. `assets/vikram_interactions.js` retained stale `#mobile-vikram-tab` query selectors instead of `#mobile-vikram-fab`.
+**ROOT CAUSE**: 
+1. In `dash_app_v2.py:409`, `toggle_mobile_drawer()` registered `Input("mobile-nav-more", "n_clicks")`. Because `mobile-bottom-nav` children are rendered dynamically by `update_nav()`, Dash 2.x dispatches an initial input mount event with `n_clicks=None`. Because `toggle_mobile_drawer()` lacked an `if not clicks: raise PreventUpdate` guard, it toggled the drawer class from `""` to `"open"` immediately on startup.
+2. Whenever a user navigated, URL change re-rendered `mobile-bottom-nav`, re-dispatching the unclicked trigger.
+**FIX**: 
+1. Added strict click-falsy guards in `toggle_mobile_drawer()`:
+   ```python
+   if not triggered: raise dash.exceptions.PreventUpdate
+   if triggered in ("mobile-drawer-toggle", "mobile-nav-more"):
+       clicks = more_clicks if triggered == "mobile-nav-more" else toggle_clicks
+       if not clicks: raise dash.exceptions.PreventUpdate
+   ```
+2. Elevated `#mobile-vikram-fab` to `z-[210]` so it floats cleanly in front of the bottom navigation bar (`z-index: 200`).
+3. Updated `assets/vikram_interactions.js` to target `#mobile-vikram-fab` for auto-focus and keyboard shortcut handlers.
+4. Updated test specs (`tests/vikram_panel.spec.js` and `tests/audit_vikram_stlnetwork.spec.js`) to support `#mobile-vikram-fab`.
+5. Verified empirically via Playwright audit (`scratch/audit_mobile_view.py`) across iPhone 14 (390x844) and iPhone SE (375x667): 100% of checks passed without overflow, zero bounding box collision, clean drawer toggle on "More" tap, and instant Vikram bottom sheet open/close via FAB tap. All 45 pytest tests pass.
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: Playwright automated mobile audit, DEEP_AUDIT trace of Dash component mounting semantics, `fix_before_touch` report, targeted patch, and regression suite execution.
+
+
 
 
 

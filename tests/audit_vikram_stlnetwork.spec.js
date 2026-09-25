@@ -12,7 +12,7 @@ test.describe('Audit Vikram Fundamental Quality Gate for STLNETWORK', () => {
     // 2. Open Vikram Panel
     const vw = page.viewportSize().width;
     if (vw < 768) {
-      await page.locator('#mobile-vikram-tab').click();
+      await page.locator('#mobile-vikram-fab, #mobile-vikram-tab').first().click();
     } else {
       await page.locator('#vikram-trigger').click();
     }

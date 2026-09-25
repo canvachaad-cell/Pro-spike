@@ -48,7 +48,7 @@
                     focusInput();
                 } else {
                     // Mobile trigger fallback
-                    var mobileTab = document.getElementById('mobile-vikram-tab');
+                    var mobileTab = document.getElementById('mobile-vikram-fab') || document.getElementById('mobile-vikram-tab');
                     if (mobileTab) {
                         mobileTab.click();
                         focusInput();
@@ -90,7 +90,7 @@
     // Safety fallback: attach on first click or interaction if element was late-mounted by Dash
     document.addEventListener('click', function (e) {
         attachChatScrollObserver();
-        if (e.target && (e.target.closest('#vikram-trigger') || e.target.closest('#mobile-vikram-tab'))) {
+        if (e.target && (e.target.closest('#vikram-trigger') || e.target.closest('#mobile-vikram-fab') || e.target.closest('#mobile-vikram-tab'))) {
             focusInput();
         }
     });

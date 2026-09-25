@@ -105,10 +105,9 @@ NAV_LINKS = [
 
 MOBILE_PRIMARY_LINKS = [
     {"id": "nav-btn-dashboard", "name": "Dashboard", "icon": "leaderboard", "path": "/"},
-    {"id": "nav-btn-archetypes", "name": "Archetypes", "icon": "emoji_events", "path": "/winner-archetypes"},
     {"id": "nav-btn-inst-signals", "name": "Inst.", "icon": "shield", "path": "/institutional-signals"},
-    {"id": "nav-btn-signals", "name": "Signals", "icon": "bolt", "path": "/signals"},
-    {"id": "nav-btn-watchlist", "name": "Watchlist", "icon": "bookmark", "path": "/watchlist"},
+    {"id": "nav-btn-momentum", "name": "Momentum", "icon": "speed", "path": "/momentum"},
+    {"id": "nav-btn-archetypes", "name": "Archetypes", "icon": "emoji_events", "path": "/winner-archetypes"},
 ]
 
 
@@ -130,14 +129,13 @@ def build_mobile_nav(pathname="/"):
         )
     links.append(
         html.Div(
-            id="mobile-vikram-tab",
+            id="mobile-nav-more",
             role="button",
             tabIndex="0",
-            **{"aria-label": "Open Vikram AI"},
             className="mobile-nav-item cursor-pointer",
             children=[
-                html.Span("smart_toy", className="material-symbols-outlined nav-icon"),
-                html.Span("Vikram")
+                html.Span("more_horiz", className="material-symbols-outlined nav-icon"),
+                html.Span("More")
             ]
         )
     )
@@ -268,6 +266,17 @@ app.layout = html.Div(
                 )
             ]
         ),
+        # Mobile Floating Vikram Button (FAB)
+        html.Div(
+            id="mobile-vikram-fab",
+            role="button",
+            tabIndex="0",
+            **{"aria-label": "Open Vikram AI"},
+            className="md:hidden fixed bottom-20 right-4 z-[210] flex items-center justify-center w-[52px] h-[52px] rounded-2xl bg-surface/80 backdrop-blur-3xl shadow-[0_8px_32px_rgba(90,240,179,0.25)] border border-primary/40 cursor-pointer active:scale-95 transition-all",
+            children=[
+                html.Span("smart_toy", className="material-symbols-outlined text-primary text-[28px]")
+            ]
+        ),
         # Vikram backdrop - dims the page and intercepts taps while the panel is open (BUG-032)
         html.Div(
             id="vikram-backdrop",
@@ -390,42 +399,53 @@ def update_nav(pathname, state):
     Output("mobile-drawer-backdrop", "className"),
     Output("mobile-drawer-links", "children"),
     Input("mobile-drawer-toggle", "n_clicks"),
+    Input("mobile-nav-more", "n_clicks"),
     Input("mobile-drawer-close", "n_clicks"),
     Input("mobile-drawer-backdrop", "n_clicks"),
     Input("url", "pathname"),
     State("mobile-drawer-backdrop", "className"),
     prevent_initial_call=True
 )
-def toggle_mobile_drawer(toggle_clicks, close_clicks, backdrop_clicks, pathname, current_cls):
+def toggle_mobile_drawer(toggle_clicks, more_clicks, close_clicks, backdrop_clicks, pathname, current_cls):
     triggered = dash.ctx.triggered_id
+    if not triggered:
+        raise dash.exceptions.PreventUpdate
+
     if triggered in ("mobile-drawer-close", "mobile-drawer-backdrop", "url"):
         return "", dash.no_update
 
-    drawer_items = []
-    for item in NAV_LINKS:
-        is_active = (pathname == item["path"])
-        item_cls = (
-            "flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all "
-            + (
-                "bg-primary/15 border-primary/40 text-primary shadow-[0_0_12px_rgba(90,240,179,0.2)]"
-                if is_active
-                else "bg-white/5 border-white/5 text-on-surface-variant hover:bg-white/10 hover:text-white"
-            )
-        )
-        drawer_items.append(
-            dcc.Link(
-                href=item["path"],
-                className=item_cls,
-                children=[
-                    html.Span(item["icon"], className="material-symbols-outlined text-[18px] flex-shrink-0"),
-                    html.Span(item["name"], className="truncate")
-                ]
-            )
-        )
+    if triggered in ("mobile-drawer-toggle", "mobile-nav-more"):
+        clicks = more_clicks if triggered == "mobile-nav-more" else toggle_clicks
+        if not clicks:
+            raise dash.exceptions.PreventUpdate
 
-    is_open = "open" in (current_cls or "")
-    new_cls = "" if is_open else "open"
-    return new_cls, drawer_items
+        drawer_items = []
+        for item in NAV_LINKS:
+            is_active = (pathname == item["path"])
+            item_cls = (
+                "flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all "
+                + (
+                    "bg-primary/15 border-primary/40 text-primary shadow-[0_0_12px_rgba(90,240,179,0.2)]"
+                    if is_active
+                    else "bg-white/5 border-white/5 text-on-surface-variant hover:bg-white/10 hover:text-white"
+                )
+            )
+            drawer_items.append(
+                dcc.Link(
+                    href=item["path"],
+                    className=item_cls,
+                    children=[
+                        html.Span(item["icon"], className="material-symbols-outlined text-[18px] flex-shrink-0"),
+                        html.Span(item["name"], className="truncate")
+                    ]
+                )
+            )
+
+        is_open = "open" in (current_cls or "")
+        new_cls = "" if is_open else "open"
+        return new_cls, drawer_items
+
+    raise dash.exceptions.PreventUpdate
 
 @app.callback(
     Output("main-layout", "className"),

@@ -1611,7 +1611,7 @@ def _loader_bubble():
     Output("vikram-backdrop", "className"),
     Input("vikram-trigger", "n_clicks"),
     Input("vikram-close", "n_clicks"),
-    Input("mobile-vikram-tab", "n_clicks"),
+    Input("mobile-vikram-fab", "n_clicks"),
     Input("vikram-backdrop", "n_clicks"),
     prevent_initial_call=True,
 )
@@ -1619,7 +1619,7 @@ def vikram_panel_visibility(trigger_clicks, close_clicks, mobile_clicks, backdro
     triggered = dash.ctx.triggered_id
     if triggered in ("vikram-close", "vikram-backdrop"):
         return PANEL_HIDDEN_STYLE, ""
-    if triggered in ("vikram-trigger", "mobile-vikram-tab"):
+    if triggered in ("vikram-trigger", "mobile-vikram-fab"):
         clicks = trigger_clicks if triggered == "vikram-trigger" else mobile_clicks
         if clicks:
             return PANEL_SHOWN_STYLE, "open"
