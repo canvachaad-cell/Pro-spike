@@ -7,7 +7,13 @@ from functools import lru_cache
 from fundamental_fetcher import FundamentalFetcher, CACHE_PATH as FUND_CACHE_PATH
 from conviction_scorer import ConvictionScorer
 
-dash.register_page(__name__, path='/', name='Dashboard', title='Pro Spike - Dashboard')
+dash.register_page(
+    __name__,
+    path='/',
+    name='Dashboard',
+    title='Pro Spike - Dashboard',
+    description='Pro Spike: Quantitative trading dashboard for NSE/BSE institutional accumulation, delivery volume signals, and portfolio analytics.'
+)
 
 FALLBACK_TOTAL_SCANNED = 5518
 FALLBACK_NSE = 2543

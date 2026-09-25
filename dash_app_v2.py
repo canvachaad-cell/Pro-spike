@@ -2,6 +2,48 @@ import dash
 from dash import Dash, html, dcc, Input, Output, State
 from dash_iconify import DashIconify
 import os
+import gzip
+
+# --- Zero-dependency WSGI Gzip Middleware for High-Speed Mobile Delivery ---
+class GzipMiddleware:
+    def __init__(self, wsgi_app, compress_level=6, min_size=500):
+        self.wsgi_app = wsgi_app
+        self.compress_level = compress_level
+        self.min_size = min_size
+
+    def __call__(self, environ, start_response):
+        if "gzip" not in environ.get("HTTP_ACCEPT_ENCODING", "").lower():
+            return self.wsgi_app(environ, start_response)
+
+        status_code = []
+        headers_list = []
+
+        def custom_start(status, headers, exc_info=None):
+            status_code.append(status)
+            headers_list.extend(headers)
+            return lambda _: None
+
+        app_iter = self.wsgi_app(environ, custom_start)
+        content_type = ""
+        for k, v in headers_list:
+            if k.lower() == "content-type":
+                content_type = v.lower()
+                break
+
+        compressable = any(t in content_type for t in ["text/", "application/javascript", "application/json", "image/svg+xml"])
+        body = b"".join(app_iter)
+        if hasattr(app_iter, "close"):
+            app_iter.close()
+
+        if compressable and len(body) >= self.min_size:
+            gz_body = gzip.compress(body, compresslevel=self.compress_level)
+            new_h = [(k, v) for k, v in headers_list if k.lower() not in ("content-length", "content-encoding")]
+            new_h.extend([("Content-Encoding", "gzip"), ("Content-Length", str(len(gz_body))), ("Vary", "Accept-Encoding")])
+            start_response(status_code[0], new_h)
+            return [gz_body]
+
+        start_response(status_code[0], headers_list)
+        return [body]
 
 app = Dash(
     __name__,
@@ -26,8 +68,11 @@ app = Dash(
 app.index_string = '''<!DOCTYPE html>
 <html lang="en">
     <head>
+        <meta name="description" content="Pro-spike: quantitative trading dashboard for NSE/BSE institutional accumulation, delivery volume signals, and portfolio analytics.">
         {%metas%}
         <title>{%title%}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="canonical" href="https://prospike.com">
         <meta property="og:description" content="Pro-spike: quantitative trading dashboard for NSE/BSE institutional accumulation, delivery volume signals, and portfolio analytics.">
         <meta property="og:title" content="Pro Spike">
@@ -47,6 +92,54 @@ app.index_string = '''<!DOCTYPE html>
 
 # Expose Flask server for gunicorn (Procfile: gunicorn dash_app_v2:server)
 server = app.server
+server.wsgi_app = GzipMiddleware(server.wsgi_app)
+
+
+@server.route('/robots.txt')
+def serve_robots():
+    return (
+        "User-agent: *\nAllow: /\nSitemap: https://prospike.com/sitemap.xml\n",
+        200,
+        {'Content-Type': 'text/plain; charset=utf-8'}
+    )
+
+
+@server.route('/llms.txt')
+def serve_llms_txt():
+    content = (
+        "# Pro Spike Quantitative Trading Platform\n\n"
+        "> Real-time institutional footprint tracking, Wyckoffian volume surges, and quantitative momentum signals for the Indian stock market.\n\n"
+        "## Core Platform Modules\n"
+        "- [Dashboard](http://127.0.0.1:8050/): High-level market overview and 12-condition breakout signals.\n"
+        "- [Institutional Signals](http://127.0.0.1:8050/institutional-signals): SBIA Alpha, FlexGate, FlexGate 2.0, and Corner Spike scanners.\n"
+        "- [Winner Archetypes](http://127.0.0.1:8050/winner-archetypes): Top 30 historical multi-bagger archetype classification.\n"
+        "- [Momentum Score](http://127.0.0.1:8050/momentum): 3-component momentum percentile rankings.\n"
+        "- [Watchlist](http://127.0.0.1:8050/watchlist): Active high-conviction institutional positions.\n"
+    )
+    return content, 200, {'Content-Type': 'text/markdown; charset=utf-8'}
+
+
+@server.route('/.well-known/ai-catalog.json')
+def serve_ai_catalog():
+    import json
+    catalog = json.dumps({
+        "specVersion": "1.0",
+        "name": "Pro Spike",
+        "description": "Indian stock market quantitative signals and analytics",
+        "entries": [
+            {
+                "name": "Market Dashboard",
+                "description": "High-level market overview and 12-condition breakout signals",
+                "url": "http://127.0.0.1:8050/"
+            },
+            {
+                "name": "Institutional Signals",
+                "description": "SBIA Alpha, FlexGate, FlexGate 2.0, and Corner Spike scanners",
+                "url": "http://127.0.0.1:8050/institutional-signals"
+            }
+        ]
+    })
+    return catalog, 200, {'Content-Type': 'application/json; charset=utf-8'}
 
 
 def get_icon(icon_name):
