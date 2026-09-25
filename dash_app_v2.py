@@ -217,6 +217,7 @@ NAV_LINKS = [
     {"name": "Watchlist", "icon": "bookmark", "path": "/watchlist"},
     {"name": "Win Rate", "icon": "monitoring", "path": "/win-rate"},
     {"name": "Verify Conditions", "icon": "check_circle", "path": "/verify-conditions"},
+    {"name": "Alerts", "icon": "notifications_active", "path": "/notifications"},
     {"name": "Data Health", "icon": "health_and_safety", "path": "/data-health"}
 ]
 
@@ -327,11 +328,18 @@ top_navbar = html.Header(
         html.Div(
             className="flex items-center gap-md",
             children=[
-                html.Button(
-                    title="Notifications",
-                    **{"aria-label": "Notifications"},
-                    className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors active:scale-95 duration-100 text-on-surface-variant",
-                    children=[DashIconify(icon="material-symbols:notifications-outline", width=24, height=24)]
+                dcc.Link(
+                    id="notif-bell-btn",
+                    href="/notifications",
+                    title="Alerts",
+                    className="relative w-11 h-11 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors active:scale-95 duration-100 text-on-surface-variant",
+                    children=[
+                        DashIconify(icon="material-symbols:notifications-outline", width=24, height=24),
+                        html.Span(
+                            id="notif-badge",
+                            className="hidden absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-error text-[10px] font-bold text-white items-center justify-center"
+                        )
+                    ]
                 ),
                 html.Button(
                     title="Settings",
@@ -583,6 +591,36 @@ def toggle_sidebar(n_clicks, state):
     
     return new_class, {"collapsed": new_collapsed}, new_icon, new_title_style
 
+
+# ---------------------------------------------------------------------------
+# Alerts bell badge — unread ledger-exit alert count.
+# ---------------------------------------------------------------------------
+@app.callback(
+    Output("notif-badge", "className"),
+    Output("notif-badge", "children"),
+    Input("url", "pathname"),
+    prevent_initial_call=False,
+)
+def update_notif_badge(pathname):
+    import os as _os
+    import pandas as _pd
+
+    hidden = ("hidden absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-full "
+              "bg-error text-[10px] font-bold text-white items-center justify-center")
+    shown = ("flex absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-full "
+             "bg-error text-[10px] font-bold text-white items-center justify-center")
+
+    log_path = _os.path.join("data", "alerts_log.csv")
+    if pathname == "/notifications" or not _os.path.exists(log_path):
+        return hidden, ""
+    try:
+        df = _pd.read_csv(log_path, usecols=["detected_at"])
+    except Exception:
+        return hidden, ""
+    if df.empty:
+        return hidden, ""
+    n = len(df)
+    return shown, str(n if n < 100 else "99+")
 
 
 # Registers the Vikram AI Analyst chat callbacks (⌘K bar -> slide-in panel).

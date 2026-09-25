@@ -1252,8 +1252,28 @@ the Round-1/Round-2 independent predictive tests.
 3. **Defense-in-Depth (`calculate_active_signals.py`)**: Added `df = df[df["ISIN"].fillna("").str.startswith("INE")].copy()` upon file ingestion to guarantee no non-equity can trigger scoring.
 4. **Data Cleanup**: Excised `LTGILTCASE` and non-INE entries from `data/combined_dashboard_live.csv` (4,324 -> 4,190 pure equities), `data/dashboard_cloud.csv`, `data/active_signals_ranked.csv` (leaving 2 clean equity breakouts: `KABRAEXTRU`, `EXHICON`), `data/signal_scores_today.csv`, `data/legacy_watchlist.csv`, and `data/survivors_archive.csv`.
 5. **Verification**: `python check_pipeline.py` passed with 0 errors; all 45 pytest tests passed in 2.30s; verified 0 non-INE ISINs across all signal files.
-**FAILED ATTEMPTS**: None.  
-**AI PROCESS**: Deep audit trace of ISIN prefixes across live dashboard, SEBI ISO 6166 standard root-cause diagnosis, `fix_before_touch` pre-flight plan, vectorized ISIN filtering, live ledger sanitation, and pytest regression verification.
+
+---
+
+## BUG-073: Ledger Exit Events Had No Notification Egress (Silent Stop-Losses)
+**STATUS**: FIXED  
+**FILE**: `alert_engine.py`, `notify_channels.py`, `dash_pages/notifications.py`, `auto_update_smart.py`, `dash_app_v2.py`, `.env.example`, `docs/alerts.md`  
+**DISCOVERED BY**: User specification & real-money trade audit, 2026-09-25  
+**SYMPTOM**: Ledger STATUS transitions (HIT_TP / HIT_SL / MOMENTUM_LOST / SUSPENDED) were written to CSV with no notification path. The user trades these signals with real money and could have a stop-loss triggered without learning about it until manually opening the dashboard.  
+**ROOT CAUSE**:  
+1. `ledger_manager.py` assigned STATUS (`:213` HIT_TP, `:221` HIT_SL, `:234` MOMENTUM_LOST, `:185/:191` SUSPENDED) and persisted the ledger (`:259` for SBIA, `:464` for FlexGate) before returning. Zero notification egress existed.  
+2. `auto_update_smart.py` terminated at `:707-708` with `sys.exit(0)` without an alert pass.  
+3. The only notifier in the repo, `send_error_email.py`, was never imported by the pipeline and itself violated the NO SILENT FAILURES rule (bare `except Exception` → `print` at `:16-17`).  
+4. The Dash notification bell (`dash_app_v2.py:330-335`) was decorative: it had `title` and `aria-label` but NO `id`, so no callback could address it.  
+**FIX**:  
+1. Added `notify_channels.py` — CallMeBot WhatsApp, ntfy.sh push, Gmail SMTP email, all using existing dependencies (`requests`, `smtplib`), with loud error logging to `logs/alerts.log`.  
+2. Added `alert_engine.py` — a READ-ONLY post-pipeline ledger diff detector. Never calls `.to_csv()` on a ledger; only writes `data/alerts_log.csv` (append-only) and `data/alerts_state.json` (fast-path cache).  
+3. Dedup key is `engine|symbol|entry_date|status`. `entry_date` is REQUIRED because `check_signal_eligibility()` (`ledger_manager.py:6-55`, added by BUG-052) deliberately permits re-entry, so a later exit of the same symbol must not be swallowed as a duplicate. Dedup derives from the append-only log itself, so deleting the state file cannot cause duplicate notification spam.  
+4. Alerts carry `entry_date`, `exit_date`, `detected_at` and `lag_days`, because exits are detected from a REPLAYED historical path (`ledger_manager.py:206`) and can be backdated.  
+5. Added `dash_pages/notifications.py` (`/notifications`), an Alerts link in `NAV_LINKS`, and gave the bell an `id` plus an unread badge.  
+6. Wired non-critical `dispatch_ledger_alerts()` call into `auto_update_smart.py` right before `sys.exit(0)`.  
+**FAILED ATTEMPTS**: Rejected hooking notifications inside `ledger_manager.py` — CRITICAL blast radius, and `update_sbia_ledger()` is invoked from TWO scanners (`calculate_active_signals.py:378` AND `flexgate_2_scanner.py:413`), which would double-fire in a single night. Rejected `python-dotenv` for `.env` parsing — it is installed in the local venv but absent from `requirements.txt`, so it would crash the Render deploy while passing locally. Rejected one message per stock — CallMeBot's free tier is personal-use only.  
+**AI PROCESS**: `fix_before_touch` + `DEMONCORE PLAN_DEEP` blast-radius map; physical CSV header verification of all four ledgers; post-pipeline diff architecture; idempotency test harness; read-only ledger invariant proven via `git diff --stat`.
 
 
 

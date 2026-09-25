@@ -704,5 +704,16 @@ try:
 except Exception as e:
     print(f"🚨 Metrics calculations failed (non-critical): {e}")
 
+# ---- Ledger exit alerts (HIT_TP / HIT_SL / MOMENTUM_LOST / SUSPENDED) ----
+# Reads ledgers READ-ONLY; never mutates them. Mirrors this file's existing
+# "non-critical + print" pattern while ALSO logging loudly (NO SILENT FAILURES).
+try:
+    from alert_engine import dispatch_ledger_alerts
+    dispatch_ledger_alerts()
+except Exception as e:
+    print(f"🚨 Alert engine failed (non-critical): {e}")
+    logger.exception("Alert engine failed")
+
 import sys
 sys.exit(0)
+
