@@ -1231,7 +1231,30 @@ the Round-1/Round-2 independent predictive tests.
      - **Performance**: 65/100 (Payload reduced from 2,696 KiB to 1,692 KiB).
    - Endpoints verified with HTTP 200 responses, clean content types, and valid schema structures.
 **FAILED ATTEMPTS**: None.  
-**AI PROCESS**: Full `fix_before_touch` protocol execution, WSGI compression middleware implementation, Flask static routing interception, ARD schema compliance refinement, multi-round Lighthouse mobile audits, and dual-remote push constraint verification.
+
+---
+
+## BUG-072: Non-Equity Instruments (G-Sec ETFs & Mutual Funds) Leaking into Active Breakout Signals
+**STATUS**: FIXED  
+**FILE**: `auto_update_smart.py`, `calculate_active_signals.py`, `data/combined_dashboard_live.csv`, `data/active_signals_ranked.csv`, `data/signal_scores_today.csv`, `data/legacy_watchlist.csv`, `data/survivors_archive.csv`  
+**DISCOVERED BY**: User observation ("check todays esignal there is non equity"), 2026-09-25  
+**SYMPTOM**: 
+1. Non-equity instrument `LTGILTCASE` (Zerodha Nifty 10 yr Benchmark G-Sec ETF, ISIN: `INF0R8F01133`) appeared in today's active breakout signals (`data/active_signals_ranked.csv`, rank #3 with AI win probability 75.82%, `signal_scores_today.csv`, and `legacy_watchlist.csv`).
+2. A deep audit of `data/combined_dashboard_live.csv` revealed 134 non-equity instruments (132 `INF...` Mutual Funds/ETFs and 2 `IN9...` partly-paid preference shares) present in the active live universe.
+3. In `auto_update_smart.py`, Step 10 progressive averages logging printed `Processed 4000/5917 stocks...` followed immediately by `SUCCESS!`, because the denominator tracked all historical symbols (5,917) while the numerator only tracked stocks traded today (4,324), and modulo-500 logging left the final 324 stocks unlogged.
+**ROOT CAUSE**: 
+1. `auto_update_smart.py:477-483` filtered ETFs using a ticker keyword regex (`"ETF|LIQID|FUND|INDEX|NIFTY|SENSEX|BEES..."`). Any ETF or fund whose ticker lacked those keywords (e.g., `LTGILTCASE`, `ALPHA`, `BFSI`, `CHEMICAL`, `DEFENCE`, `EVINDIA`, `ENERGY`, `GILT10BETA`) bypassed the filter.
+2. NSE tagged `LTGILTCASE` and several factor ETFs under `SERIES == 'EQ'`, bypassing the exchange series filter.
+3. Under SEBI / NSDL ISO 6166 standards, Indian common equity shares are strictly designated by ISIN prefix `INE...`, while mutual funds, exchange traded funds, and G-sec schemes are designated by `INF...`, government bonds by `IN0`/`IN1`, and partly-paid shares by `IN9`. The pipeline lacked an ISIN prefix gate.
+**FIX**: 
+1. **Strict Equity ISIN Gate (`auto_update_smart.py`)**: Enforced `mask &= df_all["ISIN"].fillna("").str.startswith("INE")` in the primary universe filtering block. This permanently and vectorially eliminates all 134 mutual funds, ETFs, G-secs, and preference shares from entering the universe.
+2. **Synchronized Progress Reporting (`auto_update_smart.py`)**: Pre-filtered symbols in Step 10 to `active_today_symbols`, aligning the numerator and denominator (`Processed {processed}/{total_active} active equity stocks...`) and added a 100% completion log.
+3. **Defense-in-Depth (`calculate_active_signals.py`)**: Added `df = df[df["ISIN"].fillna("").str.startswith("INE")].copy()` upon file ingestion to guarantee no non-equity can trigger scoring.
+4. **Data Cleanup**: Excised `LTGILTCASE` and non-INE entries from `data/combined_dashboard_live.csv` (4,324 -> 4,190 pure equities), `data/dashboard_cloud.csv`, `data/active_signals_ranked.csv` (leaving 2 clean equity breakouts: `KABRAEXTRU`, `EXHICON`), `data/signal_scores_today.csv`, `data/legacy_watchlist.csv`, and `data/survivors_archive.csv`.
+5. **Verification**: `python check_pipeline.py` passed with 0 errors; all 45 pytest tests passed in 2.30s; verified 0 non-INE ISINs across all signal files.
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: Deep audit trace of ISIN prefixes across live dashboard, SEBI ISO 6166 standard root-cause diagnosis, `fix_before_touch` pre-flight plan, vectorized ISIN filtering, live ledger sanitation, and pytest regression verification.
+
 
 
 

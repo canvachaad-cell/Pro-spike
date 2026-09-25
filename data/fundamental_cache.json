@@ -5084,46 +5084,46 @@
   }
  },
  "NOVUS": {
-  "ts": 1790073784.1776724,
+  "ts": 1790354185.340485,
   "data": {
-   "dii_trend": "Mar 2026: 7.72% -> Jun 2026: 6.07%",
-   "rpt_status": "NOT_APPLICABLE",
-   "fcf_pat_ratio": 5.0,
-   "market_cap_cr": 333.0,
-   "op_lev_ratio": null,
-   "revenue_ttm_cr": null,
-   "name": "Novus Loyalty Ltd",
-   "fii_trend": "Mar 2026: 4.14% -> Jun 2026: 1.20%",
-   "pat_3yr_cr": [
-    4.0
-   ],
-   "revenue_4q_growth": null,
-   "interest_coverage_recent": null,
-   "roce_abs_pct": 8.1,
-   "free_float_cr": 100,
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "quarterly_quarters": null,
-   "roice_pct": null,
-   "symbol": "NOVUS",
-   "pledge_trend": [
-    0.0
-   ],
-   "ebit_4q_growth": null,
-   "price": 214.0,
-   "fii_holding": 1.2,
    "rpt_amount_cr": null,
-   "interest_coverage_trend": null,
-   "promoter_trend": "Mar 2026: 70.06% -> Jun 2026: 70.06%",
-   "rpt_pct": null,
-   "borrowings_cr": 0.0,
+   "symbol": "NOVUS",
+   "fii_holding": 1.2,
    "promoter_holding": 70.06,
-   "pledge_direction": "flat",
    "ocf_3yr_cr": [
     20.0
    ],
-   "url": "https://www.screener.in/company/544735/",
+   "market_cap_cr": 354.0,
+   "revenue_4q_growth": null,
+   "promoter_trend": "Mar 2026: 70.06% -> Jun 2026: 70.06%",
    "op_lev_inflecting": null,
-   "dii_holding": 6.07
+   "fcf_pat_ratio": 5.0,
+   "revenue_ttm_cr": null,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "name": "Novus Loyalty Ltd",
+   "quarterly_quarters": null,
+   "interest_coverage_trend": null,
+   "ebit_4q_growth": null,
+   "dii_trend": "Mar 2026: 7.72% -> Jun 2026: 6.07%",
+   "pledge_direction": "flat",
+   "interest_coverage_recent": null,
+   "pat_3yr_cr": [
+    4.0
+   ],
+   "roice_pct": null,
+   "url": "https://www.screener.in/company/544735/",
+   "rpt_pct": null,
+   "price": 228.0,
+   "free_float_cr": 106,
+   "dii_holding": 6.07,
+   "op_lev_ratio": null,
+   "fii_trend": "Mar 2026: 4.14% -> Jun 2026: 1.20%",
+   "pledge_trend": [
+    0.0
+   ],
+   "rpt_status": "NOT_APPLICABLE",
+   "borrowings_cr": 0.0,
+   "roce_abs_pct": 8.1
   }
  },
  "SINDHUTRAD": {
@@ -5967,6 +5967,100 @@
    "fii_trend": "Sep 2023: 0.22% -> Dec 2023: 0.32% -> Mar 2024: 0.27% -> Jun 2024: 0.21% -> Sep 2024: 0.18% -> Dec 2024: 0.19% -> Mar 2025: 0.21% -> Jun 2025: 0.41% -> Sep 2025: 0.32% -> Dec 2025: 0.31% -> Mar 2026: 0.22% -> Jun 2026: 0.26%",
    "promoter_trend": "Sep 2023: 45.59% -> Dec 2023: 45.59% -> Mar 2024: 45.59% -> Jun 2024: 45.59% -> Sep 2024: 45.59% -> Dec 2024: 45.59% -> Mar 2025: 45.59% -> Jun 2025: 45.59% -> Sep 2025: 45.59% -> Dec 2025: 45.59% -> Mar 2026: 45.59% -> Jun 2026: 45.59%",
    "revenue_ttm_cr": 490.0
+  }
+ },
+ "EXHICON": {
+  "ts": 1790344183.249715,
+  "data": {
+   "dii_holding": 1.54,
+   "pledge_trend": [
+    0.0
+   ],
+   "interest_coverage_trend": null,
+   "fii_trend": "Mar 2023: 0.00% -> Sep 2023: 2.63% -> Mar 2024: 0.00% -> Sep 2024: 0.13% -> Mar 2025: 0.13% -> Sep 2025: 0.15% -> Mar 2026: 0.00%",
+   "op_lev_inflecting": false,
+   "symbol": "EXHICON",
+   "borrowings_cr": 19.0,
+   "revenue_4q_growth": 1.3605442176870748,
+   "roice_pct": 21.1,
+   "dii_trend": "Mar 2023: 0.00% -> Sep 2023: 1.97% -> Mar 2024: 3.65% -> Sep 2024: 4.83% -> Mar 2025: 4.83% -> Sep 2025: 4.24% -> Mar 2026: 3.53%",
+   "fcf_pat_ratio": 0.17,
+   "free_float_cr": 432,
+   "promoter_trend": "Mar 2023: 86.20% -> Sep 2023: 62.25% -> Mar 2024: 62.25% -> Sep 2024: 57.03% -> Mar 2025: 57.15% -> Sep 2025: 56.19% -> Mar 2026: 55.33%",
+   "price": 520.0,
+   "ebit_4q_growth": 1.7272727272727273,
+   "revenue_ttm_cr": 347.0,
+   "promoter_holding": 49.33,
+   "quarterly_quarters": 9,
+   "interest_coverage_recent": null,
+   "op_lev_ratio": 1.2695454545454545,
+   "rpt_amount_cr": null,
+   "ocf_3yr_cr": [
+    -29.0,
+    17.0,
+    27.0
+   ],
+   "fii_holding": 0.0,
+   "name": "Exhicon Events Media Solutions Ltd",
+   "market_cap_cr": 852.0,
+   "url": "https://www.screener.in/company/543895/consolidated/",
+   "pat_3yr_cr": [
+    14.0,
+    30.0,
+    45.0
+   ],
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "rpt_status": "NOT_APPLICABLE",
+   "roce_abs_pct": 25.1,
+   "rpt_pct": null,
+   "pledge_direction": "flat"
+  }
+ },
+ "KABRAEXTRU": {
+  "ts": 1790344184.3205957,
+  "data": {
+   "dii_holding": 0.02,
+   "pledge_trend": [
+    0.0
+   ],
+   "interest_coverage_trend": "deteriorating",
+   "fii_trend": "Sep 2023: 3.85% -> Dec 2023: 3.78% -> Mar 2024: 3.67% -> Jun 2024: 3.41% -> Sep 2024: 3.32% -> Dec 2024: 2.96% -> Mar 2025: 1.46% -> Jun 2025: 0.81% -> Sep 2025: 0.37% -> Dec 2025: 0.39% -> Mar 2026: 0.35% -> Jun 2026: 0.36%",
+   "op_lev_inflecting": false,
+   "symbol": "KABRAEXTRU",
+   "borrowings_cr": 145.0,
+   "revenue_4q_growth": 0.03138956770877218,
+   "roice_pct": -50.0,
+   "dii_trend": "Sep 2023: 0.01% -> Dec 2023: 0.01% -> Mar 2024: 0.01% -> Jun 2024: 0.01% -> Sep 2024: 0.01% -> Dec 2024: 0.33% -> Mar 2025: 0.69% -> Jun 2025: 0.69% -> Sep 2025: 0.65% -> Dec 2025: 0.06% -> Mar 2026: 0.02% -> Jun 2026: 0.02%",
+   "fcf_pat_ratio": 1.39,
+   "free_float_cr": 1171,
+   "promoter_trend": "Sep 2023: 60.24% -> Dec 2023: 60.24% -> Mar 2024: 60.24% -> Jun 2024: 60.24% -> Sep 2024: 60.24% -> Dec 2024: 60.23% -> Mar 2025: 60.23% -> Jun 2025: 60.21% -> Sep 2025: 60.50% -> Dec 2025: 60.50% -> Mar 2026: 60.49% -> Jun 2026: 60.44%",
+   "price": 846.0,
+   "ebit_4q_growth": -0.47551511907947547,
+   "revenue_ttm_cr": 489.58,
+   "promoter_holding": 60.44,
+   "quarterly_quarters": 13,
+   "interest_coverage_recent": 1.61,
+   "op_lev_ratio": -15.14882662581515,
+   "rpt_amount_cr": null,
+   "ocf_3yr_cr": [
+    33.0,
+    43.0,
+    9.0
+   ],
+   "fii_holding": 0.36,
+   "name": "Kabra Extrusion Technik Ltd",
+   "market_cap_cr": 2960.0,
+   "url": "https://www.screener.in/company/KABRAEXTRU/consolidated/",
+   "pat_3yr_cr": [
+    34.0,
+    32.0,
+    -5.0
+   ],
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "rpt_status": "NOT_APPLICABLE",
+   "roce_abs_pct": 1.7,
+   "rpt_pct": null,
+   "pledge_direction": "flat"
   }
  }
 }

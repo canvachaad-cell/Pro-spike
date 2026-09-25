@@ -241,6 +241,9 @@ def run_scoring():
         
     df = pd.read_csv(INPUT_FILE)
     df["DATE"] = pd.to_datetime(df["DATE"], errors="coerce")
+    if "ISIN" in df.columns:
+        # Strict Equity Gate: Only process common equities (ISO 6166: 'INE' prefix)
+        df = df[df["ISIN"].fillna("").str.startswith("INE")].copy()
     
     current_date = df["DATE"].dropna().max()
     

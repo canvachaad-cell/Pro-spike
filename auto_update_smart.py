@@ -469,6 +469,11 @@ before = len(df_all)
 # Base mask starts as all True
 mask = pd.Series(True, index=df_all.index)
 
+# 0. STRICT EQUITY ISIN FILTER (NSDL / CDSL ISO 6166: 'INE' = Indian Equity)
+# Eliminates all 'INF' (Mutual Funds / ETFs), 'IN0'/'IN1' (G-Secs/Bonds), and 'IN9' (preference/rights)
+if "ISIN" in df_all.columns:
+    mask &= df_all["ISIN"].fillna("").str.startswith("INE")
+
 # 1. Filter SERIES (keep NSE EQ & all BSE)
 if "SERIES" in df_all.columns:
     mask &= ((df_all["EXCHANGE"]=="NSE") & (df_all["SERIES"]=="EQ")) | (df_all["EXCHANGE"]=="BSE")
@@ -523,7 +528,11 @@ assert pd.api.types.is_datetime64_any_dtype(df_all["DATE"]), "DATE column must b
 
 # Pre-sort to eliminate 5,600+ inner sorts in the loop
 df_all = df_all.sort_values(["SYMBOL", "DATE"])
-grouped_symbols = df_all.groupby("SYMBOL")
+
+# Pre-filter to symbols that traded on the latest market date to eliminate dead iterations
+active_today_symbols = set(df_all[df_all["DATE"] == latest_date]["SYMBOL"].dropna())
+total_active = len(active_today_symbols)
+grouped_symbols = df_all[df_all["SYMBOL"].isin(active_today_symbols)].groupby("SYMBOL")
 results = []
 processed = 0
 
@@ -595,8 +604,9 @@ for symbol, df_stock in grouped_symbols:
 
     processed += 1
     if processed % 500 == 0:
-        print(f"Processed {processed}/{len(grouped_symbols)} stocks...")
+        print(f"Processed {processed}/{total_active} active equity stocks...")
 
+print(f"✅ Processed all {processed}/{total_active} active equity stocks (100% complete).")
 df_final = pd.DataFrame(results)
 
 # -------------------------------
