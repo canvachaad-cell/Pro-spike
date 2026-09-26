@@ -1293,7 +1293,28 @@ the Round-1/Round-2 independent predictive tests.
 5. **Daily Pipeline Integration (`auto_update_smart.py`)**: Added `run_metrics_engine("Winner Archetypes", "rank_archetypes.py")` to Step 10 daily metrics loop.  
 6. **Empirical Verification**: Self-reconciliation check passed with 100% precision ($N=25$, Win Rate $80.0\%$, ₹62,986 PnL); all 45 pytest tests passed in 1.03s; `/winner-archetypes` HTTP 200 verified with diverse dynamic probabilities.  
 **FAILED ATTEMPTS**: None.  
-**AI PROCESS**: `fix_before_touch` protocol, frequency analysis of `winner_archetypes_ranked.csv`, tracing `wl_map` ingestion, cross-referencing AI probability columns across all 9 institutional data sources, and automated regression testing.
+
+---
+
+## BUG-075: Winner Archetypes Displayed Closed Historical Trade Entry Levels Instead of Current Price
+**STATUS**: FIXED  
+**FILE**: `rank_archetypes.py`, `data/winner_archetypes_ranked.csv`  
+**DISCOVERED BY**: User inquiry with screenshot ("why entry price shown in each card are not current price?"), 2026-09-25  
+**SYMPTOM**: On `/winner-archetypes`, cards for candidate setups displayed entry prices that did not match current market prices (e.g. `ASIANHOTNR` current close ₹394.35 vs Entry ₹316.0 / SL ₹293.3 / TP ₹361.3), blowing out the visual risk-reward track and pinning the current price indicator past the target.  
+**ROOT CAUSE**:  
+In BUG-074, multi-source inheritance mapped `ENTRY_PRICE`, `STOP_LOSS`, and `TAKE_PROFIT` from historical ledger rows alongside `AI_WIN_PROBABILITY`. For stocks with closed trades from weeks or months prior (e.g. `ASIANHOTNR` entered on Aug 28 at ₹316 and hit TP on Aug 31), expired August trade parameters overwrote fresh candidate setup levels.  
+**FIX**:  
+1. **Isolated Active Trade Level Inheritance (`rank_archetypes.py`)**: Restricted `ENTRY_PRICE`, `STOP_LOSS`, and `TAKE_PROFIT` inheritance strictly to open `ACTIVE` positions (`STATUS == 'ACTIVE'`) and today's active breakout watchlists.  
+2. **Current Price Anchoring for Candidate Setups**: For all non-active candidate setups, `ENTRY_PRICE` anchors directly to current market close (`CLOSE`), with fresh 2:1 Reward:Risk targets computed from current volatility: `STOP_LOSS = round(max(close - 1.5 * atr, close * 0.90), 2)` and `TAKE_PROFIT = round(close + 3.0 * atr, 2)`.  
+3. **Restored Visual Risk-Reward Slider**: Both `RANGE_FILL_PCT` and `ENTRY_FILL_PCT` now evaluate cleanly to 33.3%, centering the current price at entry with 1.5 ATR risk to the left and 3.0 ATR reward to the right.  
+4. **Empirical Verification**:  
+   - `ASIANHOTNR`: Close ₹394.35 -> Entry ₹394.35, SL ₹358.49, TP ₹466.07 (33.3% fill).  
+   - `RPPINFRA`: Close ₹53.63 -> Entry ₹53.63, SL ₹48.90, TP ₹63.09 (33.3% fill).  
+   - `ORICONENT`: Close ₹51.40 -> Entry ₹51.40, SL ₹47.72, TP ₹58.76 (33.3% fill).  
+   - Active open positions (e.g. `DRAGARWQ`, `KABRAEXTRU`) preserve open trade parameters.  
+   - `run_self_reconciliation` passed ($N=25$, Win Rate $80.0\%$, ₹62,986 PnL); 45/45 pytest tests passed; ledger files untouched.  
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` protocol, tracing parameter inheritance in `rank_archetypes.py`, verifying mathematical coordinates of `RANGE_FILL_PCT` and `ENTRY_FILL_PCT`, isolating active vs closed trade states, and empirical regression testing.
 
 
 

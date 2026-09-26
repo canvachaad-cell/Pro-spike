@@ -300,8 +300,10 @@ def score_universe():
             try:
                 src_df = pd.read_csv(path)
                 if "SYMBOL" in src_df.columns:
+                    is_ledger = "STATUS" in src_df.columns
                     for _, r in src_df.iterrows():
                         sym = str(r["SYMBOL"]).strip()
+                        # Always inherit historical/live AI win probability
                         if prob_col in r and pd.notna(r[prob_col]):
                             try:
                                 pval = float(r[prob_col])
@@ -309,15 +311,21 @@ def score_universe():
                                     prob_map[sym] = round(pval, 2)
                             except (ValueError, TypeError):
                                 pass
-                        params = {}
-                        for target_col, col_key in [("ENTRY_PRICE", entry_col), ("STOP_LOSS", sl_col), ("TAKE_PROFIT", tp_col)]:
-                            if col_key in r and pd.notna(r[col_key]):
-                                try:
-                                    params[target_col] = float(r[col_key])
-                                except (ValueError, TypeError):
-                                    pass
-                        if params:
-                            param_map.setdefault(sym, {}).update(params)
+
+                        # Only inherit execution levels if it is currently an open ACTIVE position
+                        # or if it comes from today's active breakout watchlist.
+                        # Closed historical trades (HIT_TP / HIT_SL) must NOT overwrite fresh setups.
+                        is_active_setup = (not is_ledger) or (str(r.get("STATUS", "")).strip() == "ACTIVE")
+                        if is_active_setup:
+                            params = {}
+                            for target_col, col_key in [("ENTRY_PRICE", entry_col), ("STOP_LOSS", sl_col), ("TAKE_PROFIT", tp_col)]:
+                                if col_key in r and pd.notna(r[col_key]):
+                                    try:
+                                        params[target_col] = float(r[col_key])
+                                    except (ValueError, TypeError):
+                                        pass
+                            if params:
+                                param_map.setdefault(sym, {}).update(params)
             except Exception:
                 pass
 
