@@ -58,25 +58,25 @@
 ---
 
 ### Task 3: Legacy FlexGate Active Trades UI Synchronization
-- [ ] **Category:** Signal Ledger & UI Data Flow
-- [ ] **Priority:** MEDIUM-HIGH
-- [ ] **Files Affected:**
+- [x] **Category:** Signal Ledger & UI Data Flow
+- [x] **Priority:** MEDIUM-HIGH
+- [x] **Files Affected:**
   - `calculate_active_signals.py` (L208-L234)
   - `ledger_manager.py` (L444-L469)
   - `dash_pages/institutional_signals.py` (L408-L450, L707-L708)
   - `data/sbia_flexgate_watchlist.csv`
   - `data/flexgate_ledger.csv`
-- [ ] **Symptom:**
+- [x] **Symptom:**
   - New active trades (e.g. `MOTHERSON` entered on 2026-09-24, `GRASIM`, `INDUSTOWER`, `TATASTEEL`) exist in `data/flexgate_ledger.csv` with `STATUS == 'ACTIVE'`, but are missing from the main table in Tab 3 (Legacy FlexGate) on `/institutional-signals`.
   - Main table displays only 5 older historical rows (last row: `BRGIL` from 2026-09-10).
-- [ ] **Root Cause:**
+- [x] **Root Cause:**
   - `dash_pages/institutional_signals.py:707` renders the top table from `FLEXGATE_FILE` (`data/sbia_flexgate_watchlist.csv`).
-  - In `calculate_active_signals.py:209-234`, `sbia_flexgate_watchlist.csv` is populated via `filtered_flex`, which filters by existing keys in `flex_watchlist`. Trades that entered the ledger on days when the raw 10-day 2-alert condition did not re-trigger are omitted from `sbia_flexgate_watchlist.csv`.
-- [ ] **Implementation Fix:**
+  - In `calculate_active_signals.py:209-234`, `sbia_flexgate_watchlist.csv` was populated via `filtered_flex`, which filters by existing keys in `flex_watchlist`. Trades that entered the ledger on days when the raw 10-day 2-alert condition did not re-trigger are omitted from `sbia_flexgate_watchlist.csv`.
+- [x] **Implementation Fix:**
   - Synchronize `sbia_flexgate_watchlist.csv` directly with all `STATUS == 'ACTIVE'` records from `data/flexgate_ledger.csv`.
   - Hydrate active ledger records with current market metrics (`CLOSE`, `DELIV_PER`, current `Whale_Density`) from `data/combined_dashboard_live.csv` so the top table in Tab 3 accurately reflects all active open positions in real time.
-- [ ] **Verification Bar:**
-  - Open `/institutional-signals` Tab 3 -> Verify all 11 active positions from `flexgate_ledger.csv` (including `MOTHERSON`) appear in the main FlexGate active table with live prices and dynamic Chandelier trailing stop losses.
+- [x] **Verification Bar:**
+  - Open `/institutional-signals` Tab 3 -> Verify all 11 active positions from `flexgate_ledger.csv` (including `MOTHERSON`) appear in the main FlexGate active table with live prices and dynamic Chandelier trailing stop losses. (VERIFIED with Playwright screenshot + tests).
 
 ---
 

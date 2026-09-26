@@ -55,6 +55,123 @@ def check_signal_eligibility(ledger_df, sym, trigger_dt, cooldown_days=14):
     return True, "CLEARED"
 
 
+def _hydrate_missing_active_watchlist(filtered_wl, active_ledger, latest_prices_df, archive_path=None, is_flexgate=False):
+    """
+    Guarantees that 100% of open ACTIVE trades from the ledger are present in the active watchlist.
+    Synthesizes entries for active trades not triggered today using ledger parameters and live metrics.
+    """
+    if active_ledger.empty:
+        return filtered_wl
+
+    import numpy as np
+    filtered_wl = filtered_wl.copy() if filtered_wl is not None else pd.DataFrame()
+    if 'DATE_DT' in filtered_wl.columns:
+        present_keys = set(zip(filtered_wl['SYMBOL'], pd.to_datetime(filtered_wl['DATE_DT'])))
+    elif 'DATE' in filtered_wl.columns:
+        present_keys = set(zip(filtered_wl['SYMBOL'], pd.to_datetime(filtered_wl['DATE'], errors='coerce')))
+    else:
+        present_keys = set()
+
+    missing_active = active_ledger[
+        active_ledger.apply(lambda r: (r['SYMBOL'], pd.to_datetime(r['ENTRY_DATE'])) not in present_keys, axis=1)
+    ].copy()
+
+    if missing_active.empty:
+        # Still ensure live prices are updated
+        if not latest_prices_df.empty and {'SYMBOL', 'CLOSE'}.issubset(latest_prices_df.columns):
+            live_px_map = latest_prices_df.drop_duplicates('SYMBOL').set_index('SYMBOL')['CLOSE'].to_dict()
+            if 'CLOSE' in filtered_wl.columns:
+                filtered_wl['CLOSE'] = filtered_wl['SYMBOL'].map(live_px_map).fillna(filtered_wl['CLOSE'])
+        if is_flexgate and 'STOP_LOSS' in filtered_wl.columns:
+            filtered_wl['CHANDELIER_EXIT'] = filtered_wl['STOP_LOSS']
+        return filtered_wl
+
+    arch_df = None
+    if archive_path and os.path.exists(archive_path):
+        try:
+            arch_df = pd.read_csv(archive_path)
+            arch_df['DATE_STR'] = pd.to_datetime(arch_df['DATE'], errors='coerce').dt.strftime('%Y-%m-%d')
+        except Exception:
+            arch_df = None
+
+    syn_rows = []
+    for _, a_row in missing_active.iterrows():
+        sym = a_row['SYMBOL']
+        entry_dt = pd.to_datetime(a_row['ENTRY_DATE'])
+        dt_str = entry_dt.strftime('%Y-%m-%d')
+
+        entry_px = a_row.get('ENTRY_PRICE', np.nan)
+        sl = a_row.get('STOP_LOSS', np.nan)
+        tp = a_row.get('TAKE_PROFIT', np.nan)
+        atr = a_row.get('ATR14', np.nan)
+        prob = a_row.get('ENTRY_AI_PROB', 60.0) if pd.notna(a_row.get('ENTRY_AI_PROB')) else 60.0
+
+        syn = {
+            'DATE': dt_str,
+            'DATE_DT': entry_dt,
+            'SYMBOL': sym,
+            'ENTRY_PRICE': entry_px,
+            'ATR14': atr,
+            'STOP_LOSS': sl,
+            'CHANDELIER_EXIT': sl,
+            'TAKE_PROFIT': tp,
+            'AI_WIN_PROBABILITY': prob,
+            'AI_APPROVED': bool(prob >= 60.0),
+            'Whale_Density': a_row.get('ENTRY_WHALE_DENSITY', 0.0),
+            'Implied_Trades': a_row.get('ENTRY_IMPLIED_TRADES', 0.0),
+            'REC_POS_SIZE_INR': 100000.0,
+        }
+        if is_flexgate:
+            syn['CHANDELIER_EXIT'] = sl
+            syn['IS_FLEXGATE_ALERT'] = True
+
+        # Inherit historical screener metrics from archive if present
+        if arch_df is not None:
+            m_arch = arch_df[(arch_df['SYMBOL'] == sym) & (arch_df['DATE_STR'] == dt_str)]
+            if not m_arch.empty:
+                arch_row = m_arch.iloc[-1].to_dict()
+                for k in ['ISIN', 'EXCHANGE', 'SIS', 'MOMENTUM_RAW', 'FOOTPRINT_RAW', 'STABILITY_RAW', 
+                          'MOMENTUM_SCORE', 'FOOTPRINT_SCORE', 'STABILITY_SCORE', 'DELIV_PER', 
+                          'DELIVERY_TURNOVER', 'TOTAL_TURNOVER', 'VOLUME', 'VWAP', 'VWAP_1M',
+                          'WHALE_DENSITY', 'WHALE_DENSITY_1M', 'ATW', 'EVER_100_DELIV']:
+                    if k in arch_row and k not in syn:
+                        syn[k] = arch_row[k]
+
+        # Enrich with latest live market metrics
+        if not latest_prices_df.empty and 'SYMBOL' in latest_prices_df.columns:
+            m_live = latest_prices_df[latest_prices_df['SYMBOL'] == sym]
+            if not m_live.empty:
+                live_row = m_live.iloc[-1].to_dict()
+                syn['CLOSE'] = live_row.get('CLOSE', entry_px)
+                if 'EXCHANGE' not in syn or pd.isna(syn.get('EXCHANGE')):
+                    syn['EXCHANGE'] = live_row.get('EXCHANGE', 'NSE')
+                if 'ISIN' not in syn or pd.isna(syn.get('ISIN')):
+                    syn['ISIN'] = live_row.get('ISIN', '')
+                if 'Whale_Density' not in syn or syn['Whale_Density'] == 0:
+                    syn['Whale_Density'] = live_row.get('WHALE_DENSITY', syn.get('Whale_Density', 0.0))
+            else:
+                syn['CLOSE'] = entry_px
+        else:
+            syn['CLOSE'] = entry_px
+
+        syn_rows.append(syn)
+
+    if syn_rows:
+        syn_df = pd.DataFrame(syn_rows)
+        filtered_wl = pd.concat([filtered_wl, syn_df], ignore_index=True)
+
+    # Refresh live CLOSE prices across all active rows
+    if not latest_prices_df.empty and {'SYMBOL', 'CLOSE'}.issubset(latest_prices_df.columns):
+        live_px_map = latest_prices_df.drop_duplicates('SYMBOL').set_index('SYMBOL')['CLOSE'].to_dict()
+        if 'CLOSE' in filtered_wl.columns:
+            filtered_wl['CLOSE'] = filtered_wl['SYMBOL'].map(live_px_map).fillna(filtered_wl['CLOSE'])
+
+    if is_flexgate and 'STOP_LOSS' in filtered_wl.columns:
+        filtered_wl['CHANDELIER_EXIT'] = filtered_wl['STOP_LOSS']
+
+    return filtered_wl
+
+
 def update_sbia_ledger(alpha_watchlist, latest_prices_df, ledger_path="data/sbia_ledger.csv"):
     """
     Updates the permanent trade ledger for SBIA Alpha signals.
@@ -249,8 +366,14 @@ def update_sbia_ledger(alpha_watchlist, latest_prices_df, ledger_path="data/sbia
         
     active_ledger_subset = active_ledger[['SYMBOL', 'ENTRY_DATE', 'ENTRY_PRICE', 'ATR14', 'STOP_LOSS', 'TAKE_PROFIT']]
     active_ledger_subset = active_ledger_subset.rename(columns={'ENTRY_DATE': 'DATE_DT'})
+    active_ledger_subset['DATE_DT'] = pd.to_datetime(active_ledger_subset['DATE_DT'])
     
     filtered_alpha = pd.merge(filtered_alpha, active_ledger_subset, on=['SYMBOL', 'DATE_DT'], how='left')
+
+    # Hydrate any open active positions from ledger missing from filtered_alpha
+    filtered_alpha = _hydrate_missing_active_watchlist(
+        filtered_alpha, active_ledger, latest_prices_df, archive_path="data/survivors_archive.csv", is_flexgate=False
+    )
     
     ledger_df['ENTRY_DATE'] = ledger_df['ENTRY_DATE'].dt.strftime('%Y-%m-%d')
     if 'EXIT_DATE' in ledger_df.columns:
@@ -260,6 +383,7 @@ def update_sbia_ledger(alpha_watchlist, latest_prices_df, ledger_path="data/sbia
     print(f"Ledger updated and saved to {ledger_path}")
     
     if 'DATE_DT' in filtered_alpha.columns:
+        filtered_alpha = filtered_alpha.sort_values(by='DATE_DT', ascending=False)
         filtered_alpha = filtered_alpha.drop(columns=['DATE_DT'])
         
     return filtered_alpha, ledger_df
@@ -335,13 +459,18 @@ def update_flexgate_ledger(flex_watchlist, latest_prices_df, ledger_path):
             sym = row['SYMBOL']
             dt = row['DATE_DT']
             try:
-                if len(all_needed_symbols) == 1:
-                    ticker_df = data
-                else:
-                    yf_sym = symbol_to_yf.get(sym, f"{sym}.NS")
-                    if yf_sym not in (data.columns.levels[0] if isinstance(data.columns, pd.MultiIndex) else data.columns):
+                yf_sym = symbol_to_yf.get(sym, f"{sym}.NS")
+                if isinstance(data.columns, pd.MultiIndex):
+                    if yf_sym in (data.columns.levels[0] if hasattr(data.columns, 'levels') else []):
+                        ticker_df = data[yf_sym]
+                    elif yf_sym in (data.columns.levels[1] if hasattr(data.columns, 'levels') and len(data.columns.levels) > 1 else []):
+                        ticker_df = data.xs(yf_sym, level=1, axis=1)
+                    elif hasattr(data.columns, 'levels') and len(data.columns.levels[0]) == 1:
+                        ticker_df = data[data.columns.levels[0][0]]
+                    else:
                         raise KeyError(yf_sym)
-                    ticker_df = data[yf_sym]
+                else:
+                    ticker_df = data
                     
                 hist_up_to_dt = ticker_df[ticker_df.index.tz_localize(None) <= dt].copy()
                 hist_up_to_dt = hist_up_to_dt.dropna(subset=['Close'])
@@ -393,10 +522,16 @@ def update_flexgate_ledger(flex_watchlist, latest_prices_df, ledger_path):
 
             if data is not None:
                 yf_sym = symbol_to_yf.get(sym, f"{sym}.NS")
-                if len(yf_symbols) == 1:
-                    ticker_df = data
+                ticker_df = None
+                if isinstance(data.columns, pd.MultiIndex):
+                    if yf_sym in (data.columns.levels[0] if hasattr(data.columns, 'levels') else []):
+                        ticker_df = data[yf_sym]
+                    elif yf_sym in (data.columns.levels[1] if hasattr(data.columns, 'levels') and len(data.columns.levels) > 1 else []):
+                        ticker_df = data.xs(yf_sym, level=1, axis=1)
+                    elif hasattr(data.columns, 'levels') and len(data.columns.levels[0]) == 1:
+                        ticker_df = data[data.columns.levels[0][0]]
                 else:
-                    ticker_df = data.get(yf_sym)
+                    ticker_df = data
                     
                 if ticker_df is not None:
                     # Path must strictly evaluate days AFTER entry date to avoid Day-0 morning low lookback leakage
@@ -454,8 +589,14 @@ def update_flexgate_ledger(flex_watchlist, latest_prices_df, ledger_path):
         
     active_ledger_subset = active_ledger[['SYMBOL', 'ENTRY_DATE', 'ENTRY_PRICE', 'ATR14', 'STOP_LOSS', 'TAKE_PROFIT']]
     active_ledger_subset = active_ledger_subset.rename(columns={'ENTRY_DATE': 'DATE_DT'})
+    active_ledger_subset['DATE_DT'] = pd.to_datetime(active_ledger_subset['DATE_DT'])
     
     filtered_flex = pd.merge(filtered_flex, active_ledger_subset, on=['SYMBOL', 'DATE_DT'], how='left')
+
+    # Hydrate any open active positions from ledger missing from filtered_flex
+    filtered_flex = _hydrate_missing_active_watchlist(
+        filtered_flex, active_ledger, latest_prices_df, archive_path="data/flexgate_archive.csv", is_flexgate=True
+    )
     
     ledger_df['ENTRY_DATE'] = ledger_df['ENTRY_DATE'].dt.strftime('%Y-%m-%d')
     if 'EXIT_DATE' in ledger_df.columns:
@@ -464,6 +605,7 @@ def update_flexgate_ledger(flex_watchlist, latest_prices_df, ledger_path):
     ledger_df.to_csv(ledger_path, index=False)
     
     if 'DATE_DT' in filtered_flex.columns:
+        filtered_flex = filtered_flex.sort_values(by='DATE_DT', ascending=False)
         filtered_flex = filtered_flex.drop(columns=['DATE_DT'])
         
     return filtered_flex, ledger_df

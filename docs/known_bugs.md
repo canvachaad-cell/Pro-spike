@@ -1316,6 +1316,40 @@ In BUG-074, multi-source inheritance mapped `ENTRY_PRICE`, `STOP_LOSS`, and `TAK
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: `fix_before_touch` protocol, tracing parameter inheritance in `rank_archetypes.py`, verifying mathematical coordinates of `RANGE_FILL_PCT` and `ENTRY_FILL_PCT`, isolating active vs closed trade states, and empirical regression testing.
 
+---
+
+## BUG-076: Legacy FlexGate Active Ledger Trades Dropped from Watchlist & UI Table
+**STATUS**: FIXED  
+**FILE**: `ledger_manager.py`, `dash_pages/institutional_signals.py`, `data/sbia_flexgate_watchlist.csv`, `data/sbia_alpha_watchlist.csv`, `data/sbia_flexgate2_watchlist.csv`  
+**DISCOVERED BY**: User inquiry ("in legacy flex gate new trades in ledger but its not showing in main legacy flexgate table"), 2026-09-26  
+**SYMPTOM**: On `/institutional-signals` Tab 3 (Legacy FlexGate), newly entered active trades in `data/flexgate_ledger.csv` (e.g. `MOTHERSON` entered on `2026-09-24`, and older active trades like `PAGEIND`, `GRASIM`, `INDUSTOWER`, `TATASTEEL`) were completely missing from the main table, which displayed only 5 older historical rows (last row: `BRGIL` from 2026-09-10). Tab badge showed only 5 active trades instead of 11. Symmetrically, `sbia_alpha_watchlist.csv` only contained 4 rows instead of 10 active trades from `sbia_ledger.csv`, and `sbia_flexgate2_watchlist.csv` missed `STLNETWORK`.  
+**ROOT CAUSE**:  
+1. In `ledger_manager.py:447-449` (`update_flexgate_ledger`) and `calculate_active_signals.py:209-234`, `sbia_flexgate_watchlist.csv` was populated via an inner-join:
+   ```python
+   filtered_flex = flex_watchlist[
+       flex_watchlist.apply(lambda r: (r['SYMBOL'], r['DATE_DT']) in active_keys, axis=1)
+   ].copy()
+   ```
+   `flex_watchlist` was derived from today's triggers merged with `old_flexgate`. Any active trade in `data/flexgate_ledger.csv` that was entered on a previous day and not currently present in `old_flexgate` was permanently dropped from `filtered_flex`.
+2. When `calculate_active_signals.py` persisted `flexgate_active.to_csv(FLEXGATE_FILE)`, the watchlist was overwritten with only the surviving rows. On subsequent runs, `old_flexgate` read from this truncated file, causing an irreversible omission.
+3. In `ledger_manager.py:338-348`, `yfinance` download handling assumed single-symbol downloads returned flat 1D DataFrames, raising a `KeyError: ['Close']` when recent yfinance versions returned single-ticker MultiIndex columns.
+4. The UI table in `dash_pages/institutional_signals.py` rendered `FLEXGATE_FILE` directly with no reconciliation fallback to the active ledger, and without explicit descending date sorting.  
+**FIX**:  
+1. **Active Watchlist Hydration (`ledger_manager.py`)**: Added `_hydrate_missing_active_watchlist()` helper function to guarantee that 100% of open `ACTIVE` positions from the ledger are preserved in the active watchlist. Any active ledger trade not in today's screener pool is synthesized from its ledger coordinates (`ENTRY_PRICE`, `STOP_LOSS`, `CHANDELIER_EXIT`, `ATR14`, `ENTRY_AI_PROB`, `ENTRY_WHALE_DENSITY`, `ENTRY_IMPLIED_TRADES`), historical screener metrics from `flexgate_archive.csv` / `survivors_archive.csv`, and latest live market prices (`CLOSE`, `EXCHANGE`, `ISIN`) from `data/combined_dashboard_live.csv`.
+2. **Robust MultiIndex yfinance Handling (`ledger_manager.py`)**: Safely extracted `ticker_df` across both single-symbol and multi-symbol MultiIndex structures in both signal initialization and historical trailing stop path evaluation.
+3. **UI Defense-in-Depth & Sorting (`dash_pages/institutional_signals.py`)**:
+   - Enhanced `flexgate_table()` and `alpha_table()` to accept `ledger_path`, dynamically cross-checking against open `ACTIVE` positions.
+   - Added automatic descending date sorting so the newest active positions (e.g. `MOTHERSON`) appear at the top.
+4. **Empirical Verification**:
+   - `sbia_flexgate_watchlist.csv` expanded from 5 to 11 active rows (100% match with `data/flexgate_ledger.csv`).
+   - `sbia_alpha_watchlist.csv` expanded from 4 to 10 active rows (100% match with `data/sbia_ledger.csv`).
+   - `sbia_flexgate2_watchlist.csv` restored `STLNETWORK` to 8 active rows.
+   - Playwright test `tests/verify_flexgate_ui.spec.js` verified `MOTHERSON`, `BRGIL`, `SINTERCOM`, `PAGEIND` rendered on Tab 3 with screenshot captured.
+   - All 45 pytest tests passed; `check_pipeline.py` passed with 0 errors; zero ledger modification (`git diff --stat data/*ledger*.csv` is clean).  
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` protocol, root cause analysis of inner-join filtering in `ledger_manager.py`, multi-index yfinance extraction audit, empirical browser verification via Playwright, and cross-repo push.
+
+
 
 
 

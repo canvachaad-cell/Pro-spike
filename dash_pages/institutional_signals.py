@@ -251,14 +251,57 @@ def legacy_table():
     return _grid_table(avail, rows, min_width=1140, wide=wide)
 
 
-def alpha_table():
+def alpha_table(ledger_path=None):
     df = load_csv(ALPHA_FILE)
+
+    if ledger_path and os.path.exists(ledger_path):
+        ledger_df = load_csv(ledger_path)
+        if ledger_df is not None and "STATUS" in ledger_df.columns:
+            active_ledger = ledger_df[ledger_df["STATUS"] == "ACTIVE"].copy()
+            if not active_ledger.empty:
+                if df is None:
+                    df = pd.DataFrame()
+                existing_keys = set(zip(df["SYMBOL"], pd.to_datetime(df["DATE"], errors="coerce").dt.strftime("%Y-%m-%d"))) if (not df.empty and "SYMBOL" in df.columns and "DATE" in df.columns) else set()
+                
+                cloud_df = load_csv(CLOUD_FILE)
+                cloud_prices = {}
+                cloud_exch = {}
+                if cloud_df is not None and {"SYMBOL", "CLOSE"}.issubset(cloud_df.columns):
+                    cloud_prices = cloud_df.drop_duplicates("SYMBOL").set_index("SYMBOL")["CLOSE"].to_dict()
+                    if "EXCHANGE" in cloud_df.columns:
+                        cloud_exch = cloud_df.drop_duplicates("SYMBOL").set_index("SYMBOL")["EXCHANGE"].to_dict()
+                
+                missing_records = []
+                for _, a_row in active_ledger.iterrows():
+                    s = a_row.get("SYMBOL", "")
+                    entry_dt = pd.to_datetime(a_row.get("ENTRY_DATE", ""))
+                    d = entry_dt.strftime("%Y-%m-%d") if pd.notna(entry_dt) else ""
+                    if (s, d) not in existing_keys:
+                        missing_records.append({
+                            "SYMBOL": s,
+                            "DATE": d,
+                            "EXCHANGE": cloud_exch.get(s, "NSE"),
+                            "CLOSE": cloud_prices.get(s, a_row.get("ENTRY_PRICE", 0.0)),
+                            "ENTRY_PRICE": a_row.get("ENTRY_PRICE", 0.0),
+                            "STOP_LOSS": a_row.get("STOP_LOSS", 0.0),
+                            "TAKE_PROFIT": a_row.get("TAKE_PROFIT", 0.0),
+                            "AI_WIN_PROBABILITY": a_row.get("ENTRY_AI_PROB", 60.0),
+                            "Whale_Density": a_row.get("ENTRY_WHALE_DENSITY", 0.0),
+                            "Implied_Trades": a_row.get("ENTRY_IMPLIED_TRADES", 0.0),
+                            "REC_POS_SIZE_INR": 100000.0,
+                            "ATR14": a_row.get("ATR14", 0.0),
+                        })
+                if missing_records:
+                    df = pd.concat([df, pd.DataFrame(missing_records)], ignore_index=True)
+
     if df is None:
         return _empty_panel("Run calculate_active_signals.py to generate the Alpha Watchlist.")
     if df.empty:
         return _empty_panel("⚠️ No stocks passed the Path A ML Gate today.")
 
     if "DATE" in df.columns:
+        df["_DATE_SORT"] = pd.to_datetime(df["DATE"], errors="coerce")
+        df = df.sort_values(by="_DATE_SORT", ascending=False).drop(columns=["_DATE_SORT"])
         df = df.assign(DATE=_fmt_date(df["DATE"]))
 
     cols = ["SYMBOL", "AI_WIN_PROBABILITY", "DATE", "EXCHANGE", "ENTRY_PRICE", "CLOSE", "SIS", "Whale_Density", "Implied_Trades", "STOP_LOSS", "TAKE_PROFIT", "REC_POS_SIZE_INR", "ATR14"]
@@ -405,14 +448,59 @@ def completed_trades():
     )
 
 
-def flexgate_table(path, missing_msg, empty_msg):
+def flexgate_table(path, missing_msg, empty_msg, ledger_path=None):
     df = load_csv(path)
+
+    # Defense-in-depth: Reconcile against all open ACTIVE ledger positions
+    if ledger_path and os.path.exists(ledger_path):
+        ledger_df = load_csv(ledger_path)
+        if ledger_df is not None and "STATUS" in ledger_df.columns:
+            active_ledger = ledger_df[ledger_df["STATUS"] == "ACTIVE"].copy()
+            if not active_ledger.empty:
+                if df is None:
+                    df = pd.DataFrame()
+                existing_keys = set(zip(df["SYMBOL"], pd.to_datetime(df["DATE"], errors="coerce").dt.strftime("%Y-%m-%d"))) if (not df.empty and "SYMBOL" in df.columns and "DATE" in df.columns) else set()
+                
+                cloud_df = load_csv(CLOUD_FILE)
+                cloud_prices = {}
+                cloud_exch = {}
+                if cloud_df is not None and {"SYMBOL", "CLOSE"}.issubset(cloud_df.columns):
+                    cloud_prices = cloud_df.drop_duplicates("SYMBOL").set_index("SYMBOL")["CLOSE"].to_dict()
+                    if "EXCHANGE" in cloud_df.columns:
+                        cloud_exch = cloud_df.drop_duplicates("SYMBOL").set_index("SYMBOL")["EXCHANGE"].to_dict()
+                
+                missing_records = []
+                for _, a_row in active_ledger.iterrows():
+                    s = a_row.get("SYMBOL", "")
+                    entry_dt = pd.to_datetime(a_row.get("ENTRY_DATE", ""))
+                    d = entry_dt.strftime("%Y-%m-%d") if pd.notna(entry_dt) else ""
+                    if (s, d) not in existing_keys:
+                        missing_records.append({
+                            "SYMBOL": s,
+                            "DATE": d,
+                            "EXCHANGE": cloud_exch.get(s, "NSE"),
+                            "CLOSE": cloud_prices.get(s, a_row.get("ENTRY_PRICE", 0.0)),
+                            "ENTRY_PRICE": a_row.get("ENTRY_PRICE", 0.0),
+                            "STOP_LOSS": a_row.get("STOP_LOSS", 0.0),
+                            "CHANDELIER_EXIT": a_row.get("STOP_LOSS", 0.0),
+                            "AI_WIN_PROBABILITY": a_row.get("ENTRY_AI_PROB", 60.0),
+                            "AI_APPROVED": bool(a_row.get("ENTRY_AI_PROB", 60.0) >= 60.0),
+                            "Whale_Density": a_row.get("ENTRY_WHALE_DENSITY", 0.0),
+                            "Implied_Trades": a_row.get("ENTRY_IMPLIED_TRADES", 0.0),
+                            "REC_POS_SIZE_INR": 100000.0,
+                            "ATR14": a_row.get("ATR14", 0.0),
+                        })
+                if missing_records:
+                    df = pd.concat([df, pd.DataFrame(missing_records)], ignore_index=True)
+
     if df is None:
         return _empty_panel(missing_msg)
     if df.empty:
         return _empty_panel(empty_msg)
 
     if "DATE" in df.columns:
+        df["_DATE_SORT"] = pd.to_datetime(df["DATE"], errors="coerce")
+        df = df.sort_values(by="_DATE_SORT", ascending=False).drop(columns=["_DATE_SORT"])
         df = df.assign(DATE=_fmt_date(df["DATE"]))
 
     has_ai = ("AI_WIN_PROBABILITY" in df.columns) and ("AI_APPROVED" in df.columns)
@@ -689,7 +777,7 @@ def _tab_legacy():
 def _tab_alpha():
     return [
         _section_header("Path A: Alpha Markups", "#FFB300"),
-        alpha_table(),
+        alpha_table(ledger_path=SBIA_LEDGER),
         velocity_simulation(SBIA_LEDGER, risk_pct=0.003),
     ]
 
@@ -704,7 +792,7 @@ def _tab_flexgate():
                 html.P("These signals survived the ICT Box anomalies (exactly 2 alerts in 10 days). Trend-Following Notice: No Fixed Profit Target. Use the Chandelier Exit.", className="text-on-surface-variant text-sm px-4 pb-4 mb-0 border-t border-white/10 pt-3"),
             ],
         ),
-        flexgate_table(FLEXGATE_FILE, "Run calculate_active_signals.py to generate the FlexGate Watchlist.", "⚠️ No stocks passed the strict FlexGate logic today."),
+        flexgate_table(FLEXGATE_FILE, "Run calculate_active_signals.py to generate the FlexGate Watchlist.", "⚠️ No stocks passed the strict FlexGate logic today.", ledger_path=FLEXGATE_LEDGER),
         velocity_simulation(FLEXGATE_LEDGER, risk_pct=0.002, ai_threshold=65.0, title="₹10L FlexGate Simulation Status"),
     ]
 
@@ -719,7 +807,7 @@ def _tab_flexgate2():
                 html.P("These signals survived the ML Heuristic Bouncer (ATR > 3.5%) and scored ≥ 60% on the Random Forest engine.", className="text-on-surface-variant text-sm px-4 pb-4 mb-0 border-t border-white/10 pt-3"),
             ],
         ),
-        flexgate_table(FLEXGATE2_FILE, "Run flexgate_2_scanner.py to generate the FlexGate 2.0 Watchlist.", "⚠️ No stocks passed the strict FlexGate 2.0 ML logic today."),
+        flexgate_table(FLEXGATE2_FILE, "Run flexgate_2_scanner.py to generate the FlexGate 2.0 Watchlist.", "⚠️ No stocks passed the strict FlexGate 2.0 ML logic today.", ledger_path=FLEXGATE2_LEDGER),
         velocity_simulation(FLEXGATE2_LEDGER, risk_pct=0.002, ai_threshold=60.0, title="₹10L FlexGate 2.0 Simulation Status"),
     ]
 
