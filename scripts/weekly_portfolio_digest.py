@@ -120,6 +120,18 @@ def collect_digest_data(days: int = 7) -> dict:
                     if sl_p and sl_p < entry_p and (entry_p - sl_p) > 0:
                         r_mult = (exit_p - entry_p) / (entry_p - sl_p)
 
+                # Classify exit mechanism accurately
+                if status == "SUSPENDED" or (pnl_pct == 0.0 and entry_p == exit_p):
+                    status_display = "SUSPENDED"
+                elif status == "HIT_TP" or (status in ("HIT_SL", "CHANDELIER_EXIT") and pnl_pct and pnl_pct > 0):
+                    status_display = "CHANDELIER_PROFIT" if status in ("HIT_SL", "CHANDELIER_EXIT") else "HIT_TP"
+                elif status == "MOMENTUM_LOST" and pnl_pct and pnl_pct > 0:
+                    status_display = "MOMENTUM_HARVEST"
+                elif status == "MOMENTUM_LOST" and pnl_pct and pnl_pct <= 0:
+                    status_display = "MOMENTUM_DECAY"
+                else:
+                    status_display = status
+
                 recent_exits.append({
                     "engine": engine_label,
                     "symbol": sym,
@@ -127,6 +139,7 @@ def collect_digest_data(days: int = 7) -> dict:
                     "exit_price": exit_p,
                     "exit_date": exit_date,
                     "status": status,
+                    "status_display": status_display,
                     "pnl_pct": pnl_pct,
                     "r_mult": r_mult,
                 })
@@ -193,14 +206,24 @@ def collect_digest_data(days: int = 7) -> dict:
         except Exception:
             pass
 
-    # Aggregations for Exits
-    total_exits = len(recent_exits)
-    wins = [e for e in recent_exits if e["pnl_pct"] is not None and e["pnl_pct"] > 0]
-    losses = [e for e in recent_exits if e["pnl_pct"] is not None and e["pnl_pct"] <= 0]
-    win_rate = (len(wins) / total_exits * 100.0) if total_exits > 0 else 0.0
-    net_pnl_sum = sum(e["pnl_pct"] for e in recent_exits if e["pnl_pct"] is not None)
-    avg_pnl = (net_pnl_sum / total_exits) if total_exits > 0 else 0.0
-    total_r = sum(e["r_mult"] for e in recent_exits if e["r_mult"] is not None)
+    # Aggregations for Exits: Segregate active market trades from corporate suspensions
+    active_trades = [e for e in recent_exits if e["status_display"] != "SUSPENDED"]
+    suspended_trades = [e for e in recent_exits if e["status_display"] == "SUSPENDED"]
+
+    # Any trade with positive return (whether TP, trailing Chandelier, or Momentum Harvest) is a WIN
+    wins = [e for e in active_trades if e["pnl_pct"] is not None and e["pnl_pct"] > 0]
+    losses = [e for e in active_trades if e["pnl_pct"] is not None and e["pnl_pct"] < 0]
+    scratches = [e for e in active_trades if e["pnl_pct"] is not None and e["pnl_pct"] == 0]
+
+    total_closed = len(active_trades)
+    win_rate = (len(wins) / total_closed * 100.0) if total_closed > 0 else 0.0
+    net_pnl_sum = sum(e["pnl_pct"] for e in active_trades if e["pnl_pct"] is not None)
+    avg_pnl = (net_pnl_sum / total_closed) if total_closed > 0 else 0.0
+    total_r = sum(e["r_mult"] for e in active_trades if e["r_mult"] is not None)
+
+    # Sub-breakdown of wins
+    tp_wins = [e for e in wins if e["status_display"] in ("HIT_TP", "CHANDELIER_PROFIT")]
+    momentum_wins = [e for e in wins if e["status_display"] == "MOMENTUM_HARVEST"]
 
     near_sl_count = sum(1 for p in active_positions if p["urgency"] in ("NEAR_SL", "BELOW_SL"))
     near_tp_count = sum(1 for p in active_positions if p["urgency"] == "NEAR_TP")
@@ -209,9 +232,14 @@ def collect_digest_data(days: int = 7) -> dict:
         "days": days,
         "cutoff_str": cutoff_str,
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "total_exits": total_exits,
+        "total_exits": len(recent_exits),
+        "total_closed": total_closed,
+        "suspended_count": len(suspended_trades),
         "win_count": len(wins),
         "loss_count": len(losses),
+        "scratch_count": len(scratches),
+        "tp_win_count": len(tp_wins),
+        "momentum_win_count": len(momentum_wins),
         "win_rate": win_rate,
         "net_pnl_sum": net_pnl_sum,
         "avg_pnl": avg_pnl,
@@ -233,22 +261,22 @@ def format_plain_text(data: dict) -> str:
         "=" * 70,
         "",
         "--- [1] 7-DAY REALIZED PERFORMANCE ---",
-        f"Total Exits: {data['total_exits']} | Wins: {data['win_count']} | Losses: {data['loss_count']}",
-        f"Win Rate:    {data['win_rate']:.1f}%",
-        f"Net PnL Sum: {data['net_pnl_sum']:+.2f}% (Avg: {data['avg_pnl']:+.2f}% / trade)",
-        f"Net R-Book:  {data['total_r']:+.2f}R",
+        f"Closed Trades: {data['total_closed']} | Wins: {data['win_count']} (TP/Chandelier: {data['tp_win_count']}, Momentum Harvest: {data['momentum_win_count']}) | Losses: {data['loss_count']}",
+        f"Win Rate:      {data['win_rate']:.1f}% ({data['suspended_count']} corporate suspensions excluded from denominator)",
+        f"Net PnL Sum:   {data['net_pnl_sum']:+.2f}% (Avg: {data['avg_pnl']:+.2f}% / trade)",
+        f"Net R-Book:    {data['total_r']:+.2f}R",
         "",
     ]
 
     if data["recent_exits"]:
-        lines.append(f"{'ENGINE':<14} {'SYMBOL':<12} {'ENTRY':<10} {'EXIT':<10} {'PnL %':<10} {'R-MULT':<8} {'REASON'}")
-        lines.append("-" * 75)
+        lines.append(f"{'ENGINE':<14} {'SYMBOL':<12} {'ENTRY':<10} {'EXIT':<10} {'PnL %':<10} {'R-MULT':<8} {'EXIT REASON'}")
+        lines.append("-" * 80)
         for e in data["recent_exits"]:
             pnl_s = f"{e['pnl_pct']:+.2f}%" if e['pnl_pct'] is not None else "N/A"
             r_s = f"{e['r_mult']:+.2f}R" if e['r_mult'] is not None else "N/A"
             en_s = f"₹{e['entry_price']:.2f}" if e['entry_price'] else "N/A"
             ex_s = f"₹{e['exit_price']:.2f}" if e['exit_price'] else "N/A"
-            lines.append(f"{e['engine']:<14} {e['symbol']:<12} {en_s:<10} {ex_s:<10} {pnl_s:<10} {r_s:<8} {e['status']}")
+            lines.append(f"{e['engine']:<14} {e['symbol']:<12} {en_s:<10} {ex_s:<10} {pnl_s:<10} {r_s:<8} {e['status_display']}")
     else:
         lines.append("No position exits recorded in the past 7 days.")
 
@@ -302,10 +330,22 @@ def format_html(data: dict) -> str:
         for e in data["recent_exits"]:
             pnl_val = e["pnl_pct"]
             pnl_str = f"{pnl_val:+.2f}%" if pnl_val is not None else "—"
-            c = "#10b981" if (pnl_val or 0) > 0 else "#ef4444"
+            c = "#10b981" if (pnl_val or 0) > 0 else ("#94a3b8" if (pnl_val or 0) == 0 else "#ef4444")
             r_str = f"{e['r_mult']:+.2f}R" if e['r_mult'] is not None else "—"
             en_str = f"₹{e['entry_price']:.2f}" if e['entry_price'] else "—"
             ex_str = f"₹{e['exit_price']:.2f}" if e['exit_price'] else "—"
+
+            disp = e["status_display"]
+            if disp in ("HIT_TP", "CHANDELIER_PROFIT", "MOMENTUM_HARVEST"):
+                badge_bg = "#064e3b"
+                badge_fg = "#34d399"
+            elif disp in ("HIT_SL", "MOMENTUM_DECAY"):
+                badge_bg = "#450a0a"
+                badge_fg = "#f87171"
+            else:
+                badge_bg = "#1e293b"
+                badge_fg = "#94a3b8"
+
             exit_rows += f"""
             <tr style="border-bottom: 1px solid #1e293b;">
               <td style="padding: 10px 8px; color: #94a3b8; font-size: 13px;">{e['engine']}</td>
@@ -314,7 +354,7 @@ def format_html(data: dict) -> str:
               <td style="padding: 10px 8px; color: #cbd5e1; font-size: 13px;">{ex_str}</td>
               <td style="padding: 10px 8px; font-weight: 700; color: {c}; font-size: 14px;">{pnl_str}</td>
               <td style="padding: 10px 8px; color: {c}; font-size: 13px;">{r_str}</td>
-              <td style="padding: 10px 8px; color: #94a3b8; font-size: 12px;">{e['status']}</td>
+              <td style="padding: 10px 8px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; background: {badge_bg}; color: {badge_fg}; font-size: 11px; font-weight: 600;">{disp}</span></td>
             </tr>"""
     else:
         exit_rows = """
@@ -399,6 +439,7 @@ def format_html(data: dict) -> str:
       <div>
         <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Win Rate</div>
         <div style="font-size: 20px; font-weight: 800; color: #f8fafc; margin-top: 4px;">{data['win_rate']:.1f}%</div>
+        <div style="font-size: 11px; color: #64748b;">({data['win_count']} of {data['total_closed']} closed)</div>
       </div>
       <div>
         <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Net R-Booked</div>
@@ -413,7 +454,7 @@ def format_html(data: dict) -> str:
     <!-- Section 1: Exits -->
     <div style="padding: 24px 28px;">
       <h3 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px;">
-        1. Realized Exits ({data['total_exits']} Trades)
+        1. Realized Exits ({data['total_closed']} Closed Trades + {data['suspended_count']} Suspended)
       </h3>
       <table style="width: 100%; border-collapse: collapse; text-align: left;">
         <thead>
@@ -424,7 +465,7 @@ def format_html(data: dict) -> str:
             <th style="padding: 6px 8px;">Exit</th>
             <th style="padding: 6px 8px;">Net PnL</th>
             <th style="padding: 6px 8px;">R-Mult</th>
-            <th style="padding: 6px 8px;">Trigger</th>
+            <th style="padding: 6px 8px;">Exit Mechanism</th>
           </tr>
         </thead>
         <tbody>
@@ -511,9 +552,10 @@ def dispatch_digest(days: int = 7, send: bool = False):
     print(f"Email Dispatch: {'✅ OK' if ok_email else '❌ FAILED'} ({detail_email})")
 
     # 2. Dispatch Mobile Push (ntfy)
-    push_title = f"📊 Pro-Spike Weekly Digest: {data['net_pnl_sum']:+.1f}% PnL ({data['total_r']:+.1f}R)"
+    push_title = f"📊 Pro-Spike Weekly: {data['win_rate']:.0f}% Win Rate ({data['net_pnl_sum']:+.1f}% PnL)"
     push_msg = (
-        f"7D Exits: {data['total_exits']} trades (Win Rate: {data['win_rate']:.0f}%)\n"
+        f"Closed Trades: {data['total_closed']} ({data['win_count']} Wins: {data['tp_win_count']} TP + {data['momentum_win_count']} Momentum)\n"
+        f"Net Return: {data['net_pnl_sum']:+.1f}% ({data['total_r']:+.1f}R)\n"
         f"Active Positions: {data['total_active']} open ({data['near_sl_count']} near SL, {data['near_tp_count']} near TP)\n"
     )
     if data["top_candidates"]:
@@ -527,6 +569,8 @@ def dispatch_digest(days: int = 7, send: bool = False):
         tags="bar_chart,briefcase",
     )
     print(f"Mobile Push Dispatch: {'✅ OK' if ok_ntfy else '❌ FAILED'} ({detail_ntfy})")
+
+    return ok_email or ok_ntfy
 
     return ok_email or ok_ntfy
 
