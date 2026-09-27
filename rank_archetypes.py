@@ -23,6 +23,7 @@ UNIVERSE_FILE = "data/combined_dashboard_live.csv"     # Full live dashboard uni
 WATCHLIST_FILE = "data/sbia_alpha_watchlist.csv"       # Today's active screener signals
 LEDGER_FILE = "data/sbia_ledger.csv"                   # For self-reconciliation check
 OUTPUT_FILE = "data/winner_archetypes_ranked.csv"
+ARCHIVE_FILE = "data/winner_archetypes_archive.csv"
 
 NON_EQUITY_PATTERNS = r"ETF|LIQUID|FUND|INDEX|NIFTY|SENSEX|GILT5BETA|GILT10BETA|GS\d|SDL"
 
@@ -448,13 +449,35 @@ def score_universe():
         ascending=[False, True, False]
     ).drop(columns=["_g_order"])
 
-    # Write output
+    # Write current snapshot
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     merged.to_csv(OUTPUT_FILE, index=False)
     print(f"Successfully generated {OUTPUT_FILE} ({len(merged)} symbols ranked)")
     print(f"80% Quality Tier Symbols: {merged['QUALITY_80'].sum()}")
     print("Archetypes breakdown across universe:")
     print(merged["ARCHETYPE"].value_counts().to_dict())
+
+    # Append to permanent daily archive for future ML pattern recognition and simulation
+    try:
+        archive_cols = [
+            "RANKED_DATE", "SYMBOL", "ARCHETYPE", "CLOSE", "AI_WIN_PROBABILITY",
+            "RULE3_SCORE", "QUALITY_80", "DELIV_GRADE", "DELIV_PER", "ATR14",
+            "ATR_PCT", "Whale_Density", "ENTRY_PRICE", "STOP_LOSS", "TAKE_PROFIT"
+        ]
+        available_cols = [c for c in archive_cols if c in merged.columns]
+        snap_to_archive = merged[available_cols].copy()
+
+        if os.path.exists(ARCHIVE_FILE):
+            existing_arc = pd.read_csv(ARCHIVE_FILE)
+            combined_arc = pd.concat([existing_arc, snap_to_archive], ignore_index=True)
+            combined_arc.drop_duplicates(subset=["RANKED_DATE", "SYMBOL"], keep="last", inplace=True)
+        else:
+            combined_arc = snap_to_archive
+
+        combined_arc.to_csv(ARCHIVE_FILE, index=False)
+        print(f"Successfully updated permanent archive {ARCHIVE_FILE} ({len(combined_arc)} historical rows)")
+    except Exception as e:
+        print(f"Warning: could not update archive {ARCHIVE_FILE}: {e}")
 
 
 if __name__ == "__main__":

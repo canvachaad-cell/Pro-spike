@@ -1425,6 +1425,33 @@ even after the user generated a fresh, valid 16-character Google App Password.
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: `fix_before_touch` report, `DEMONCORE: PLAN_DEEP` blast-radius audit, backward-compatible MIMEText subtype enhancement, and dual-remote sync.
 
+---
+
+## BUG-081: Daily Winner Archetypes Archival & Dedicated Weekly Trade Playbook
+**STATUS**: FIXED  
+**FILE**: `rank_archetypes.py`, `scripts/weekly_portfolio_digest.py`, `data/winner_archetypes_archive.csv`  
+**DISCOVERED BY**: User Inquiry ("how to know in future whether trades we telling here are winners or losers for future pattern recognition and ml references are we recording it somewhere... we can add winner archetype trade report as separate in weekly reports"), 2026-09-27  
+**SYMPTOM**: 
+1. Daily candidate setups identified by the Winner Archetypes engine (`rank_archetypes.py`) were overwritten on each pipeline run in `data/winner_archetypes_ranked.csv`, leaving no persistent record of historical candidates for tracking forward trade outcomes, conducting statistical simulation, or retraining machine learning models.
+2. The weekly portfolio digest report blended candidate setups into a generic watchlist without highlighting the distinct execution parameters (Clean Runners requiring fixed 2R target vs Grind Compounders requiring momentum trailing) or showing concrete Stop Loss and Target Profit price levels.
+**ROOT CAUSE**: 
+1. `rank_archetypes.py` previously only exported a point-in-time snapshot to `data/winner_archetypes_ranked.csv` without an append-only archive ledger.
+2. `scripts/weekly_portfolio_digest.py` rendered candidate setups in a basic table lacking stop loss, take profit, delivery %, and specific trade execution playbooks derived from the empirical Rule-3 Quality Cohort.
+**FIX**: 
+1. **Append-Only Archival Logging (`rank_archetypes.py`)**: Added automatic logging of daily candidate rankings to `data/winner_archetypes_archive.csv` with composite deduplication on `["RANKED_DATE", "SYMBOL"]`, ensuring idempotent re-runs never duplicate historical snapshots.
+2. **Dedicated Trade Playbook Section (`scripts/weekly_portfolio_digest.py`)**:
+   - Filtered candidate setups strictly through the empirical Rule-3 Quality Ladder (`QUALITY_80 == True`, `DELIV_GRADE == 'A-GRADE'`).
+   - Added concrete execution metrics: Close, Stop Loss, Target Profit, Delivery %, and AI Win Probability.
+   - Enforced distinct playbook horizons: `2R Fixed TP (~9 days)` for Clean Runners and `Trailing Momentum (~12–18 days)` for Grind Compounders.
+   - Designed responsive HTML badges and high-contrast tables for email dispatch.
+3. **Empirical Verification**:
+   - `python rank_archetypes.py` generated `data/winner_archetypes_archive.csv` (168 historical candidate setups), and repeated execution confirmed zero duplicate records.
+   - `python scripts/weekly_portfolio_digest.py --dry-run` and `--send` executed cleanly, delivering high-conviction setups (`ASIANHOTNR`, `RPPINFRA`, `ORICONENT`, `KNAGRI`, `SOFTTECH`) to both Gmail inbox and phone push via `ntfy.sh`.
+   - Verified zero ledger modification (`git diff --stat data/*ledger*.csv` is clean). Regression suite passed 45/45 tests.
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` report, `DEMONCORE: PLAN_DEEP` blast-radius audit, schema invariant verification, idempotent CSV persistence, and dual-remote sync.
+
+
 
 
 

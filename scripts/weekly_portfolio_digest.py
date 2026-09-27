@@ -202,14 +202,22 @@ def collect_digest_data(days: int = 7) -> dict:
                     ranked = adf.head(5)
 
                 for _, r in ranked.iterrows():
+                    arch = str(r.get("ARCHETYPE", "BREAKOUT")).replace("_", " ").title()
+                    cl = _to_float(r.get("CLOSE"))
+                    sl = _to_float(r.get("STOP_LOSS"))
+                    tp = _to_float(r.get("TAKE_PROFIT"))
+                    playbook = "2R Fixed TP (~9 days)" if "Runner" in arch else "Trailing Momentum (~12–18 days)"
                     top_candidates.append({
                         "symbol": str(r.get("SYMBOL", "")).strip().upper(),
-                        "archetype": str(r.get("ARCHETYPE", "BREAKOUT")).replace("_", " ").title(),
-                        "close": _to_float(r.get("CLOSE")),
+                        "archetype": arch,
+                        "close": cl,
+                        "stop_loss": sl,
+                        "take_profit": tp,
                         "ai_prob": _to_float(r.get("AI_WIN_PROBABILITY")),
                         "score": _to_float(r.get("RULE3_SCORE")),
                         "deliv_per": _to_float(r.get("DELIV_PER")),
                         "grade": str(r.get("DELIV_GRADE", "A-GRADE")),
+                        "playbook": playbook,
                     })
         except Exception:
             pass
@@ -308,16 +316,20 @@ def format_plain_text(data: dict) -> str:
 
     lines.extend([
         "",
-        "--- [3] NEXT WEEK HIGH-CONVICTION WATCHLIST ---",
+        "--- [3] WINNER ARCHETYPES HIGH-CONVICTION TRADE PLAYBOOK ---",
+        "Rule 3 Institutional Cohort (A-Grade Accumulation 60–75% · Tier != Large · ATR >= 3.15%)",
+        "",
     ])
     if data["top_candidates"]:
-        lines.append(f"{'SYMBOL':<12} {'ARCHETYPE':<18} {'CLOSE':<10} {'AI PROB %':<12} {'SCORE'}")
-        lines.append("-" * 65)
+        lines.append(f"{'SYMBOL':<12} {'ARCHETYPE':<18} {'CLOSE':<10} {'SL':<10} {'TARGET':<10} {'DELIV %':<10} {'AI PROB':<10} {'PLAYBOOK'}")
+        lines.append("-" * 95)
         for c in data["top_candidates"]:
             cl_s = f"₹{c['close']:.2f}" if c['close'] else "N/A"
+            sl_s = f"₹{c['stop_loss']:.2f}" if c['stop_loss'] else "N/A"
+            tp_s = f"₹{c['take_profit']:.2f}" if c['take_profit'] else "N/A"
+            deliv_s = f"{c['deliv_per']:.1f}%" if c['deliv_per'] is not None else "N/A"
             ai_s = f"{c['ai_prob']:.1f}%" if c['ai_prob'] is not None else "N/A"
-            sc_s = f"{c['score']:.1f}" if c['score'] is not None else "N/A"
-            lines.append(f"{c['symbol']:<12} {c['archetype']:<18} {cl_s:<10} {ai_s:<12} {sc_s}")
+            lines.append(f"{c['symbol']:<12} {c['archetype']:<18} {cl_s:<10} {sl_s:<10} {tp_s:<10} {deliv_s:<10} {ai_s:<10} {c['playbook']}")
 
     lines.extend([
         "",
@@ -407,15 +419,30 @@ def format_html(data: dict) -> str:
     cand_rows = ""
     for c in data["top_candidates"]:
         cl_str = f"₹{c['close']:.2f}" if c['close'] else "—"
+        sl_str = f"₹{c['stop_loss']:.2f}" if c['stop_loss'] else "—"
+        tp_str = f"₹{c['take_profit']:.2f}" if c['take_profit'] else "—"
+        deliv_str = f"{c['deliv_per']:.1f}%" if c['deliv_per'] is not None else "—"
         ai_str = f"{c['ai_prob']:.1f}%" if c['ai_prob'] is not None else "—"
-        sc_str = f"{c['score']:.1f}" if c['score'] is not None else "—"
+
+        is_runner = "Runner" in c["archetype"]
+        badge_bg = "rgba(90,240,179,0.15)" if is_runner else "rgba(174,198,255,0.15)"
+        badge_fg = "#5af0b3" if is_runner else "#aec6ff"
+        badge_icon = "🏃" if is_runner else "📈"
+
         cand_rows += f"""
         <tr style="border-bottom: 1px solid #1e293b;">
-          <td style="padding: 8px; font-weight: 700; color: #38bdf8; font-size: 13px;">{c['symbol']}</td>
-          <td style="padding: 8px; color: #cbd5e1; font-size: 12px;">{c['archetype']}</td>
-          <td style="padding: 8px; color: #cbd5e1; font-size: 13px;">{cl_str}</td>
-          <td style="padding: 8px; font-weight: 700; color: #a855f7; font-size: 13px;">{ai_str}</td>
-          <td style="padding: 8px; font-weight: 600; color: #f59e0b; font-size: 13px;">{sc_str}</td>
+          <td style="padding: 10px 8px; font-weight: 700; color: #38bdf8; font-size: 14px;">{c['symbol']}</td>
+          <td style="padding: 10px 8px;">
+            <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; background: {badge_bg}; color: {badge_fg}; font-size: 11px; font-weight: 700;">
+              {badge_icon} {c['archetype']}
+            </span>
+          </td>
+          <td style="padding: 10px 8px; color: #f8fafc; font-size: 13px; font-weight: 600;">{cl_str}</td>
+          <td style="padding: 10px 8px; color: #f87171; font-size: 12px; font-family: monospace;">{sl_str}</td>
+          <td style="padding: 10px 8px; color: #34d399; font-size: 12px; font-family: monospace;">{tp_str}</td>
+          <td style="padding: 10px 8px; color: #cbd5e1; font-size: 12px;">{deliv_str}</td>
+          <td style="padding: 10px 8px; font-weight: 700; color: #a855f7; font-size: 13px;">{ai_str}</td>
+          <td style="padding: 10px 8px; color: #94a3b8; font-size: 11px;">{c['playbook']}</td>
         </tr>"""
 
     return f"""<!DOCTYPE html>
@@ -509,19 +536,27 @@ def format_html(data: dict) -> str:
       </table>
     </div>
 
-    <!-- Section 3: High Conviction Watchlist -->
+    <!-- Section 3: Winner Archetypes High-Conviction Setups -->
     <div style="padding: 0 28px 24px 28px;">
-      <h3 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px;">
-        3. Next Week High-Conviction Candidates (Top 5)
-      </h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px;">
+          3. Winner Archetypes Trade Playbook (Forward Setups)
+        </h3>
+        <span style="font-size: 11px; color: #38bdf8; background: #0c4a6e; padding: 3px 8px; border-radius: 9999px; font-weight: 600;">
+          Rule 3 Quality Cohort
+        </span>
+      </div>
       <table style="width: 100%; border-collapse: collapse; text-align: left;">
         <thead>
           <tr style="border-bottom: 2px solid #334155; color: #64748b; font-size: 11px; text-transform: uppercase;">
             <th style="padding: 6px 8px;">Symbol</th>
             <th style="padding: 6px 8px;">Archetype</th>
             <th style="padding: 6px 8px;">Close</th>
-            <th style="padding: 6px 8px;">AI Win Prob</th>
-            <th style="padding: 6px 8px;">Composite Score</th>
+            <th style="padding: 6px 8px;">Stop Loss</th>
+            <th style="padding: 6px 8px;">Target</th>
+            <th style="padding: 6px 8px;">Delivery</th>
+            <th style="padding: 6px 8px;">AI Prob</th>
+            <th style="padding: 6px 8px;">Playbook Horizon</th>
           </tr>
         </thead>
         <tbody>
