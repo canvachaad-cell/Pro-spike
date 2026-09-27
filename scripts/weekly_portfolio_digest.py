@@ -188,13 +188,19 @@ def collect_digest_data(days: int = 7) -> dict:
                 "urgency": urgency,
             })
 
-    # 3. Top Candidate Archetypes
+    # 3. Top Candidate Archetypes (Restricted to True Institutional Quality Cohort)
     top_candidates = []
     if os.path.exists(ARCHETYPES_FILE):
         try:
             adf = pd.read_csv(ARCHETYPES_FILE)
-            if "RULE3_SCORE" in adf.columns and not adf.empty:
-                ranked = adf.sort_values(by="RULE3_SCORE", ascending=False).head(5)
+            if not adf.empty:
+                # Use pre-sorted institutional hierarchy: QUALITY_80 -> A-GRADE -> RULE3_SCORE
+                if "QUALITY_80" in adf.columns and "DELIV_GRADE" in adf.columns:
+                    q_adf = adf[(adf["QUALITY_80"] == True) & (adf["DELIV_GRADE"].isin(["A-GRADE", "B-GRADE"]))]
+                    ranked = q_adf.head(5) if len(q_adf) >= 5 else adf.head(5)
+                else:
+                    ranked = adf.head(5)
+
                 for _, r in ranked.iterrows():
                     top_candidates.append({
                         "symbol": str(r.get("SYMBOL", "")).strip().upper(),
@@ -202,6 +208,8 @@ def collect_digest_data(days: int = 7) -> dict:
                         "close": _to_float(r.get("CLOSE")),
                         "ai_prob": _to_float(r.get("AI_WIN_PROBABILITY")),
                         "score": _to_float(r.get("RULE3_SCORE")),
+                        "deliv_per": _to_float(r.get("DELIV_PER")),
+                        "grade": str(r.get("DELIV_GRADE", "A-GRADE")),
                     })
         except Exception:
             pass
