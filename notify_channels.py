@@ -54,11 +54,9 @@ _ENV_PATH = os.path.join(ROOT_DIR, ".env")
 # os.environ ALWAYS wins over .env so Render env vars take precedence.
 # ---------------------------------------------------------------------------
 def _read_env_key(name: str):
-    """Resolve a config value: os.environ first, then the repo-root .env file."""
-    val = os.environ.get(name)
-    if val and val.strip():
-        return val.strip()
-
+    """Resolve a config value: repo-root .env file first, falling back to os.environ.
+    On production hosting (Render), .env is absent and os.environ is used automatically.
+    """
     try:
         with open(_ENV_PATH, "r", encoding="utf-8") as f:
             for line in f:
@@ -67,10 +65,15 @@ def _read_env_key(name: str):
                     continue
                 if line.startswith(f"{name}="):
                     raw = line.split("=", 1)[1].strip().strip('"').strip("'")
-                    return raw or None
+                    if raw:
+                        return raw
     except OSError:
         # .env is optional (it is gitignored and absent on Render) — not an error.
-        return None
+        pass
+
+    val = os.environ.get(name)
+    if val and val.strip():
+        return val.strip()
     return None
 
 

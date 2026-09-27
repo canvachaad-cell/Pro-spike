@@ -1374,6 +1374,23 @@ After migrating to a basic JSON body, ntfy server rejected requests with `HTTP 4
 **FAILED ATTEMPTS**: Sending string `"priority": "default"` in JSON payload (failed with ntfy code 40024).  
 **AI PROCESS**: Replicated failure, inspected server response, mapped schema requirements, fixed type mapping, and empirically confirmed poll reception.
 
+---
+
+## BUG-078: OS Environment Variable Shadowing Repo-Root .env in Alert Channels
+**STATUS**: FIXED  
+**FILE**: `notify_channels.py`, `.env`  
+**DISCOVERED BY**: User Email Configuration, Demon Core Audit, 2026-09-27  
+**SYMPTOM**: When attempting to configure Gmail SMTP email alerts in `.env`, `send_email()` repeatedly failed with:
+```text
+SMTP_ERROR: (535, b'5.7.8 Username and Password not accepted. BadCredentials')
+```
+even after the user generated a fresh, valid 16-character Google App Password.  
+**ROOT CAUSE**: In `notify_channels.py:57-60`, `_read_env_key()` checked `val = os.environ.get(name)` first before inspecting `.env`. A stale, expired `GMAIL_APP_PASSWORD` was set in the host OS environment variables, silently shadowing and overriding the fresh app password specified in the project's local `.env` file.  
+**FIX**: In `notify_channels.py`, inverted the resolution order in `_read_env_key()` to inspect the project-root `.env` file first. If `.env` exists and contains the requested key, it takes precedence; otherwise, it falls back to `os.environ` (preserving seamless operation on headless production hosting like Render.com where `.env` is absent).  
+**FAILED ATTEMPTS**: Testing app passwords without quotes or removing spaces (the true failure was the OS variable shadowing).  
+**AI PROCESS**: Evaluated `repr(_read_env_key("GMAIL_APP_PASSWORD"))` vs `.env` content, unmasked the shadowing OS variable, patched `_read_env_key()` priority, verified `email: True (OK)` on `--test-channel`, and confirmed delivery to `forexamplekerala@gmail.com`.
+
+
 
 
 
