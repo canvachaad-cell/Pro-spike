@@ -1349,6 +1349,32 @@ In BUG-074, multi-source inheritance mapped `ENTRY_PRICE`, `STOP_LOSS`, and `TAK
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: `fix_before_touch` protocol, root cause analysis of inner-join filtering in `ledger_manager.py`, multi-index yfinance extraction audit, empirical browser verification via Playwright, and cross-repo push.
 
+---
+
+## BUG-077: ntfy Push Notification UnicodeEncodeError & Priority Schema Type Mismatch
+**STATUS**: FIXED  
+**FILE**: `notify_channels.py`, `.env`  
+**DISCOVERED BY**: User Inquiry ("callmebot is not replying"), Demon Core Verification, 2026-09-27  
+**SYMPTOM**: When attempting to dispatch mobile push notifications via `send_ntfy()`, Python crashed with:
+```text
+UnicodeEncodeError: 'latin-1' codec can't encode character '\u2014' in position 10: ordinal not in range(256)
+```
+After migrating to a basic JSON body, ntfy server rejected requests with `HTTP 400`:
+```json
+{"code":40024,"http":400,"error":"invalid request: request body must be valid JSON"}
+```
+**ROOT CAUSE**:  
+1. `send_ntfy()` originally placed notification metadata (`Title`, `Priority`, `Tags`) directly in HTTP headers. In Python's `http.client.putheader()`, header values are strictly encoded using `latin-1`. Titles containing an em-dash `—` (`\u2014`) or non-ASCII currency symbols caused `UnicodeEncodeError`.
+2. In ntfy's server JSON schema (Golang), the `"priority"` field is strictly typed as an `int` (1 to 5). Passing string priorities (e.g. `"default"`, `"high"`) caused Go's JSON unmarshaler to fail parsing the payload.  
+**FIX**:  
+1. In `notify_channels.py`, switched `send_ntfy()` to use ntfy's native JSON publication endpoint (`requests.post(NTFY_BASE, json=payload)`).
+2. Defined `NTFY_PRIORITY_MAP = {"min": 1, "low": 2, "default": 3, "high": 4, "urgent": 5, "max": 5}` to safely map string and numeric priorities into compliant integer levels (`1..5`).
+3. Enabled instant mobile notifications by configuring `NTFY_TOPIC=prospike-fawaz-alerts-924` in `.env`.
+4. Verified end-to-end delivery: `python alert_engine.py --test-channel` returned `ntfy : True (OK)`, and polled server message confirmed delivery of Unicode title and text.  
+**FAILED ATTEMPTS**: Sending string `"priority": "default"` in JSON payload (failed with ntfy code 40024).  
+**AI PROCESS**: Replicated failure, inspected server response, mapped schema requirements, fixed type mapping, and empirically confirmed poll reception.
+
+
 
 
 

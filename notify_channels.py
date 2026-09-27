@@ -134,6 +134,16 @@ def send_whatsapp(text: str):
 NTFY_BASE = "https://ntfy.sh"
 
 
+NTFY_PRIORITY_MAP = {
+    "min": 1,
+    "low": 2,
+    "default": 3,
+    "high": 4,
+    "urgent": 5,
+    "max": 5,
+}
+
+
 def send_ntfy(title: str, text: str, priority: str = "high", tags: str = ""):
     """Returns (ok: bool, detail: str)."""
     topic = _read_env_key("NTFY_TOPIC")
@@ -141,19 +151,29 @@ def send_ntfy(title: str, text: str, priority: str = "high", tags: str = ""):
         logger.info("send_ntfy: NOT_CONFIGURED (NTFY_TOPIC missing)")
         return False, "NOT_CONFIGURED"
 
-    headers = {
-        "Title": title,
-        "Priority": priority,
-        "Content-Type": "text/plain; charset=utf-8",
+    if isinstance(priority, str):
+        p_val = NTFY_PRIORITY_MAP.get(priority.strip().lower(), 3)
+    elif isinstance(priority, int):
+        p_val = max(1, min(5, priority))
+    else:
+        p_val = 3
+
+    payload = {
+        "topic": topic,
+        "title": title,
+        "message": text,
+        "priority": p_val,
     }
     if tags:
-        headers["Tags"] = tags
+        if isinstance(tags, str):
+            payload["tags"] = [t.strip() for t in tags.split(",") if t.strip()]
+        elif isinstance(tags, list):
+            payload["tags"] = tags
 
     try:
         resp = requests.post(
-            f"{NTFY_BASE}/{topic}",
-            data=text.encode("utf-8"),
-            headers=headers,
+            NTFY_BASE,
+            json=payload,
             timeout=HTTP_TIMEOUT,
         )
     except requests.RequestException as exc:
