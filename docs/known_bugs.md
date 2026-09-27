@@ -1390,6 +1390,24 @@ even after the user generated a fresh, valid 16-character Google App Password.
 **FAILED ATTEMPTS**: Testing app passwords without quotes or removing spaces (the true failure was the OS variable shadowing).  
 **AI PROCESS**: Evaluated `repr(_read_env_key("GMAIL_APP_PASSWORD"))` vs `.env` content, unmasked the shadowing OS variable, patched `_read_env_key()` priority, verified `email: True (OK)` on `--test-channel`, and confirmed delivery to `forexamplekerala@gmail.com`.
 
+---
+
+## BUG-079: Pre-Exit Proximity Alerts Inactive & CLI-Only (Phase 4 Automation)
+**STATUS**: FIXED  
+**FILE**: `alert_engine.py`, `.env`  
+**DISCOVERED BY**: User Roadmap Request ("lets do 1"), Demon Core Implementation, 2026-09-27  
+**SYMPTOM**: In `alert_engine.py`, `compute_approach_alerts()` existed as an isolated calculation routine that only printed plain text to the console when `--approaching` was passed. It had no formatting digest, no integration with `send_ntfy()` or `send_email()`, no deduplication, and was never called in automated pipeline runs.  
+**ROOT CAUSE**: Phase 4 was originally left as an opt-in CLI diagnostic. Active positions approaching within 3.0% of their Stop-Loss (e.g. `GRASIM` at 2.93%, `NBIFIN` at 2.39%) produced zero push or email warnings to the trader.  
+**FIX**:  
+1. Added `build_approach_digest()` in `alert_engine.py` to format high-urgency proximity warning cards with current close, exit level, distance %, and recommended monitoring actions.
+2. Implemented `dispatch_approach_alerts()` with daily deduplication stored in `data/alerts_state.json["approach_history"]` to prevent repeat notifications within the same calendar day while guaranteeing daily re-checks.
+3. Integrated proximity dispatch into `dispatch_ledger_alerts()` (gated by `ALERT_APPROACH_ENABLED=1`) and added `--send` CLI support.
+4. Set `ALERT_APPROACH_PCT=3.0` in `.env`.
+5. Empirically verified: `python alert_engine.py --approaching --send` delivered 2 active warnings (`GRASIM`, `NBIFIN`) to both phone push and Gmail inbox with `ntfy : True (OK)` and `email : True (OK)`. Subsequent run on same day confirmed 0-spam dedup.  
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` protocol, state isolation in `alerts_state.json`, dual-channel verification, and multi-remote push.
+
+
 
 
 

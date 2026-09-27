@@ -418,6 +418,28 @@ def build_digest(events: list):
     return title, "\n".join(lines).strip()
 
 
+def build_approach_digest(rows: list[dict]):
+    """Format near-level warning digest for phone push and email."""
+    title = f"⚠️ Pro Spike — {len(rows)} position(s) near exit levels"
+    lines = [
+        f"⚠️ *PRO SPIKE PRE-EXIT WARNING* — {len(rows)} alert(s)",
+        "Open position(s) approaching Stop-Loss or Target Profit:",
+        "",
+    ]
+    for r in rows:
+        label = ENGINE_LABELS.get(r["engine"], r["engine"])
+        target_name = "Stop-Loss (SL)" if r["event_type"] == "APPROACHING_SL" else "Take-Profit (TP)"
+        icon = "🔴" if r["event_type"] == "APPROACHING_SL" else "🟢"
+        lines.append(
+            f"{icon} *{r['event_type'].replace('_', ' ')}*\n"
+            f"*{r['symbol']}* · {label}\n"
+            f"Close ₹{r['close']} vs {target_name} ₹{r['level']}  (Distance: {r['distance_pct']}%)\n"
+            f"Action: Monitor position for potential exit."
+        )
+        lines.append("")
+    return title, "\n".join(lines).strip()
+
+
 # ---------------------------------------------------------------------------
 # Orchestration
 # ---------------------------------------------------------------------------
@@ -478,7 +500,71 @@ def dispatch_ledger_alerts(dry_run: bool = False, no_send: bool = False,
 
     append_log(events)
     save_state(new_state)
+
+    approach_enabled = (_read_env_key("ALERT_APPROACH_ENABLED") or "1").strip().lower() not in ("0", "false", "no", "off")
+    if approach_enabled and not dry_run and not no_send:
+        try:
+            dispatch_approach_alerts(dry_run=dry_run, no_send=no_send)
+        except Exception:
+            logger.exception("dispatch_approach_alerts failed (non-critical)")
+
     return len(events)
+
+
+def dispatch_approach_alerts(pct: float | None = None, dry_run: bool = False,
+                             no_send: bool = False) -> int:
+    """Detect and dispatch proximity warnings for ACTIVE positions near SL/TP.
+    Deduplicated per symbol per day in alerts_state.json.
+    """
+    if not alerts_enabled():
+        return 0
+
+    if pct is None:
+        pct = float(_read_env_key("ALERT_APPROACH_PCT") or 3.0)
+
+    rows = compute_approach_alerts(pct=pct)
+    if not rows:
+        print(f"Approaching: no ACTIVE position within {pct}% of SL/TP.")
+        return 0
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    state = load_state()
+    approach_history = state.get("approach_history", {})
+
+    new_rows = []
+    for r in rows:
+        key = f"{today_str}|{r['engine']}|{r['symbol']}|{r['event_type']}"
+        if key not in approach_history:
+            new_rows.append(r)
+            approach_history[key] = _now_str()
+
+    if not new_rows:
+        print(f"Approaching: {len(rows)} position(s) near levels already alerted today.")
+        return 0
+
+    title, body = build_approach_digest(new_rows)
+    print(f"Approaching: {len(new_rows)} warning(s) near levels")
+    print(body)
+
+    if dry_run:
+        print("[DRY RUN] Warning messages not sent.")
+        return len(new_rows)
+
+    if no_send:
+        print("[NO SEND] Warning messages skipped.")
+        return len(new_rows)
+
+    ok_wa, detail_wa = send_whatsapp(body)
+    ok_ntfy, detail_ntfy = send_ntfy(title, body, priority="high", tags="warning,rotating_light")
+    ok_mail, detail_mail = send_email(title, body)
+
+    print(f"  whatsapp: {ok_wa} ({detail_wa})")
+    print(f"  ntfy    : {ok_ntfy} ({detail_ntfy})")
+    print(f"  email   : {ok_mail} ({detail_mail})")
+
+    state["approach_history"] = approach_history
+    save_state(state)
+    return len(new_rows)
 
 
 def _test_channel():
@@ -509,8 +595,10 @@ def main() -> int:
     ap.add_argument("--approaching", action="store_true",
                     help="Phase 4: report ACTIVE positions near their SL/TP")
     ap.add_argument("--approach-pct", type=float,
-                    default=float(_read_env_key("ALERT_APPROACH_PCT") or 1.5),
-                    help="Band width for --approaching (default 1.5)")
+                    default=float(_read_env_key("ALERT_APPROACH_PCT") or 3.0),
+                    help="Band width for --approaching (default 3.0)")
+    ap.add_argument("--send", action="store_true",
+                    help="Dispatch outbound notifications for --approaching instead of console-only output")
     args = ap.parse_args()
 
     if args.test_channel:
@@ -518,9 +606,13 @@ def main() -> int:
         return 0
 
     if args.approaching:
-        rows = compute_approach_alerts(args.approach_pct)
+        pct = args.approach_pct
+        if args.send:
+            dispatch_approach_alerts(pct=pct, dry_run=args.dry_run, no_send=args.no_send)
+            return 0
+        rows = compute_approach_alerts(pct)
         if not rows:
-            print(f"Approaching: no ACTIVE position within {args.approach_pct}% of SL/TP.")
+            print(f"Approaching: no ACTIVE position within {pct}% of SL/TP.")
             return 0
         for r in rows:
             print(f"{r['event_type']:<15} {r['symbol']:<14} {r['engine']:<14} "
