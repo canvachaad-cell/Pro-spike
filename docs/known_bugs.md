@@ -1405,7 +1405,26 @@ even after the user generated a fresh, valid 16-character Google App Password.
 4. Set `ALERT_APPROACH_PCT=3.0` in `.env`.
 5. Empirically verified: `python alert_engine.py --approaching --send` delivered 2 active warnings (`GRASIM`, `NBIFIN`) to both phone push and Gmail inbox with `ntfy : True (OK)` and `email : True (OK)`. Subsequent run on same day confirmed 0-spam dedup.  
 **FAILED ATTEMPTS**: None.  
-**AI PROCESS**: `fix_before_touch` protocol, state isolation in `alerts_state.json`, dual-channel verification, and multi-remote push.
+---
+
+## BUG-080: Weekly Portfolio Health & Edge Digest with Multi-Channel Transport
+**STATUS**: FIXED  
+**FILE**: `scripts/weekly_portfolio_digest.py`, `notify_channels.py`  
+**DISCOVERED BY**: User Task Request ("i think we should 3 and 4 in tasklist"), Demon Core PLAN_DEEP, 2026-09-27  
+**SYMPTOM**: Quant desk had no centralized weekend report aggregating closed-trade performance across all 4 disparate ledgers, no unified view of current portfolio risk/SL distance for all open positions, and no high-conviction candidate preview for the upcoming trading week.  
+**ROOT CAUSE**: Engine ledgers operated independently (`sbia_ledger.csv`, `flexgate_ledger.csv`, `flexgate2_ledger.csv`, `corner_engine_ledger.csv`), requiring manual multi-page inspection on Dash or manual CSV review to assess realized weekly win rate and active position exposure.  
+**FIX**:  
+1. Added `html: bool = False` support to `send_email()` in `notify_channels.py` allowing rich HTML table markup and status badges while preserving 100% backward compatibility for existing plain text callers.
+2. Implemented `scripts/weekly_portfolio_digest.py` to:
+   - Compute 7-day realized performance (total exits, win rate, net PnL sum, net R-multiple booked).
+   - Evaluate active portfolio health across all 37 open positions, identifying any within 3.0% of SL or TP.
+   - Extract top 5 upcoming candidate setups ranked by Composite Rule-3 Score and AI Win Probability from `data/winner_archetypes_ranked.csv`.
+   - Dispatch an executive HTML email via Gmail SMTP and a compact push notification via `ntfy.sh`.
+3. Empirically verified: `python scripts/weekly_portfolio_digest.py --dry-run` and `--send` executed cleanly with `Email Dispatch: ✅ OK` and `Mobile Push Dispatch: ✅ OK`.
+4. Verified zero ledger corruption: `git diff --stat data/*ledger*.csv` is completely empty. Regression suite passes 45/45 tests.  
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` report, `DEMONCORE: PLAN_DEEP` blast-radius audit, backward-compatible MIMEText subtype enhancement, and dual-remote sync.
+
 
 
 

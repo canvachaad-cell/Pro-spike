@@ -199,7 +199,7 @@ SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 465
 
 
-def send_email(subject: str, body: str):
+def send_email(subject: str, body: str, html: bool = False):
     """Returns (ok: bool, detail: str)."""
     to_email = _read_env_key("ALERT_EMAIL_TO")
     from_email = _read_env_key("ALERT_EMAIL_FROM") or to_email
@@ -209,7 +209,8 @@ def send_email(subject: str, body: str):
         logger.info("send_email: NOT_CONFIGURED (ALERT_EMAIL_TO / GMAIL_APP_PASSWORD missing)")
         return False, "NOT_CONFIGURED"
 
-    msg = MIMEText(body, "plain", "utf-8")
+    subtype = "html" if html else "plain"
+    msg = MIMEText(body, subtype, "utf-8")
     msg["Subject"] = subject
     msg["From"] = from_email
     msg["To"] = to_email
