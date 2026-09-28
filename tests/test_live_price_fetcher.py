@@ -11,6 +11,8 @@ from live_price_fetcher import (
     get_portfolio_proximity_summary,
     get_active_symbols,
     render_risk_radar_banner,
+    get_live_quotes,
+    CACHE_FILE,
 )
 
 
@@ -116,3 +118,45 @@ def test_render_risk_radar_banner_deduplication():
     # Should show the tighter SL distance (1.7% / 363.10)
     assert "1.7%" in badge_text
     assert "363.10" in badge_text
+
+
+def test_get_live_quotes_stale_while_revalidate(monkeypatch):
+    """Verify Stale-While-Revalidate returns cached quotes instantly even when expired."""
+    import time
+    import json
+    import live_price_fetcher
+
+    refreshed_called = []
+    monkeypatch.setattr(
+        live_price_fetcher,
+        "_trigger_background_refresh",
+        lambda symbols, max_workers=10: refreshed_called.append(symbols)
+    )
+
+    test_quotes = {
+        "GRASIM": {
+            "cmp": 3190.0,
+            "exchange": "NSE",
+            "timestamp": time.time() - 600,  # 10 minutes old
+            "time_str": "12:00:00 PM",
+            "source": "cached",
+        }
+    }
+    payload = {
+        "timestamp": time.time() - 600,
+        "updated_at": "10 minutes ago",
+        "quotes": test_quotes,
+    }
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(payload, f)
+
+    t0 = time.perf_counter()
+    quotes = get_live_quotes(["GRASIM"], force_refresh=False, ttl_seconds=300)
+    elapsed_ms = (time.perf_counter() - t0) * 1000
+
+    # Must return immediately (< 500ms) without blocking
+    assert elapsed_ms < 500
+    assert "GRASIM" in quotes
+    assert quotes["GRASIM"]["cmp"] == 3190.0
+    assert len(refreshed_called) == 1
+

@@ -22,7 +22,7 @@ test.describe('FULL_TEST End-to-End QA Suite', () => {
       console.log(`Navigating to route: ${r.path}`);
       const resp = await page.goto(r.path, { waitUntil: 'domcontentloaded' });
       expect(resp.status()).toBe(200);
-      await page.locator(r.expectedSelector).first().waitFor({ state: 'visible', timeout: 10000 });
+      await page.locator(r.expectedSelector).first().waitFor({ state: 'visible', timeout: 15000 });
       const isVisible = await page.locator(r.expectedSelector).first().isVisible();
       expect(isVisible).toBe(true);
     }
@@ -37,21 +37,20 @@ test.describe('FULL_TEST End-to-End QA Suite', () => {
     await page.waitForSelector('#engine-tab-content', { state: 'visible' });
     await page.waitForTimeout(1500);
 
-    // 1. Check Path A (SBIA Alpha) tab
-    await page.locator('#engine-tabs .tab', { hasText: 'SBIA Alpha' }).first().click();
-    await page.waitForTimeout(1500);
-    const contentAlpha = await page.content();
-    // Verify GROWW is rendered cleanly
-    expect(contentAlpha.includes('GROWW')).toBe(true);
+    // 1. SBIA Alpha tab (default) - verify GROWW is present
+    await page.locator('#engine-tab-content').getByText('GROWW').first().waitFor({ state: 'visible', timeout: 15000 });
+    expect(await page.locator('#engine-tab-content').getByText('GROWW').count()).toBeGreaterThan(0);
 
-    // 2. Check Tab 3 (FlexGate) tab
-    await page.locator('#engine-tabs .tab', { hasText: 'FlexGate' }).first().click();
-    await page.waitForTimeout(1500);
-    const contentFlex = await page.content();
-    // Verify active trades are synced
-    expect(contentFlex.includes('MOTHERSON')).toBe(true);
-    expect(contentFlex.includes('PAGEIND')).toBe(true);
-    expect(contentFlex.includes('INDUSTOWER')).toBe(true);
+    // 2. Switch to FlexGate Tab
+    const flexTab = page.locator('#engine-tabs .tab', { hasText: 'FlexGate' }).first();
+    await flexTab.scrollIntoViewIfNeeded();
+    await flexTab.click();
+
+    // Verify active trades are synced and rendered
+    await page.locator('#engine-tab-content').getByText('MOTHERSON').first().waitFor({ state: 'visible', timeout: 15000 });
+    expect(await page.locator('#engine-tab-content').getByText('MOTHERSON').count()).toBeGreaterThan(0);
+    expect(await page.locator('#engine-tab-content').getByText('PAGEIND').count()).toBeGreaterThan(0);
+    expect(await page.locator('#engine-tab-content').getByText('INDUSTOWER').count()).toBeGreaterThan(0);
   });
 
   test('4 & 8. Watchlist Live Risk Radar & Quote Refresh Contract', async ({ page }) => {

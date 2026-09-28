@@ -19,10 +19,13 @@ Features:
 import os
 import time
 import json
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import pandas as pd
 import yfinance as yf
+
+_REFRESH_LOCK = threading.Lock()
 
 CACHE_FILE = os.path.join("data", "live_quotes_cache.json")
 CLOUD_FILE = os.path.join("data", "dashboard_cloud.csv")
@@ -103,62 +106,26 @@ def _fetch_single_quote(symbol: str, exch: str) -> tuple[str, float | None]:
     return symbol, None
 
 
-def get_live_quotes(
-    symbols: list[str] | None = None,
-    force_refresh: bool = False,
-    ttl_seconds: int = 60,
-    max_workers: int = 10,
-) -> dict[str, dict]:
-    """Fetch live quotes for active symbols.
-
-    Returns a dict keyed by SYMBOL containing:
-      {'cmp': float, 'exchange': str, 'timestamp': float, 'time_str': str, 'source': str}
-    """
-    if symbols is None:
-        symbols = get_active_symbols()
-
-    if not symbols:
-        return {}
-
+def _sync_fetch_and_cache(symbols: list[str], max_workers: int = 10) -> dict[str, dict]:
+    """Internal synchronous fetcher that queries yfinance and writes atomically to cache."""
     now_ts = time.time()
-
-    # 1. Check local cache first
-    cached_data = {}
-    if os.path.exists(CACHE_FILE) and not force_refresh:
-        try:
-            with open(CACHE_FILE, "r", encoding="utf-8") as f:
-                raw = json.load(f)
-                cache_ts = raw.get("timestamp", 0)
-                if (now_ts - cache_ts) < ttl_seconds:
-                    cached_quotes = raw.get("quotes", {})
-                    # If all requested symbols exist in cache, return immediately
-                    if all(s in cached_quotes for s in symbols):
-                        return cached_quotes
-                    cached_data = cached_quotes
-        except Exception:
-            cached_data = {}
-
     exch_map = get_exchange_map()
+    new_quotes = {}
 
-    # 2. Parallel network fetch for missing or expired symbols
-    symbols_to_fetch = [s for s in symbols if force_refresh or (s not in cached_data)]
-    new_quotes = dict(cached_data)
+    tasks = [(s, exch_map.get(s, "NSE")) for s in symbols]
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        results = executor.map(lambda args: _fetch_single_quote(*args), tasks)
+        for sym, px in results:
+            if px is not None and px > 0:
+                new_quotes[sym] = {
+                    "cmp": round(px, 2),
+                    "exchange": exch_map.get(sym, "NSE"),
+                    "timestamp": now_ts,
+                    "time_str": datetime.now().strftime("%I:%M:%S %p"),
+                    "source": "live_yfinance",
+                }
 
-    if symbols_to_fetch:
-        tasks = [(s, exch_map.get(s, "NSE")) for s in symbols_to_fetch]
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            results = executor.map(lambda args: _fetch_single_quote(*args), tasks)
-            for sym, px in results:
-                if px is not None and px > 0:
-                    new_quotes[sym] = {
-                        "cmp": round(px, 2),
-                        "exchange": exch_map.get(sym, "NSE"),
-                        "timestamp": now_ts,
-                        "time_str": datetime.now().strftime("%I:%M:%S %p"),
-                        "source": "live_yfinance",
-                    }
-
-    # 3. Fallback for any unresolvable tickers to dashboard_cloud.csv EOD close
+    # Fallback for any unresolvable tickers to dashboard_cloud.csv EOD close
     eod_prices = {}
     if os.path.exists(CLOUD_FILE):
         try:
@@ -179,19 +146,82 @@ def get_live_quotes(
                 "source": "eod_fallback",
             }
 
-    # 4. Save to cache
+    # Atomic write to cache file using tmp file replace
     try:
         payload = {
             "timestamp": now_ts,
             "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "quotes": new_quotes,
         }
-        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        tmp_file = CACHE_FILE + ".tmp"
+        with open(tmp_file, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2)
+        os.replace(tmp_file, CACHE_FILE)
     except Exception:
         pass
 
     return new_quotes
+
+
+def _trigger_background_refresh(symbols: list[str], max_workers: int = 10):
+    """Spawns a daemon thread to quietly update disk cache without blocking callers."""
+    def worker():
+        if _REFRESH_LOCK.acquire(blocking=False):
+            try:
+                _sync_fetch_and_cache(symbols, max_workers=max_workers)
+            finally:
+                _REFRESH_LOCK.release()
+
+    t = threading.Thread(target=worker, daemon=True)
+    t.start()
+
+
+def get_live_quotes(
+    symbols: list[str] | None = None,
+    force_refresh: bool = False,
+    ttl_seconds: int = 300,
+    max_workers: int = 10,
+) -> dict[str, dict]:
+    """Fetch live quotes for active symbols with Stale-While-Revalidate non-blocking caching.
+
+    Returns a dict keyed by SYMBOL containing:
+      {'cmp': float, 'exchange': str, 'timestamp': float, 'time_str': str, 'source': str}
+    """
+    if symbols is None:
+        symbols = get_active_symbols()
+
+    if not symbols:
+        return {}
+
+    now_ts = time.time()
+
+    # 1. Check local cache
+    cached_data = {}
+    cache_ts = 0
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+                cache_ts = raw.get("timestamp", 0)
+                cached_data = raw.get("quotes", {})
+        except Exception:
+            cached_data = {}
+
+    # If force_refresh is requested, fetch synchronously
+    if force_refresh:
+        return _sync_fetch_and_cache(symbols, max_workers=max_workers)
+
+    # 2. Stale-While-Revalidate: If cache has all requested symbols, return instantly
+    if cached_data and all(s in cached_data for s in symbols):
+        # If cache is still fresh (< ttl_seconds), return immediately
+        if (now_ts - cache_ts) < ttl_seconds:
+            return cached_data
+        # If expired, return cached data immediately for zero-latency UI and refresh in background
+        _trigger_background_refresh(symbols, max_workers=max_workers)
+        return cached_data
+
+    # 3. If cache is missing or incomplete, fetch synchronously
+    return _sync_fetch_and_cache(symbols, max_workers=max_workers)
 
 
 def compute_trade_proximity(

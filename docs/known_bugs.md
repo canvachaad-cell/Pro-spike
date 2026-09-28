@@ -1582,3 +1582,19 @@ even after the user generated a fresh, valid 16-character Google App Password.
 5. Added unit test `test_render_risk_radar_banner_deduplication()` in `tests/test_live_price_fetcher.py`.
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: `fix_before_touch` pre-flight checklist, `DEMONCORE: PLAN_DEEP` blast radius mapping, Option A UI deduplication design, unit test validation, and dual-remote sync.
+---
+
+## BUG-086: Tab A (SBIA Alpha) Callback Freeze on 60s Live Price Cache Expiration
+**STATUS**: FIXED  
+**FILE**: `live_price_fetcher.py`, `tests/test_live_price_fetcher.py`  
+**DISCOVERED BY**: User Inquiry ("i have notice some loading time when moving through tab a check that also resume test with that"), Demon Core investigation, 2026-09-28  
+**SYMPTOM**: Switching to Tab A ("SBIA Alpha") on `/institutional-signals` stalled for **6,943 ms (~7 seconds)**, causing visual browser freeze and unresponsive tab switching.  
+**ROOT CAUSE**: `alpha_table()` calls `get_live_quotes()`. In `live_price_fetcher.py:109`, `ttl_seconds` defaulted to `60` seconds. Whenever 60 seconds elapsed, `get_live_quotes()` discarded the cache and fired a synchronous multi-threaded `yfinance` network request for 29 tickers over the internet. Because Dash callbacks execute synchronously in the server process, the server blocked for ~7 seconds before returning the tab HTML.  
+**FIX**: 
+1. **Stale-While-Revalidate Architecture**: Upgraded `get_live_quotes()` to immediately return cached quotes from disk (<10ms) whenever present, eliminating all network blocking during user tab switching.
+2. **Asynchronous Background Refresh**: Added non-blocking daemon thread `_trigger_background_refresh()` protected by `threading.Lock()` to quietly refresh the disk cache in the background when expired.
+3. **Atomic Cache Replacement**: Swapped direct file writes for `os.replace(tmp_file, CACHE_FILE)` preventing partial read race conditions.
+4. **Increased Default TTL**: Extended default `ttl_seconds` from 60s to 300s (5 minutes).
+5. **Empirical Verification**: Tab A callback render time dropped from **6,943.95 ms ➔ 159.38 ms (43x speedup)**; all 6 mobile Playwright tests passed; all 61 pytest tests passed; ledgers 100% untouched.
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` pre-flight checklist, micro-benchmarking with Python `perf_counter()`, cache expiry simulation, and dual-remote sync.
