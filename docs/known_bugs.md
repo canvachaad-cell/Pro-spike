@@ -1598,3 +1598,32 @@ even after the user generated a fresh, valid 16-character Google App Password.
 5. **Empirical Verification**: Tab A callback render time dropped from **6,943.95 ms ➔ 159.38 ms (43x speedup)**; all 6 mobile Playwright tests passed; all 61 pytest tests passed; ledgers 100% untouched.
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: `fix_before_touch` pre-flight checklist, micro-benchmarking with Python `perf_counter()`, cache expiry simulation, and dual-remote sync.
+
+---
+
+## BUG-087: Initial Load & Button Navigation Latency (Winner Archetypes & Institutional Signals)
+**STATUS**: FIXED  
+**FILE**: `dash_app_v2.py`, `dash_pages/winner_archetypes.py`, `dash_pages/institutional_signals.py`, `winner_archetype_data.py`, `live_price_fetcher.py`  
+**DISCOVERED BY**: User Inquiry ("also check inoticed in first load of website clicking different vutton like winner archtype ,institutioonal signals also take time did you check that"), Demon Core PLAN_DEEP, 2026-09-28  
+**SYMPTOM**: On the first load of the web application, clicking navigation buttons like **Winner Archetypes** (`/winner-archetypes`) and **Institutional Signals** (`/institutional-signals`) suffered high latency (up to **9,613 ms**), causing visible UI freezing and delayed page transitions.  
+**ROOT CAUSE**: 
+1. **Unpopulated Initial Sidebar Nav Links**: In `dash_app_v2.py`, `sidebar-nav-links` was initialized empty (`children=[]`), meaning desktop navigation links did not exist in the DOM until the server-side callback `update_nav` completed, delaying click registration.
+2. **Winner Archetypes Double Round-Trip**: In `dash_pages/winner_archetypes.py`, `layout()` mounted an empty shell with `"Loading signals..."` and dispatched an initial callback `update_card_grid("QUALITY")` with `prevent_initial_call=False`. The server serialized a redundant 211 KB JSON virtual DOM tree over the wire, causing React reconciliation and Tailwind CDN class parsing to freeze the browser thread for over 8 seconds.
+3. **Institutional Signals Redundant Callback**: In `dash_pages/institutional_signals.py`, `layout()` pre-rendered `_tab_alpha()`, but `render_engine_tab` had `prevent_initial_call=False`, firing an immediate redundant POST callback on mount that recomputed `_tab_alpha()` and `velocity_simulation` daily equity curves.
+4. **Unmemoized Radar Computations**: `winner_archetype_data.build_radar_df` recomputed streak and lockout logic across all 97 symbols on every layout call.
+5. **Partial Cache Fallback in Live Quotes**: `live_price_fetcher.get_live_quotes()` fell back to a synchronous network fetch if even a single symbol was missing from the local cache file.  
+**FIX**: 
+1. **Pre-populate Sidebar Links (`dash_app_v2.py`)**: Extracted `build_desktop_nav(pathname="/", collapsed=False)` and populated `sidebar-nav-links` directly in the initial layout shell so links exist from t=0.
+2. **Single-Pass Pre-Rendering (`dash_pages/winner_archetypes.py`)**: Extracted `_get_cards()` helper, pre-rendered the initial 30 `"QUALITY"` cards directly inside `_archetype_switcher_shell(initial_cards)` in `layout()`, and set `prevent_initial_call=True` on `update_card_grid`. Completely eliminated the second round-trip callback and `"Loading signals..."` flash.
+3. **Prevent Redundant Engine Tab Callback (`dash_pages/institutional_signals.py`)**: Set `prevent_initial_call=True` on `render_engine_tab`.
+4. **Memoize Radar Data Processing (`winner_archetype_data.py`)**: Added `@lru_cache(maxsize=8)` keyed on `sbia_ledger.csv` mtime for instantaneous (0.0 ms) repeated lookups.
+5. **Resilient SWR Cache Return (`live_price_fetcher.py`)**: Allowed `get_live_quotes()` to immediately return cached quotes with background daemon thread refresh even if expired or missing partial symbols.
+6. **Empirical Verification**:
+   - `/winner-archetypes` navigation latency dropped from **9,613 ms ➔ 1,229 ms (7.8x speedup)**.
+   - `/institutional-signals` navigation latency dropped from **6,457 ms ➔ 1,848 ms (3.5x speedup)**.
+   - All 6 Mobile Chrome Playwright tests pass (26.4s).
+   - All 5 Desktop Chrome Playwright tests pass (27.4s).
+   - All 61 pytest regression tests pass (5.96s).
+   - Strategy ledgers (`data/*ledger*.csv`) 100% untouched.  
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` pre-flight checklist, Playwright millisecond network tracing, DOM polling diagnostics, `DEMONCORE: PLAN_DEEP` blast radius mapping, and dual-remote sync.

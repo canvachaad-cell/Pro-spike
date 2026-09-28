@@ -198,16 +198,6 @@ sidebar_footer = html.Div(
     ]
 )
 
-sidebar = html.Nav(
-    id="sidebar-el",
-    className="hidden md:flex flex-col py-lg px-sm gap-xs bg-surface-container-low/80 backdrop-blur-xl h-[calc(100vh-32px)] my-4 ml-4 rounded-2xl sticky left-0 top-4 border border-white/5 shadow-[0_0_40px_rgba(0,0,0,0.5)] z-40",
-    children=[
-        sidebar_header,
-        html.Div(id="sidebar-nav-links", className="flex-1 flex flex-col gap-base"),
-        sidebar_footer
-    ]
-)
-
 NAV_LINKS = [
     {"name": "Dashboard", "icon": "leaderboard", "path": "/"},
     {"name": "Winner Archetypes", "icon": "emoji_events", "path": "/winner-archetypes"},
@@ -220,6 +210,41 @@ NAV_LINKS = [
     {"name": "Alerts", "icon": "notifications_active", "path": "/notifications"},
     {"name": "Data Health", "icon": "health_and_safety", "path": "/data-health"}
 ]
+
+
+def build_desktop_nav(pathname="/", collapsed=False):
+    base_class = "flex items-center gap-md px-sm py-md rounded-lg font-label-caps text-label-caps transition-all duration-300 ease-in-out min-h-[44px]"
+    active_class = " text-secondary bg-secondary-container/10 border-transparent shadow-[0_0_20px_rgba(174,198,255,0.15)]"
+    inactive_class = " text-on-surface-variant hover:text-secondary hover:bg-white/5"
+
+    items_html = []
+    for item in NAV_LINKS:
+        text_style = {"display": "none"} if collapsed else {}
+        is_active = (pathname == item["path"])
+        cls = base_class + (active_class if is_active else inactive_class)
+        items_html.append(
+            dcc.Link(
+                className=cls,
+                href=item["path"],
+                children=[
+                    html.Span(item["icon"], className="material-symbols-outlined text-lg"),
+                    html.Span(item["name"], style=text_style)
+                ]
+            )
+        )
+    return items_html
+
+
+sidebar = html.Nav(
+    id="sidebar-el",
+    className="hidden md:flex flex-col py-lg px-sm gap-xs bg-surface-container-low/80 backdrop-blur-xl h-[calc(100vh-32px)] my-4 ml-4 rounded-2xl sticky left-0 top-4 border border-white/5 shadow-[0_0_40px_rgba(0,0,0,0.5)] z-40",
+    children=[
+        sidebar_header,
+        html.Div(id="sidebar-nav-links", className="flex-1 flex flex-col gap-base", children=build_desktop_nav("/")),
+        sidebar_footer
+    ]
+)
+
 
 MOBILE_PRIMARY_LINKS = [
     {"id": "nav-btn-dashboard", "name": "Dashboard", "icon": "leaderboard", "path": "/"},
@@ -496,26 +521,7 @@ app.layout = html.Div(
 )
 def update_nav(pathname, state):
     collapsed = state.get("collapsed", False) if state else False
-    base_class = "flex items-center gap-md px-sm py-md rounded-lg font-label-caps text-label-caps transition-all duration-300 ease-in-out min-h-[44px]"
-    active_class = " text-secondary bg-secondary-container/10 border-transparent shadow-[0_0_20px_rgba(174,198,255,0.15)]"
-    inactive_class = " text-on-surface-variant hover:text-secondary hover:bg-white/5"
-
-    items_html = []
-    for item in NAV_LINKS:
-        text_style = {"display": "none"} if collapsed else {}
-        is_active = (pathname == item["path"])
-        cls = base_class + (active_class if is_active else inactive_class)
-        items_html.append(
-            dcc.Link(
-                className=cls,
-                href=item["path"],
-                children=[
-                    html.Span(item["icon"], className="material-symbols-outlined text-lg"),
-                    html.Span(item["name"], style=text_style)
-                ]
-            )
-        )
-
+    items_html = build_desktop_nav(pathname or "/", collapsed=collapsed)
     mobile_items = build_mobile_nav(pathname or "/")
     return items_html, mobile_items
 

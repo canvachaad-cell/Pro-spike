@@ -159,11 +159,8 @@ def _streak(sym: str, closed_df: pd.DataFrame) -> int:
     return n
 
 
-def build_radar_df(ledger_df: pd.DataFrame, today: pd.Timestamp = None) -> pd.DataFrame:
-    """
-    Builds the 14-Day Re-Entry Radar dataset.
-    Rule: Lockout is OUTCOME-CONDITIONAL (blocked after LOSS, permitted after WIN).
-    """
+def _build_radar_df_calc(ledger_df: pd.DataFrame, today: pd.Timestamp = None) -> pd.DataFrame:
+    """Internal calculation of 14-Day Re-Entry Radar dataset."""
     if ledger_df is None or ledger_df.empty:
         return pd.DataFrame()
 
@@ -222,3 +219,35 @@ def build_radar_df(ledger_df: pd.DataFrame, today: pd.Timestamp = None) -> pd.Da
     res = latest.sort_values(["_p", "days_since_exit"]).drop(columns=["_p"])
 
     return res
+
+
+@lru_cache(maxsize=8)
+def _build_radar_cached(mtime: float, today_str: str) -> pd.DataFrame:
+    """Cached radar dataset keyed on file mtime and day."""
+    ledger_df = _load(SBIA_LEDGER)
+    if ledger_df is None or ledger_df.empty:
+        return pd.DataFrame()
+    today = pd.Timestamp(today_str)
+    return _build_radar_df_calc(ledger_df, today)
+
+
+def build_radar_df(ledger_df: pd.DataFrame = None, today: pd.Timestamp = None) -> pd.DataFrame:
+    """
+    Builds the 14-Day Re-Entry Radar dataset.
+    Rule: Lockout is OUTCOME-CONDITIONAL (blocked after LOSS, permitted after WIN).
+    Memoized with automatic mtime invalidation.
+    """
+    if os.path.exists(SBIA_LEDGER):
+        try:
+            mtime = os.path.getmtime(SBIA_LEDGER)
+            today_ts = today if today is not None else pd.Timestamp.now().normalize()
+            today_str = today_ts.strftime("%Y-%m-%d")
+            res = _build_radar_cached(mtime, today_str)
+            if res is not None and not res.empty:
+                return res.copy()
+        except Exception:
+            pass
+
+    if ledger_df is None or ledger_df.empty:
+        return pd.DataFrame()
+    return _build_radar_df_calc(ledger_df, today or pd.Timestamp.now().normalize())

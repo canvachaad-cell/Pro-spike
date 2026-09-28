@@ -48,9 +48,14 @@ test.describe('PRO-SPIKE MOBILE FULL TEST SUITE', () => {
     expect(box.y).toBeGreaterThanOrEqual(vh - 5);
 
     // Open Vikram via mobile trigger
-    const mobileTrigger = page.locator('#mobile-vikram-fab, #mobile-vikram-tab, button:has-text("Vikram")').first();
+    const mobileTrigger = page.locator('#mobile-vikram-fab');
+    await mobileTrigger.waitFor({ state: 'visible' });
     await mobileTrigger.click();
-    await page.waitForTimeout(1200);
+    await page.waitForFunction(() => {
+      const b = document.querySelector('#vikram-backdrop');
+      return b && b.classList.contains('open');
+    }, { timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(800);
 
     // Panel slides up into bottom-sheet viewport
     box = await panel.boundingBox();

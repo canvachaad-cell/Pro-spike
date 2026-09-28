@@ -1064,7 +1064,7 @@ TAB_BUILDERS = {
 @dash.callback(
     Output("engine-tab-content", "children"),
     Input("engine-tabs", "value"),
-    prevent_initial_call=False,
+    prevent_initial_call=True,
 )
 def render_engine_tab(tab_value):
     builder = TAB_BUILDERS.get(tab_value)

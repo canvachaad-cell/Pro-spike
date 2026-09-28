@@ -475,8 +475,7 @@ def _ticker_card(row):
     )
 
 
-# Tier 2: Archetype Switcher Shell
-def _archetype_switcher_shell():
+def _archetype_switcher_shell(initial_cards=None):
     tabs = dcc.Tabs(
         id="archetype-tabs",
         value="QUALITY",
@@ -517,7 +516,7 @@ def _archetype_switcher_shell():
             html.Div(
                 id="archetype-card-grid",
                 className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5",
-                children=[_empty_panel("Loading signals...")],
+                children=initial_cards or [_empty_panel("Loading signals...")],
             ),
         ],
     )
@@ -728,13 +727,8 @@ def _reentry_radar(radar_df):
     )
 
 
-# Interactive Callbacks
-@callback(
-    Output("archetype-card-grid", "children"),
-    Input("archetype-tabs", "value"),
-)
-def update_card_grid(tab):
-    df = wad.load_signals()
+# Helper to render cards for a specific tab
+def _get_cards(tab, df):
     if df is None or df.empty:
         return [_empty_panel("Run rank_archetypes.py to populate the ranked universe.")]
 
@@ -761,18 +755,30 @@ def update_card_grid(tab):
     return [_ticker_card(row) for _, row in display_rows.iterrows()]
 
 
+# Interactive Callbacks
+@callback(
+    Output("archetype-card-grid", "children"),
+    Input("archetype-tabs", "value"),
+    prevent_initial_call=True,
+)
+def update_card_grid(tab):
+    df = wad.load_signals()
+    return _get_cards(tab, df)
+
+
 # Page Layout Assembly
 def layout():
     signals_df = wad.load_signals()
     ledger_raw = wad._load(wad.SBIA_LEDGER)
     today = pd.Timestamp.now().normalize()
     radar_df = wad.build_radar_df(ledger_raw, today) if ledger_raw is not None else pd.DataFrame()
+    initial_cards = _get_cards("QUALITY", signals_df)
 
     return html.Div(
         className="flex flex-col w-full px-2 sm:px-4 md:px-6 py-4 sm:py-6 max-w-[1600px] mx-auto gap-6 sm:gap-8",
         children=[
             _kpi_hud(signals_df, radar_df),
-            _archetype_switcher_shell(),
+            _archetype_switcher_shell(initial_cards=initial_cards),
             _reentry_radar(radar_df),
         ],
     )

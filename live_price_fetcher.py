@@ -211,16 +211,16 @@ def get_live_quotes(
     if force_refresh:
         return _sync_fetch_and_cache(symbols, max_workers=max_workers)
 
-    # 2. Stale-While-Revalidate: If cache has all requested symbols, return instantly
-    if cached_data and all(s in cached_data for s in symbols):
-        # If cache is still fresh (< ttl_seconds), return immediately
-        if (now_ts - cache_ts) < ttl_seconds:
+    # 2. Stale-While-Revalidate: If cache has quotes, return instantly and refresh in background
+    if cached_data:
+        # If cache is still fresh (< ttl_seconds) and has all symbols, return immediately
+        if (now_ts - cache_ts) < ttl_seconds and all(s in cached_data for s in symbols):
             return cached_data
-        # If expired, return cached data immediately for zero-latency UI and refresh in background
+        # If expired or missing symbols, return cached data immediately for zero-latency UI and refresh in background
         _trigger_background_refresh(symbols, max_workers=max_workers)
         return cached_data
 
-    # 3. If cache is missing or incomplete, fetch synchronously
+    # 3. If cache is completely missing, fetch synchronously
     return _sync_fetch_and_cache(symbols, max_workers=max_workers)
 
 

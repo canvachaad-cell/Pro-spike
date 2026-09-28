@@ -1,208 +1,208 @@
 {
-  "timestamp": 1790582129.599762,
-  "updated_at": "2026-09-28 13:25:33",
+  "timestamp": 1790585416.1830292,
+  "updated_at": "2026-09-28 14:20:30",
   "quotes": {
     "ACESOFT": {
-      "cmp": 198.85,
+      "cmp": 193.1,
       "exchange": "BSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:31 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:27 PM",
       "source": "live_yfinance"
     },
     "ALKEM": {
-      "cmp": 5233.0,
+      "cmp": 5225.0,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:31 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:27 PM",
       "source": "live_yfinance"
     },
     "BHATIA": {
-      "cmp": 38.6,
+      "cmp": 38.0,
       "exchange": "BSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:27 PM",
       "source": "live_yfinance"
     },
     "BRGIL": {
       "cmp": 188.95,
       "exchange": "BSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:27 PM",
       "source": "live_yfinance"
     },
     "CARBORUNIV": {
-      "cmp": 1254.6,
+      "cmp": 1243.4,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:27 PM",
       "source": "live_yfinance"
     },
     "DRAGARWQ": {
-      "cmp": 5200.0,
+      "cmp": 5195.5,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:27 PM",
       "source": "live_yfinance"
     },
     "EXHICON": {
-      "cmp": 525.0,
+      "cmp": 524.05,
       "exchange": "BSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "GALAGEX": {
       "cmp": 93.9,
       "exchange": "BSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "GMRAIRPORT": {
-      "cmp": 94.43,
+      "cmp": 94.37,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "GRASIM": {
-      "cmp": 3140.4,
+      "cmp": 3142.2,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "GROWW": {
-      "cmp": 183.55,
+      "cmp": 183.04,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "GUJAPOLLO": {
-      "cmp": 351.3,
+      "cmp": 345.85,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "GUJJUBHAI": {
-      "cmp": 114.0,
+      "cmp": 114.8,
       "exchange": "BSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "INDUSTOWER": {
-      "cmp": 365.65,
+      "cmp": 358.65,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "ITCONS": {
-      "cmp": 270.0,
+      "cmp": 273.0,
       "exchange": "BSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "KABRAEXTRU": {
-      "cmp": 888.7,
+      "cmp": 860.0,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "LALITHAA": {
-      "cmp": 350.7,
+      "cmp": 355.0,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "MGEL": {
       "cmp": 15.93,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "MOTHERSON": {
-      "cmp": 162.23,
+      "cmp": 162.2,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "NATFIT": {
-      "cmp": 292.0,
+      "cmp": 295.0,
       "exchange": "BSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "NATHBIOGEN": {
-      "cmp": 145.0,
+      "cmp": 144.51,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:32 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "NBIFIN": {
-      "cmp": 1943.6,
+      "cmp": 1933.9,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:33 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "NOVUS": {
-      "cmp": 228.9,
+      "cmp": 224.5,
       "exchange": "BSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:33 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "PAGEIND": {
-      "cmp": 37545.0,
+      "cmp": 37500.0,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:33 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "PRARUH": {
       "cmp": 171.3,
       "exchange": "BSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:33 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "SINDHUTRAD": {
-      "cmp": 23.35,
+      "cmp": 23.34,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:33 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "SINTERCOM": {
-      "cmp": 77.89,
+      "cmp": 77.0,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:33 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "STLNETWORK": {
       "cmp": 51.88,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:33 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     },
     "TATASTEEL": {
-      "cmp": 186.68,
+      "cmp": 185.98,
       "exchange": "NSE",
-      "timestamp": 1790582129.599762,
-      "time_str": "01:25:33 PM",
+      "timestamp": 1790585416.1830292,
+      "time_str": "02:20:29 PM",
       "source": "live_yfinance"
     }
   }
