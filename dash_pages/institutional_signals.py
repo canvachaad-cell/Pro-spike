@@ -146,7 +146,10 @@ def _grid_row(cells, tpl, row_class=""):
 
 
 def _fmt_date(series):
-    return pd.to_datetime(series, errors="coerce").dt.strftime("%d %b %Y")
+    dt_val = pd.to_datetime(series, format="mixed", errors="coerce")
+    if hasattr(dt_val, "dt"):
+        return dt_val.dt.strftime("%d %b %Y")
+    return dt_val.strftime("%d %b %Y")
 
 
 def _sl_tp_str(v, entry, sign_prefix=""):
@@ -193,7 +196,7 @@ def legacy_table():
 
     is_today = pd.Series([False] * len(df))
     if "DATE" in df.columns:
-        date_raw = pd.to_datetime(df["DATE"], errors="coerce")
+        date_raw = pd.to_datetime(df["DATE"], format="mixed", errors="coerce")
         df = df.assign(DATE=date_raw.dt.strftime("%d %b %Y"))
         if date_raw.notna().any():
             is_today = date_raw == date_raw.max()
@@ -268,7 +271,7 @@ def alpha_table(ledger_path=None):
             if not active_ledger.empty:
                 if df is None:
                     df = pd.DataFrame()
-                existing_keys = set(zip(df["SYMBOL"], pd.to_datetime(df["DATE"], errors="coerce").dt.strftime("%Y-%m-%d"))) if (not df.empty and "SYMBOL" in df.columns and "DATE" in df.columns) else set()
+                existing_keys = set(zip(df["SYMBOL"], pd.to_datetime(df["DATE"], format="mixed", errors="coerce").dt.strftime("%Y-%m-%d"))) if (not df.empty and "SYMBOL" in df.columns and "DATE" in df.columns) else set()
                 
                 cloud_df = load_csv(CLOUD_FILE)
                 cloud_prices = {}
@@ -293,6 +296,7 @@ def alpha_table(ledger_path=None):
                             "STOP_LOSS": a_row.get("STOP_LOSS", 0.0),
                             "TAKE_PROFIT": a_row.get("TAKE_PROFIT", 0.0),
                             "AI_WIN_PROBABILITY": a_row.get("ENTRY_AI_PROB", 60.0),
+                            "SIS": a_row.get("ENTRY_SIS", np.nan),
                             "Whale_Density": a_row.get("ENTRY_WHALE_DENSITY", 0.0),
                             "Implied_Trades": a_row.get("ENTRY_IMPLIED_TRADES", 0.0),
                             "REC_POS_SIZE_INR": 100000.0,
@@ -307,7 +311,7 @@ def alpha_table(ledger_path=None):
         return _empty_panel("⚠️ No stocks passed the Path A ML Gate today.")
 
     if "DATE" in df.columns:
-        df["_DATE_SORT"] = pd.to_datetime(df["DATE"], errors="coerce")
+        df["_DATE_SORT"] = pd.to_datetime(df["DATE"], format="mixed", errors="coerce")
         df = df.sort_values(by="_DATE_SORT", ascending=False).drop(columns=["_DATE_SORT"])
         df = df.assign(DATE=_fmt_date(df["DATE"]))
 
@@ -500,7 +504,7 @@ def flexgate_table(path, missing_msg, empty_msg, ledger_path=None):
             if not active_ledger.empty:
                 if df is None:
                     df = pd.DataFrame()
-                existing_keys = set(zip(df["SYMBOL"], pd.to_datetime(df["DATE"], errors="coerce").dt.strftime("%Y-%m-%d"))) if (not df.empty and "SYMBOL" in df.columns and "DATE" in df.columns) else set()
+                existing_keys = set(zip(df["SYMBOL"], pd.to_datetime(df["DATE"], format="mixed", errors="coerce").dt.strftime("%Y-%m-%d"))) if (not df.empty and "SYMBOL" in df.columns and "DATE" in df.columns) else set()
                 
                 cloud_df = load_csv(CLOUD_FILE)
                 cloud_prices = {}
@@ -526,6 +530,7 @@ def flexgate_table(path, missing_msg, empty_msg, ledger_path=None):
                             "CHANDELIER_EXIT": a_row.get("STOP_LOSS", 0.0),
                             "AI_WIN_PROBABILITY": a_row.get("ENTRY_AI_PROB", 60.0),
                             "AI_APPROVED": bool(a_row.get("ENTRY_AI_PROB", 60.0) >= 60.0),
+                            "SIS": a_row.get("ENTRY_SIS", np.nan),
                             "Whale_Density": a_row.get("ENTRY_WHALE_DENSITY", 0.0),
                             "Implied_Trades": a_row.get("ENTRY_IMPLIED_TRADES", 0.0),
                             "REC_POS_SIZE_INR": 100000.0,
@@ -540,7 +545,7 @@ def flexgate_table(path, missing_msg, empty_msg, ledger_path=None):
         return _empty_panel(empty_msg)
 
     if "DATE" in df.columns:
-        df["_DATE_SORT"] = pd.to_datetime(df["DATE"], errors="coerce")
+        df["_DATE_SORT"] = pd.to_datetime(df["DATE"], format="mixed", errors="coerce")
         df = df.sort_values(by="_DATE_SORT", ascending=False).drop(columns=["_DATE_SORT"])
         df = df.assign(DATE=_fmt_date(df["DATE"]))
 

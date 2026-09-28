@@ -74,14 +74,14 @@ def _hydrate_missing_active_watchlist(filtered_wl, active_ledger, latest_prices_
     import numpy as np
     filtered_wl = filtered_wl.copy() if filtered_wl is not None else pd.DataFrame()
     if 'DATE_DT' in filtered_wl.columns:
-        present_keys = set(zip(filtered_wl['SYMBOL'], pd.to_datetime(filtered_wl['DATE_DT'])))
+        present_keys = set(zip(filtered_wl['SYMBOL'], pd.to_datetime(filtered_wl['DATE_DT'], format='mixed', errors='coerce')))
     elif 'DATE' in filtered_wl.columns:
-        present_keys = set(zip(filtered_wl['SYMBOL'], pd.to_datetime(filtered_wl['DATE'], errors='coerce')))
+        present_keys = set(zip(filtered_wl['SYMBOL'], pd.to_datetime(filtered_wl['DATE'], format='mixed', errors='coerce')))
     else:
         present_keys = set()
 
     missing_active = active_ledger[
-        active_ledger.apply(lambda r: (r['SYMBOL'], pd.to_datetime(r['ENTRY_DATE'])) not in present_keys, axis=1)
+        active_ledger.apply(lambda r: (r['SYMBOL'], pd.to_datetime(r['ENTRY_DATE'], format='mixed', errors='coerce')) not in present_keys, axis=1)
     ].copy()
 
     if missing_active.empty:
@@ -98,15 +98,15 @@ def _hydrate_missing_active_watchlist(filtered_wl, active_ledger, latest_prices_
     if archive_path and os.path.exists(archive_path):
         try:
             arch_df = pd.read_csv(archive_path)
-            arch_df['DATE_STR'] = pd.to_datetime(arch_df['DATE'], errors='coerce').dt.strftime('%Y-%m-%d')
+            arch_df['DATE_STR'] = pd.to_datetime(arch_df['DATE'], format='mixed', errors='coerce').dt.strftime('%Y-%m-%d')
         except Exception:
             arch_df = None
 
     syn_rows = []
     for _, a_row in missing_active.iterrows():
         sym = a_row['SYMBOL']
-        entry_dt = pd.to_datetime(a_row['ENTRY_DATE'])
-        dt_str = entry_dt.strftime('%Y-%m-%d')
+        entry_dt = pd.to_datetime(a_row['ENTRY_DATE'], format='mixed', errors='coerce')
+        dt_str = entry_dt.strftime('%Y-%m-%d') if pd.notna(entry_dt) else ""
 
         entry_px = a_row.get('ENTRY_PRICE', np.nan)
         sl = a_row.get('STOP_LOSS', np.nan)
@@ -144,6 +144,29 @@ def _hydrate_missing_active_watchlist(filtered_wl, active_ledger, latest_prices_
                           'WHALE_DENSITY', 'WHALE_DENSITY_1M', 'ATW', 'EVER_100_DELIV']:
                     if k in arch_row and k not in syn:
                         syn[k] = arch_row[k]
+
+        # Fallback to secondary archives for SIS and screener metrics if missing
+        if 'SIS' not in syn or pd.isna(syn['SIS']):
+            if 'ENTRY_SIS' in a_row and pd.notna(a_row.get('ENTRY_SIS')):
+                syn['SIS'] = float(a_row['ENTRY_SIS'])
+            else:
+                for fb_path in ["data/active_signals_ranked.csv", "data/legacy_watchlist.csv", "data/flexgate_archive.csv"]:
+                    if os.path.exists(fb_path):
+                        try:
+                            fb_df = pd.read_csv(fb_path)
+                            fb_df['DATE_STR'] = pd.to_datetime(fb_df['DATE'], format='mixed', errors='coerce').dt.strftime('%Y-%m-%d')
+                            m_fb = fb_df[(fb_df['SYMBOL'] == sym) & (fb_df['DATE_STR'] == dt_str)]
+                            if not m_fb.empty and 'SIS' in m_fb.columns and pd.notna(m_fb.iloc[-1]['SIS']):
+                                syn['SIS'] = float(m_fb.iloc[-1]['SIS'])
+                                break
+                        except Exception:
+                            pass
+
+        # If raw metrics exist but SIS is still missing, calculate continuous SIS
+        if ('SIS' not in syn or pd.isna(syn['SIS'])) and all(k in syn and pd.notna(syn[k]) for k in ['STABILITY_SCORE', 'FOOTPRINT_SCORE', 'MOMENTUM_SCORE']):
+            syn['SIS'] = ((syn['STABILITY_SCORE'] + 1)**0.50 * 
+                          (syn['FOOTPRINT_SCORE'] + 1)**0.30 * 
+                          (syn['MOMENTUM_SCORE'] + 1)**0.20) - 1
 
         # Enrich with latest live market metrics
         if not latest_prices_df.empty and 'SYMBOL' in latest_prices_df.columns:
@@ -371,7 +394,7 @@ def update_sbia_ledger(alpha_watchlist, latest_prices_df, ledger_path="data/sbia
                 
     # 5. Filter alpha_watchlist
     active_ledger = ledger_df[ledger_df['STATUS'] == 'ACTIVE'].copy()
-    active_keys = set(zip(active_ledger['SYMBOL'], pd.to_datetime(active_ledger['ENTRY_DATE'])))
+    active_keys = set(zip(active_ledger['SYMBOL'], pd.to_datetime(active_ledger['ENTRY_DATE'], format='mixed', errors='coerce')))
     
     filtered_alpha = alpha_watchlist[
         alpha_watchlist.apply(lambda row: (row['SYMBOL'], row['DATE_DT']) in active_keys, axis=1)
@@ -383,7 +406,7 @@ def update_sbia_ledger(alpha_watchlist, latest_prices_df, ledger_path="data/sbia
         
     active_ledger_subset = active_ledger[['SYMBOL', 'ENTRY_DATE', 'ENTRY_PRICE', 'ATR14', 'STOP_LOSS', 'TAKE_PROFIT']]
     active_ledger_subset = active_ledger_subset.rename(columns={'ENTRY_DATE': 'DATE_DT'})
-    active_ledger_subset['DATE_DT'] = pd.to_datetime(active_ledger_subset['DATE_DT'])
+    active_ledger_subset['DATE_DT'] = pd.to_datetime(active_ledger_subset['DATE_DT'], format='mixed', errors='coerce')
     
     filtered_alpha = pd.merge(filtered_alpha, active_ledger_subset, on=['SYMBOL', 'DATE_DT'], how='left')
 
@@ -603,7 +626,7 @@ def update_flexgate_ledger(flex_watchlist, latest_prices_df, ledger_path):
                         ledger_df.at[idx, 'STOP_LOSS'] = current_stop_loss
                         
     active_ledger = ledger_df[ledger_df['STATUS'] == 'ACTIVE'].copy()
-    active_keys = set(zip(active_ledger['SYMBOL'], pd.to_datetime(active_ledger['ENTRY_DATE'])))
+    active_keys = set(zip(active_ledger['SYMBOL'], pd.to_datetime(active_ledger['ENTRY_DATE'], format='mixed', errors='coerce')))
     
     filtered_flex = flex_watchlist[
         flex_watchlist.apply(lambda r: (r['SYMBOL'], r['DATE_DT']) in active_keys, axis=1)
@@ -615,7 +638,7 @@ def update_flexgate_ledger(flex_watchlist, latest_prices_df, ledger_path):
         
     active_ledger_subset = active_ledger[['SYMBOL', 'ENTRY_DATE', 'ENTRY_PRICE', 'ATR14', 'STOP_LOSS', 'TAKE_PROFIT']]
     active_ledger_subset = active_ledger_subset.rename(columns={'ENTRY_DATE': 'DATE_DT'})
-    active_ledger_subset['DATE_DT'] = pd.to_datetime(active_ledger_subset['DATE_DT'])
+    active_ledger_subset['DATE_DT'] = pd.to_datetime(active_ledger_subset['DATE_DT'], format='mixed', errors='coerce')
     
     filtered_flex = pd.merge(filtered_flex, active_ledger_subset, on=['SYMBOL', 'DATE_DT'], how='left')
 

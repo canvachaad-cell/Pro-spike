@@ -1533,3 +1533,34 @@ even after the user generated a fresh, valid 16-character Google App Password.
    - All 55 regression tests pass in 5.31s; zero ledger modification (`git diff --stat data/*ledger*.csv` is clean).
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: `fix_before_touch` pre-flight checklist, `DEMONCORE: PLAN_DEEP` blast radius mapping, yfinance API dictionary key audit, and dual-remote sync.
+
+---
+
+## BUG-084: Pandas Mixed-Datetime Parser Silent Coercion to NaT & Missing SIS in Active Watchlist Hydration
+**STATUS**: FIXED  
+**FILE**: `dash_pages/institutional_signals.py`, `ledger_manager.py`, `data/sbia_alpha_watchlist.csv`, `tests/test_alpha_table_integrity.py`  
+**DISCOVERED BY**: User Inquiry ("in alpha markup why grow with that ai probability on downsie? main problem is stocks below grow many have non sis ,no dates many things are missing ..is this because of blast radius of anything we did before DEEP_AUDIT"), Demon Core DEEP_AUDIT, 2026-09-28  
+**SYMPTOM**: 
+1. In Path A (Alpha Markups) on `/institutional-signals`, active trades entering between 2026-09-16 and 2026-09-23 (`NATHBIOGEN`, `NBIFIN`, `BHATIA`, `GUJAPOLLO`, `DRAGARWQ`, `ALKEM`) displayed `DATE = "-"` and `SIS = "-"`.
+2. All 6 stocks were pushed below `GROWW` (dated 2026-08-31) in table row ordering, violating descending chronological sort.
+3. `GROWW` displayed a 92.2% AI Win Probability despite an SIS score of only 0.053.
+**ROOT CAUSE**: 
+1. **Pandas 2.x Format Inference Bug**: When `calculate_active_signals.py` persisted today's triggers with `%Y-%m-%d %H:%M:%S` while hydrated ledger rows had `%Y-%m-%d`, `pd.to_datetime(series, errors='coerce')` without `format='mixed'` inferred the full timestamp format from row 0. Non-timestamped dates were silently coerced to `NaT`. This caused `_DATE_SORT` to push rows 3-8 to the bottom (below `GROWW`), and caused `_fmt_date()` to output `NaN` -> rendering `"-"`.
+2. **Missing Schema Field in Watchlist Hydration**: `_hydrate_missing_active_watchlist()` queried `data/survivors_archive.csv` which only saves raw metrics (`MOMENTUM_RAW`, `FOOTPRINT_RAW`, `STABILITY_RAW`), omitting `SIS`. In addition, `alpha_table()` and `flexgate_table()` omitted `"SIS"` from `missing_records`.
+3. **GROWW Volume Weight Bias (BUG-061)**: `shadow_box_model.pkl` allocates 66.5% feature weight to reciprocal order-flow ratios (`Whale_Density` and `Implied_Trades`). On 2026-08-31, `GROWW` had Rs 3,003 Cr delivery volume (307,255 implied trades), overriding its 0.053 SIS score. It remained `ACTIVE` in `sbia_ledger.csv` because price stayed between SL (180.45) and TP (215.28).
+**FIX**: 
+1. **Robust Mixed Datetime Parsing (`dash_pages/institutional_signals.py`)**:
+   - Added `format="mixed"` to all `pd.to_datetime` calls in `_fmt_date()`, `_read_csv()`, `alpha_table()`, and `flexgate_table()`.
+   - Upgraded `_fmt_date()` to gracefully handle both `pd.Series` and `DatetimeIndex` / list inputs via `hasattr(dt, 'dt')`.
+2. **Defensive Watchlist Hydration (`ledger_manager.py`)**:
+   - Added `format="mixed"` in `_hydrate_missing_active_watchlist()`.
+   - Added secondary archive fallback lookup for `SIS` (`active_signals_ranked.csv`, `legacy_watchlist.csv`, `flexgate_archive.csv`) and fallback continuous calculation from raw metrics.
+   - Added `"SIS"` to `missing_records` in `alpha_table()` and `flexgate_table()`.
+3. **Historical Data Restoration (`data/sbia_alpha_watchlist.csv`)**:
+   - Restored exact historical `SIS` scores: `NATHBIOGEN` (0.9877), `NBIFIN` (0.9704), `BHATIA` (0.9011), `GUJAPOLLO` (0.9796), `DRAGARWQ` (0.9622), `ALKEM` (0.7832).
+4. **Automated Regression Suite (`tests/test_alpha_table_integrity.py`)**:
+   - 4 unit tests verifying mixed string date formatting, data completeness across all 10 rows, descending chronological sorting, and active watchlist hydration.
+5. **Empirical Verification**:
+   - All 59 tests in `tests/` pass in 6.39s; `git diff --stat data/*ledger*.csv` is 100% clean (zero ledger mutation).
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` pre-flight checklist, `DEMONCORE: DEEP_AUDIT` root cause analysis, Pandas 2.x datetime inference diagnosis, and dual-remote sync.
