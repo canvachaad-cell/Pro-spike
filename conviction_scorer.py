@@ -56,11 +56,17 @@ METRIC_WEIGHTS = METRIC_WEIGHTS_VIKRAM
 def classify(market_cap_cr):
     if market_cap_cr is None:
         return "U"
-    if market_cap_cr >= 20000.0:
-        return "L"
-    if market_cap_cr >= 7000.0:
-        return "M"
-    return "S"
+    try:
+        val = float(market_cap_cr)
+        if math.isnan(val) or val <= 0:
+            return "U"
+        if val >= 20000.0:
+            return "L"
+        if val >= 7000.0:
+            return "M"
+        return "S"
+    except (ValueError, TypeError):
+        return "U"
 
 
 def _gate_scores(fund):

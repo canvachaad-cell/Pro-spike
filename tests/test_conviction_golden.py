@@ -6,7 +6,7 @@ import os
 
 # Add root to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from conviction_scorer import ConvictionScorer, _gate_scores
+from conviction_scorer import ConvictionScorer, _gate_scores, classify
 
 def load_fixtures():
     with open('tests/fixtures/golden_fundamentals.json') as f:
@@ -112,3 +112,20 @@ def test_all_vetoes_not_found_unverified(scorer):
     assert res["unverified_veto"] is True
     assert res["rating"] == "UNVERIFIED_VETO"
     assert len(res["veto_reasons"]) >= 2
+
+
+def test_classify_nan_and_unmapped_returns_unknown():
+    """BUG-053: classify(NaN), classify(0.0), and invalid inputs must return 'U', never 'S'."""
+    import numpy as np
+    assert classify(None) == "U"
+    assert classify(float("nan")) == "U"
+    assert classify(np.nan) == "U"
+    assert classify(0.0) == "U"
+    assert classify(-250.0) == "U"
+    assert classify("invalid") == "U"
+    assert classify(500.0) == "S"
+    assert classify(6999.0) == "S"
+    assert classify(7000.0) == "M"
+    assert classify(19999.0) == "M"
+    assert classify(20000.0) == "L"
+

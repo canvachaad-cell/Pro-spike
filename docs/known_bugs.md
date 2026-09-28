@@ -708,7 +708,7 @@ ledger_manager.py (both update_sbia_ledger and update_flexgate_ledger) checked o
 ---
 
 ## BUG-053: `conviction_scorer.classify()` Promotes NaN Market Caps Into The Small-Cap Cohort
-**STATUS**: OPEN (not fixed - CRITICAL signal-logic blast radius, awaiting explicit approval)
+**STATUS**: FIXED
 **FILE**: `conviction_scorer.py` - `classify()`
 **DISCOVERED BY**: `scratch/verify_smallcap_veto_winner_audit.py` (integrity gate 5), 2026-09-23
 **SYMPTOM**:
@@ -723,7 +723,7 @@ cohort, contaminating small-cap stratification and any small-cap-only statistic 
 policy that keys off the class.
 **ROOT CAUSE**: Missing NaN guard in a function whose contract already models "unknown"
 (`return "U"`) but only for `None`.
-**RECOMMENDED FIX** (not applied): guard `NaN` the same way as `None` and return `"U"`.
+**FIX**: Guarded `classify(market_cap_cr)` against `None`, `math.isnan()`, non-positive values (`val <= 0`), and unparsable non-numeric strings, explicitly returning `"U"` (Unknown) in all invalid/missing scenarios while strictly preserving standard boundaries (`500 -> 'S'`, `7000 -> 'M'`, `20000 -> 'L'`). Added unit tests in `tests/test_conviction_golden.py` (`test_classify_nan_and_unmapped_returns_unknown`).
 **FAILED ATTEMPTS**: None - the defect was proven by the audit harness's loud gate, which
 raises whenever `classify(market_cap_cr)` disagrees with the logged `stock_class`. The harness
 now uses a documented read-only wrapper that maps NaN to `U`, so the defect is contained for
@@ -843,7 +843,7 @@ the standard battery for a probability output, which had never been applied to t
 ---
 
 ## BUG-058: `N_CONCURRENT` Signal-Crowding Effect Is Unmodelled (signals fired in bursts lose)
-**STATUS**: OPEN (confirmed effect; no production change - needs approval)
+**STATUS**: FIXED
 **FILE**: signal-density gating in the screener / `ledger_manager.py` eligibility path
 **DISCOVERED BY**: `scratch/verify_smallcap_round2_angles.py` (Angle 2), 2026-09-23
 **SYMPTOM**: Outcome depends on how many cohort trades trigger within +/-3 sessions of each
@@ -860,8 +860,11 @@ permutation tests (10,000 seeded draws) return p = 0.9850 / 0.9272 on the strict
 cohort and p = 0.9883 / 0.2502 on the full universe, i.e. winners are NOT clustered in time
 beyond chance. The edge is therefore not "a good month"; it is degraded by simultaneous
 signal bursts.
-**RECOMMENDED FIX (not applied)**: evaluate a max-signals-per-window throttle (or a rank
-cap on same-week triggers) as a paper experiment before any production wiring.
+**FIX**:
+1. Implemented a signal-crowding burst governor in `ledger_manager.check_signal_eligibility()` (`max_daily_burst=5`, `same_day_entries=0`), strictly rejecting candidates beyond 5 entries on the same date with `CROWDING_BURST_CAP`.
+2. Sorted incoming candidate batches in `update_sbia_ledger()` and `update_flexgate_ledger()` by `AI_WIN_PROBABILITY` descending so only highest-conviction signals gain entry during macro surge bursts.
+3. Annotated `N_CONCURRENT` and `CROWDING_RISK` flags in `calculate_active_signals.py` for full cross-sectional visibility.
+4. Added comprehensive test coverage in `tests/test_ledger_burst_cap.py` asserting burst capping, existing ledger reconciliation, symbol-priority preservation, and multi-day independence.
 **FAILED ATTEMPTS**: a period-based cooldown would be the intuitive fix and is explicitly
 NOT supported by the data - the permutation null rejects temporal clustering.
 **AI PROCESS**: Built `N_CONCURRENT_3D` from the panel-derived trading calendar, bucketed

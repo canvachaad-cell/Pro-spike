@@ -219,6 +219,9 @@ def process_flexgate_engine(df, current_date):
         flexgate_final["DATE"] = pd.to_datetime(flexgate_final["DATE"], errors="coerce")
         flexgate_final = flexgate_final.drop_duplicates(subset=["DATE", "SYMBOL", "EXCHANGE"], keep="last")
         flexgate_final = flexgate_final.sort_values(by=["DATE", "AI_WIN_PROBABILITY"], ascending=[False, False])
+        daily_counts = flexgate_final.groupby("DATE")["SYMBOL"].transform("count")
+        flexgate_final["N_CONCURRENT"] = daily_counts
+        flexgate_final["CROWDING_RISK"] = flexgate_final["N_CONCURRENT"] >= 5
         
     # Integrate FlexGate Ledger to track SL simulation
     from ledger_manager import update_flexgate_ledger
@@ -375,6 +378,12 @@ def run_scoring():
         legacy_watchlist = legacy_watchlist.sort_values(by=["SIS"], ascending=[False])
         sbia_alpha_watchlist = sbia_alpha_watchlist.sort_values(by=["AI_WIN_PROBABILITY"], ascending=[False])
         
+        # Annotate cross-sectional crowding metric (signals per date)
+        if not sbia_alpha_watchlist.empty and "DATE" in sbia_alpha_watchlist.columns:
+            daily_counts = sbia_alpha_watchlist.groupby("DATE")["SYMBOL"].transform("count")
+            sbia_alpha_watchlist["N_CONCURRENT"] = daily_counts
+            sbia_alpha_watchlist["CROWDING_RISK"] = sbia_alpha_watchlist["N_CONCURRENT"] >= 5
+            
         # Integrate SBIA Ledger to track SL/TP
         from ledger_manager import update_sbia_ledger
         print("Updating SBIA Trade Ledger and applying target filters...")

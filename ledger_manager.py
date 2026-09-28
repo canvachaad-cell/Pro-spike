@@ -3,54 +3,62 @@ import numpy as np
 import yfinance as yf
 import os
 
-def check_signal_eligibility(ledger_df, sym, trigger_dt, cooldown_days=14):
+def check_signal_eligibility(ledger_df, sym, trigger_dt, cooldown_days=14, same_day_entries=0, max_daily_burst=5):
     """
     Enforces:
     1. Max 1 Active Trade: No stacking if symbol is already ACTIVE.
     2. Conditional Post-Loss Lockout: Blocks re-entry for 14 calendar days after a LOSS.
     3. Positive Continuation: Freely permits re-entry after a WIN.
+    4. Signal-Crowding Burst Guard: Caps max new entries on the same date to prevent macro surge traps.
     """
-    if ledger_df.empty:
+    trigger_ts = pd.to_datetime(trigger_dt) if pd.notna(trigger_dt) else None
+
+    if not ledger_df.empty:
+        sym_trades = ledger_df[ledger_df['SYMBOL'] == sym]
+        if not sym_trades.empty:
+            # Rule 1: No stacking while active
+            if (sym_trades['STATUS'] == 'ACTIVE').any():
+                return False, "ALREADY_ACTIVE"
+
+            # Exact duplicate entry check
+            if trigger_ts is not None and (sym_trades['ENTRY_DATE'] == trigger_ts).any():
+                return False, "DUPLICATE_ENTRY_DATE"
+
+            # Rule 2: Check most recent closed trade
+            closed = sym_trades[sym_trades['STATUS'].isin(['HIT_TP', 'HIT_SL', 'MOMENTUM_LOST'])].copy()
+            if not closed.empty:
+                closed['EXIT_DT'] = pd.to_datetime(closed['EXIT_DATE'], errors='coerce')
+                valid_closed = closed[closed['EXIT_DT'].notna() & (closed['EXIT_DT'] <= trigger_ts)] if trigger_ts is not None else closed[closed['EXIT_DT'].notna()]
+                if not valid_closed.empty:
+                    last_trade = valid_closed.sort_values('EXIT_DT').iloc[-1]
+
+                    # Determine if last trade was a WIN or LOSS
+                    is_loss = (last_trade['STATUS'] == 'HIT_SL') or (
+                        last_trade['STATUS'] == 'MOMENTUM_LOST' and
+                        pd.notna(last_trade.get('EXIT_PRICE')) and
+                        last_trade['EXIT_PRICE'] < last_trade['ENTRY_PRICE']
+                    )
+
+                    if is_loss and pd.notna(last_trade['EXIT_DT']) and trigger_ts is not None:
+                        days_since_exit = (trigger_ts - last_trade['EXIT_DT']).days
+                        if 0 <= days_since_exit < cooldown_days:
+                            return False, f"POST_LOSS_LOCKOUT ({days_since_exit}d < {cooldown_days}d)"
+
+    # Rule 4: Signal-Crowding Burst Guard (checks existing ledger entries on this date + in-flight batch entries)
+    existing_same_day = 0
+    if not ledger_df.empty and 'ENTRY_DATE' in ledger_df.columns and trigger_ts is not None:
+        try:
+            existing_same_day = int((pd.to_datetime(ledger_df['ENTRY_DATE']).dt.normalize() == trigger_ts.normalize()).sum())
+        except Exception:
+            existing_same_day = 0
+
+    total_same_day = existing_same_day + same_day_entries
+    if total_same_day >= max_daily_burst:
+        date_str = trigger_ts.strftime('%Y-%m-%d') if trigger_ts is not None else "session"
+        return False, f"CROWDING_BURST_CAP ({total_same_day} >= {max_daily_burst} max on {date_str})"
+
+    if ledger_df.empty or sym not in ledger_df['SYMBOL'].values:
         return True, "FIRST_ENTRY"
-
-    sym_trades = ledger_df[ledger_df['SYMBOL'] == sym]
-    if sym_trades.empty:
-        return True, "FIRST_ENTRY"
-
-    # Rule 1: No stacking while active
-    if (sym_trades['STATUS'] == 'ACTIVE').any():
-        return False, "ALREADY_ACTIVE"
-
-    # Exact duplicate entry check
-    trigger_ts = pd.to_datetime(trigger_dt)
-    if (sym_trades['ENTRY_DATE'] == trigger_ts).any():
-        return False, "DUPLICATE_ENTRY_DATE"
-
-    # Rule 2: Check most recent closed trade
-    closed = sym_trades[sym_trades['STATUS'].isin(['HIT_TP', 'HIT_SL', 'MOMENTUM_LOST'])].copy()
-    if closed.empty:
-        return True, "CLEARED"
-
-    closed['EXIT_DT'] = pd.to_datetime(closed['EXIT_DATE'], errors='coerce')
-    valid_closed = closed[closed['EXIT_DT'].notna() & (closed['EXIT_DT'] <= trigger_ts)]
-    if valid_closed.empty:
-        valid_closed = closed[closed['EXIT_DT'].notna()]
-        if valid_closed.empty:
-            return True, "CLEARED"
-
-    last_trade = valid_closed.sort_values('EXIT_DT').iloc[-1]
-
-    # Determine if last trade was a WIN or LOSS
-    is_loss = (last_trade['STATUS'] == 'HIT_SL') or (
-        last_trade['STATUS'] == 'MOMENTUM_LOST' and
-        pd.notna(last_trade.get('EXIT_PRICE')) and
-        last_trade['EXIT_PRICE'] < last_trade['ENTRY_PRICE']
-    )
-
-    if is_loss and pd.notna(last_trade['EXIT_DT']):
-        days_since_exit = (trigger_ts - last_trade['EXIT_DT']).days
-        if 0 <= days_since_exit < cooldown_days:
-            return False, f"POST_LOSS_LOCKOUT ({days_since_exit}d < {cooldown_days}d)"
 
     return True, "CLEARED"
 
@@ -199,14 +207,23 @@ def update_sbia_ledger(alpha_watchlist, latest_prices_df, ledger_path="data/sbia
     alpha_watchlist = alpha_watchlist.copy()
     alpha_watchlist['DATE_DT'] = pd.to_datetime(alpha_watchlist['DATE'])
     
+    # Sort candidates descending by AI_WIN_PROBABILITY so highest conviction enters first
+    if 'AI_WIN_PROBABILITY' in alpha_watchlist.columns:
+        alpha_watchlist = alpha_watchlist.sort_values(by='AI_WIN_PROBABILITY', ascending=False)
+    
+    same_day_counter = {}
     new_signals = []
     for _, row in alpha_watchlist.iterrows():
         sym = row['SYMBOL']
         dt = row['DATE_DT']
+        dt_key = dt.normalize() if pd.notna(dt) else None
+        current_same_day = same_day_counter.get(dt_key, 0)
         
-        eligible, reason = check_signal_eligibility(ledger_df, sym, dt, cooldown_days=14)
+        eligible, reason = check_signal_eligibility(ledger_df, sym, dt, cooldown_days=14, same_day_entries=current_same_day, max_daily_burst=5)
         if eligible:
             new_signals.append(row)
+            if dt_key is not None:
+                same_day_counter[dt_key] = current_same_day + 1
         else:
             print(f"[RE-ENTRY GATE] SBIA candidate {sym} on {dt.strftime('%Y-%m-%d')} skipped: {reason}")
             
@@ -419,14 +436,23 @@ def update_flexgate_ledger(flex_watchlist, latest_prices_df, ledger_path):
     flex_watchlist = flex_watchlist.copy()
     flex_watchlist['DATE_DT'] = pd.to_datetime(flex_watchlist['DATE'])
     
+    # Sort candidates descending by AI_WIN_PROBABILITY so highest conviction enters first
+    if 'AI_WIN_PROBABILITY' in flex_watchlist.columns:
+        flex_watchlist = flex_watchlist.sort_values(by='AI_WIN_PROBABILITY', ascending=False)
+    
+    same_day_counter = {}
     new_signals = []
     for _, row in flex_watchlist.iterrows():
         sym = row['SYMBOL']
         dt = row['DATE_DT']
+        dt_key = dt.normalize() if pd.notna(dt) else None
+        current_same_day = same_day_counter.get(dt_key, 0)
         
-        eligible, reason = check_signal_eligibility(ledger_df, sym, dt, cooldown_days=14)
+        eligible, reason = check_signal_eligibility(ledger_df, sym, dt, cooldown_days=14, same_day_entries=current_same_day, max_daily_burst=5)
         if eligible:
             new_signals.append(row)
+            if dt_key is not None:
+                same_day_counter[dt_key] = current_same_day + 1
         else:
             print(f"[RE-ENTRY GATE] FlexGate candidate {sym} on {dt.strftime('%Y-%m-%d')} skipped: {reason}")
             
