@@ -1,0 +1,209 @@
+{
+  "timestamp": 1790571275.1185539,
+  "updated_at": "2026-09-28 10:24:35",
+  "quotes": {
+    "ACESOFT": {
+      "cmp": 202.05,
+      "exchange": "BSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "ALKEM": {
+      "cmp": 5274.0,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "BHATIA": {
+      "cmp": 38.54,
+      "exchange": "BSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "BRGIL": {
+      "cmp": 187.8,
+      "exchange": "BSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "CARBORUNIV": {
+      "cmp": 1278.5,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "DRAGARWQ": {
+      "cmp": 5209.0,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "EXHICON": {
+      "cmp": 519.55,
+      "exchange": "BSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "GALAGEX": {
+      "cmp": 96.8,
+      "exchange": "BSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "GMRAIRPORT": {
+      "cmp": 97.95,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "GRASIM": {
+      "cmp": 3191.0,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "GROWW": {
+      "cmp": null,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "GUJAPOLLO": {
+      "cmp": 329.1,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "GUJJUBHAI": {
+      "cmp": 118.65,
+      "exchange": "BSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "INDUSTOWER": {
+      "cmp": 374.65,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "ITCONS": {
+      "cmp": 282.15,
+      "exchange": "BSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "KABRAEXTRU": {
+      "cmp": 846.4,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "LALITHAA": {
+      "cmp": 366.35,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "MGEL": {
+      "cmp": 15.99,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "MOTHERSON": {
+      "cmp": 165.71,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "NATFIT": {
+      "cmp": 305.95,
+      "exchange": "BSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "NATHBIOGEN": {
+      "cmp": 149.35,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "NBIFIN": {
+      "cmp": 1926.4,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "NOVUS": {
+      "cmp": 227.7,
+      "exchange": "BSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "PAGEIND": {
+      "cmp": 37695.0,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "PRARUH": {
+      "cmp": 163.15,
+      "exchange": "BSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "SINDHUTRAD": {
+      "cmp": 23.75,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "SINTERCOM": {
+      "cmp": 77.93,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "STLNETWORK": {
+      "cmp": 54.61,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    },
+    "TATASTEEL": {
+      "cmp": 187.97,
+      "exchange": "NSE",
+      "timestamp": 1790571275.1185539,
+      "time_str": "10:24:35 AM",
+      "source": "eod_fallback"
+    }
+  }
+}

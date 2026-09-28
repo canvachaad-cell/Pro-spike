@@ -2,7 +2,14 @@ import dash
 from dash import html, dcc, Input, Output
 import pandas as pd
 import os
+import time
 from functools import lru_cache
+
+from live_price_fetcher import (
+    get_live_quotes,
+    compute_trade_proximity,
+    get_portfolio_proximity_summary,
+)
 
 dash.register_page(__name__, path='/institutional-signals', name='Institutional Signals', title='Pro Spike - Institutional Signals', description='Multi-Strategy Execution Engine — high-conviction data signals for professional trading.')
 
@@ -251,6 +258,93 @@ def legacy_table():
     return _grid_table(avail, rows, min_width=1140, wide=wide)
 
 
+def render_risk_radar_banner(summary=None):
+    if summary is None:
+        summary = get_portfolio_proximity_summary(force_refresh=False)
+
+    near_sl = summary.get("near_sl", [])
+    breached_sl = summary.get("breached_sl", [])
+    near_tp = summary.get("near_tp", [])
+    total_active = summary.get("total_active", 0)
+    healthy_count = summary.get("healthy_count", 0)
+    last_updated = summary.get("last_updated", "Just now")
+
+    has_breach = len(breached_sl) > 0
+    has_near_sl = len(near_sl) > 0
+
+    border_color = "rgba(239, 68, 68, 0.5)" if has_breach else ("rgba(245, 158, 11, 0.45)" if has_near_sl else "rgba(90, 240, 179, 0.25)")
+    accent_glow = "rgba(239, 68, 68, 0.06)" if has_breach else ("rgba(245, 158, 11, 0.05)" if has_near_sl else "rgba(90, 240, 179, 0.03)")
+
+    warning_badges = []
+    for item in breached_sl:
+        warning_badges.append(
+            html.Div(
+                f"🚨 {item['symbol']} ({item['engine']}): CMP ₹{item['cmp']:.2f} BREACHED SL ₹{item['effective_sl']:.2f}",
+                className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#ef4444]/20 text-[#f87171] border border-[#ef4444]/40"
+            )
+        )
+    for item in near_sl:
+        warning_badges.append(
+            html.Div(
+                f"⚠️ {item['symbol']} ({item['engine']}): CMP ₹{item['cmp']:.2f} · {item['sl_dist_pct']:.1f}% to SL (₹{item['effective_sl']:.2f})",
+                className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#f59e0b]/20 text-[#fbbf24] border border-[#f59e0b]/40"
+            )
+        )
+    for item in near_tp:
+        warning_badges.append(
+            html.Div(
+                f"🎯 {item['symbol']} ({item['engine']}): CMP ₹{item['cmp']:.2f} · {item['tp_dist_pct']:.1f}% to TP (₹{item['take_profit']:.2f})",
+                className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#38bdf8]/20 text-[#38bdf8] border border-[#38bdf8]/40"
+            )
+        )
+
+    if not warning_badges:
+        warning_badges.append(
+            html.Div(
+                "🛡️ All active positions trading comfortably above stop-loss thresholds",
+                className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#10b981]/15 text-[#34d399] border border-[#10b981]/30"
+            )
+        )
+
+    return html.Div(
+        id="live-risk-radar-card",
+        className="glass-panel rounded-2xl p-4 md:p-5 mb-2 border flex flex-col gap-3 transition-all duration-300",
+        style={"borderColor": border_color, "backgroundColor": accent_glow},
+        children=[
+            html.Div(
+                className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3",
+                children=[
+                    html.Div(
+                        children=[
+                            html.Div(
+                                [
+                                    html.Span("⚡ LIVE PORTFOLIO RISK & SL/TP RADAR", className="text-[10px] font-bold tracking-widest text-primary uppercase"),
+                                    html.Span(f" • Quotes: {last_updated}", className="text-[10px] text-on-surface-variant font-medium ml-1"),
+                                ],
+                                className="flex items-center gap-1 mb-1"
+                            ),
+                            html.Div(
+                                f"Active Positions: {total_active} · ⚠️ {len(near_sl)} Near SL (<3%) · 🚨 {len(breached_sl)} Breached · 🎯 {len(near_tp)} Near TP · 🛡️ {healthy_count} Healthy",
+                                className="text-sm font-semibold text-on-surface tracking-tight"
+                            ),
+                        ]
+                    ),
+                    html.Button(
+                        "🔄 Refresh Live Quotes",
+                        id="btn-refresh-live-quotes",
+                        n_clicks=0,
+                        className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 active:scale-95 text-on-surface border border-white/10 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                    ),
+                ]
+            ),
+            html.Div(
+                className="flex flex-wrap gap-2 pt-1 border-t border-white/5",
+                children=warning_badges
+            ),
+        ]
+    )
+
+
 def alpha_table(ledger_path=None):
     df = load_csv(ALPHA_FILE)
 
@@ -304,18 +398,52 @@ def alpha_table(ledger_path=None):
         df = df.sort_values(by="_DATE_SORT", ascending=False).drop(columns=["_DATE_SORT"])
         df = df.assign(DATE=_fmt_date(df["DATE"]))
 
-    cols = ["SYMBOL", "AI_WIN_PROBABILITY", "DATE", "EXCHANGE", "ENTRY_PRICE", "CLOSE", "SIS", "Whale_Density", "Implied_Trades", "STOP_LOSS", "TAKE_PROFIT", "REC_POS_SIZE_INR", "ATR14"]
-    avail = [c for c in cols if c in df.columns]
-    wide = {"SYMBOL": "minmax(150px, 1.5fr)", "AI_WIN_PROBABILITY": "minmax(115px, 1.1fr)", "DATE": "minmax(110px, 1fr)", "STOP_LOSS": "minmax(140px, 1.2fr)", "TAKE_PROFIT": "minmax(140px, 1.2fr)"}
+    quotes = get_live_quotes()
+    cols = ["SYMBOL", "AI_WIN_PROBABILITY", "DATE", "EXCHANGE", "ENTRY_PRICE", "CMP", "SL_PROXIMITY", "SIS", "Whale_Density", "Implied_Trades", "STOP_LOSS", "TAKE_PROFIT", "REC_POS_SIZE_INR", "ATR14"]
+    avail = [c for c in cols if c in df.columns or c in ("CMP", "SL_PROXIMITY")]
+    wide = {
+        "SYMBOL": "minmax(140px, 1.4fr)",
+        "AI_WIN_PROBABILITY": "minmax(110px, 1.1fr)",
+        "DATE": "minmax(105px, 1fr)",
+        "CMP": "minmax(125px, 1.2fr)",
+        "SL_PROXIMITY": "minmax(145px, 1.4fr)",
+        "STOP_LOSS": "minmax(135px, 1.2fr)",
+        "TAKE_PROFIT": "minmax(135px, 1.2fr)",
+    }
+    labels = {
+        "CMP": "CMP (LIVE)",
+        "SL_PROXIMITY": "SL PROXIMITY",
+    }
     tpl = _template(avail, wide)
 
     rows = []
     for _, r in df.iterrows():
+        sym = str(r.get("SYMBOL", "")).strip().upper()
         entry = r.get("ENTRY_PRICE")
+        sl = r.get("STOP_LOSS")
+        tp = r.get("TAKE_PROFIT")
+        chand = r.get("CHANDELIER_EXIT")
+        q = quotes.get(sym, {})
+        cmp_val = q.get("cmp") or r.get("CLOSE") or entry
+        prox = compute_trade_proximity(sym, entry, sl, tp, chand, cmp=cmp_val)
+
         cells = []
         for c in avail:
             if c == "SYMBOL":
-                cells.append(html.Div(str(r.get(c, "")), className="font-semibold text-on-surface"))
+                cells.append(html.Div(sym, className="font-semibold text-on-surface"))
+            elif c == "CMP":
+                pnl_str = f" ({'+' if prox['pnl_pct'] >= 0 else ''}{prox['pnl_pct']:.1f}%)" if prox['pnl_pct'] is not None else ""
+                color_cls = "text-[#2ecc71]" if (prox['pnl_pct'] is not None and prox['pnl_pct'] >= 0) else ("text-[#e74c3c]" if (prox['pnl_pct'] is not None and prox['pnl_pct'] < 0) else "text-on-surface")
+                cells.append(html.Div([
+                    html.Span(f"₹{cmp_val:.2f}" if cmp_val else "-", className="font-semibold text-on-surface font-mono tabular-nums"),
+                    html.Span(pnl_str, className=f"text-xs ml-1 font-bold {color_cls}")
+                ]))
+            elif c == "SL_PROXIMITY":
+                cells.append(html.Div(
+                    prox["badge_text"],
+                    className="text-xs font-bold px-2.5 py-0.5 rounded-full w-fit whitespace-nowrap",
+                    style={"backgroundColor": prox["badge_bg"], "color": prox["badge_fg"]}
+                ))
             elif c == "DATE":
                 cells.append(html.Div(str(r.get(c, "-")) if pd.notna(r.get(c)) else "-", className="text-on-surface-variant"))
             elif c == "EXCHANGE":
@@ -339,7 +467,7 @@ def alpha_table(ledger_path=None):
                 cells.append(html.Div("-" if raw is None or pd.isna(raw) else str(raw), className="text-on-surface"))
         rows.append(_grid_row(cells, tpl))
 
-    return _grid_table(avail, rows, min_width=1280, wide=wide)
+    return _grid_table(avail, rows, min_width=1380, wide=wide, labels=labels)
 
 
 _STATUS_BADGE = {
@@ -504,19 +632,40 @@ def flexgate_table(path, missing_msg, empty_msg, ledger_path=None):
         df = df.assign(DATE=_fmt_date(df["DATE"]))
 
     has_ai = ("AI_WIN_PROBABILITY" in df.columns) and ("AI_APPROVED" in df.columns)
-    cols = ["SYMBOL", "AI_STATUS", "DATE", "EXCHANGE", "CLOSE", "SIS", "Whale_Density", "Implied_Trades", "CHANDELIER_EXIT", "REC_POS_SIZE_INR", "ATR14"]
-    avail = [c for c in cols if c in df.columns or c == "AI_STATUS"]
+    quotes = get_live_quotes()
+    cols = ["SYMBOL", "AI_STATUS", "DATE", "EXCHANGE", "ENTRY_PRICE", "CMP", "SL_PROXIMITY", "SIS", "Whale_Density", "Implied_Trades", "CHANDELIER_EXIT", "REC_POS_SIZE_INR", "ATR14"]
+    avail = [c for c in cols if c in df.columns or c in ("AI_STATUS", "ENTRY_PRICE", "CMP", "SL_PROXIMITY")]
     if not has_ai:
         avail = [c for c in avail if c != "AI_STATUS"]
-    wide = {"SYMBOL": "minmax(150px, 1.5fr)", "AI_STATUS": "minmax(110px, 1fr)", "DATE": "minmax(110px, 1fr)"}
+    wide = {
+        "SYMBOL": "minmax(140px, 1.4fr)",
+        "AI_STATUS": "minmax(110px, 1fr)",
+        "DATE": "minmax(105px, 1fr)",
+        "CMP": "minmax(125px, 1.2fr)",
+        "SL_PROXIMITY": "minmax(145px, 1.4fr)",
+        "CHANDELIER_EXIT": "minmax(130px, 1.2fr)",
+    }
+    labels = {
+        "CMP": "CMP (LIVE)",
+        "SL_PROXIMITY": "SL PROXIMITY",
+        "CHANDELIER_EXIT": "CHANDELIER SL",
+    }
     tpl = _template(avail, wide)
 
     rows = []
     for _, r in df.iterrows():
+        sym = str(r.get("SYMBOL", "")).strip().upper()
+        entry = r.get("ENTRY_PRICE")
+        sl = r.get("STOP_LOSS")
+        chand = r.get("CHANDELIER_EXIT")
+        q = quotes.get(sym, {})
+        cmp_val = q.get("cmp") or r.get("CLOSE") or entry
+        prox = compute_trade_proximity(sym, entry, sl, None, chand, cmp=cmp_val)
+
         cells = []
         for c in avail:
             if c == "SYMBOL":
-                cells.append(html.Div(str(r.get(c, "")), className="font-semibold text-on-surface"))
+                cells.append(html.Div(sym, className="font-semibold text-on-surface"))
             elif c == "DATE":
                 cells.append(html.Div(str(r.get(c, "-")) if pd.notna(r.get(c)) else "-", className="text-on-surface-variant"))
             elif c == "EXCHANGE":
@@ -530,6 +679,21 @@ def flexgate_table(path, missing_msg, empty_msg, ledger_path=None):
                     cells.append(html.Div(f"✅ {prob:.1f}%", className="text-[#2ecc71] font-semibold bg-[rgba(46,204,113,0.10)] px-2 py-0.5 rounded-full w-fit text-xs"))
                 else:
                     cells.append(html.Div(f"❌ {prob:.1f}%", className="text-[#e74c3c] italic bg-[rgba(231,76,60,0.08)] px-2 py-0.5 rounded-full w-fit text-xs"))
+            elif c == "ENTRY_PRICE":
+                cells.append(html.Div(_f(entry, "{:.2f}", "₹"), className="text-on-surface"))
+            elif c == "CMP":
+                pnl_str = f" ({'+' if prox['pnl_pct'] >= 0 else ''}{prox['pnl_pct']:.1f}%)" if prox['pnl_pct'] is not None else ""
+                color_cls = "text-[#2ecc71]" if (prox['pnl_pct'] is not None and prox['pnl_pct'] >= 0) else ("text-[#e74c3c]" if (prox['pnl_pct'] is not None and prox['pnl_pct'] < 0) else "text-on-surface")
+                cells.append(html.Div([
+                    html.Span(f"₹{cmp_val:.2f}" if cmp_val else "-", className="font-semibold text-on-surface font-mono tabular-nums"),
+                    html.Span(pnl_str, className=f"text-xs ml-1 font-bold {color_cls}")
+                ]))
+            elif c == "SL_PROXIMITY":
+                cells.append(html.Div(
+                    prox["badge_text"],
+                    className="text-xs font-bold px-2.5 py-0.5 rounded-full w-fit whitespace-nowrap",
+                    style={"backgroundColor": prox["badge_bg"], "color": prox["badge_fg"]}
+                ))
             elif c in ("CLOSE", "ATR14", "CHANDELIER_EXIT"):
                 cells.append(html.Div(_f(r.get(c), "{:.2f}", "₹"), className="text-on-surface"))
             elif c == "REC_POS_SIZE_INR":
@@ -543,7 +707,7 @@ def flexgate_table(path, missing_msg, empty_msg, ledger_path=None):
                 cells.append(html.Div("-" if raw is None or pd.isna(raw) else str(raw), className="text-on-surface"))
         rows.append(_grid_row(cells, tpl))
 
-    return _grid_table(avail, rows, min_width=1080, wide=wide)
+    return _grid_table(avail, rows, min_width=1320, wide=wide, labels=labels)
 
 
 def _sim_tile(title, accent, stat_a_label, stat_a_value, stat_b_label, stat_b_value, stat_b_class=""):
@@ -822,13 +986,15 @@ def corner_table():
     if "DATE" in df.columns:
         df = df.assign(DATE=_fmt_date(df["DATE"]))
 
-    cols = ["SYMBOL", "ARCHETYPE", "PROMOTER_DIRECTION", "CLOSE", "STOP_LOSS", "TAKE_PROFIT", "ATR_PCT", "FREE_FLOAT_CR", "FLOAT_ABSORBED_PCT", "ATW", "RISK_FLAGS", "CONVINCING_REASON"]
-    avail = [c for c in cols if c in df.columns]
+    quotes = get_live_quotes()
+    cols = ["SYMBOL", "ARCHETYPE", "PROMOTER_DIRECTION", "CMP", "SL_PROXIMITY", "STOP_LOSS", "TAKE_PROFIT", "ATR_PCT", "FREE_FLOAT_CR", "FLOAT_ABSORBED_PCT", "ATW", "RISK_FLAGS", "CONVINCING_REASON"]
+    avail = [c for c in cols if c in df.columns or c in ("CMP", "SL_PROXIMITY")]
     wide = {
         "SYMBOL": "minmax(130px, 1.3fr)",
         "ARCHETYPE": "minmax(150px, 1.5fr)",
         "PROMOTER_DIRECTION": "minmax(120px, 1.2fr)",
-        "CLOSE": "minmax(95px, 0.95fr)",
+        "CMP": "minmax(125px, 1.2fr)",
+        "SL_PROXIMITY": "minmax(145px, 1.4fr)",
         "STOP_LOSS": "minmax(140px, 1.4fr)",
         "TAKE_PROFIT": "minmax(140px, 1.4fr)",
         "ATR_PCT": "minmax(85px, 0.85fr)",
@@ -839,6 +1005,8 @@ def corner_table():
         "CONVINCING_REASON": "minmax(260px, 2.6fr)",
     }
     labels = {
+        "CMP": "CMP (LIVE)",
+        "SL_PROXIMITY": "SL PROXIMITY",
         "PROMOTER_DIRECTION": "PROMOTER",
         "STOP_LOSS": "STOP LOSS",
         "TAKE_PROFIT": "TAKE PROFIT",
@@ -864,11 +1032,31 @@ def corner_table():
 
     rows = []
     for _, r in df.iterrows():
+        sym = str(r.get("SYMBOL", "")).strip().upper()
         close = r.get("CLOSE")
+        sl = r.get("STOP_LOSS")
+        tp = r.get("TAKE_PROFIT")
+        q = quotes.get(sym, {})
+        cmp_val = q.get("cmp") or close
+        prox = compute_trade_proximity(sym, close, sl, tp, None, cmp=cmp_val)
+
         cells = []
         for c in avail:
             if c == "SYMBOL":
-                cells.append(html.Div(str(r.get(c, "")), className="font-semibold text-on-surface"))
+                cells.append(html.Div(sym, className="font-semibold text-on-surface"))
+            elif c == "CMP":
+                pnl_str = f" ({'+' if prox['pnl_pct'] >= 0 else ''}{prox['pnl_pct']:.1f}%)" if prox['pnl_pct'] is not None else ""
+                color_cls = "text-[#2ecc71]" if (prox['pnl_pct'] is not None and prox['pnl_pct'] >= 0) else ("text-[#e74c3c]" if (prox['pnl_pct'] is not None and prox['pnl_pct'] < 0) else "text-on-surface")
+                cells.append(html.Div([
+                    html.Span(f"₹{cmp_val:.2f}" if cmp_val else "-", className="font-semibold text-on-surface font-mono tabular-nums"),
+                    html.Span(pnl_str, className=f"text-xs ml-1 font-bold {color_cls}")
+                ]))
+            elif c == "SL_PROXIMITY":
+                cells.append(html.Div(
+                    prox["badge_text"],
+                    className="text-xs font-bold px-2.5 py-0.5 rounded-full w-fit whitespace-nowrap",
+                    style={"backgroundColor": prox["badge_bg"], "color": prox["badge_fg"]}
+                ))
             elif c == "ARCHETYPE":
                 arch = str(r.get(c, ""))
                 badge = archetype_badges.get(arch, "text-on-surface")
@@ -956,11 +1144,25 @@ TAB_BUILDERS = {
 
 
 @dash.callback(
-    Output("engine-tab-content", "children"),
-    Input("engine-tabs", "value"),
+    Output("live-risk-radar-container", "children"),
+    Output("live-refresh-store", "data"),
+    Input("btn-refresh-live-quotes", "n_clicks"),
     prevent_initial_call=True,
 )
-def render_engine_tab(tab_value):
+def refresh_live_quotes(n_clicks):
+    if not n_clicks:
+        raise dash.exceptions.PreventUpdate
+    summary = get_portfolio_proximity_summary(force_refresh=True)
+    return render_risk_radar_banner(summary), time.time()
+
+
+@dash.callback(
+    Output("engine-tab-content", "children"),
+    Input("engine-tabs", "value"),
+    Input("live-refresh-store", "data"),
+    prevent_initial_call=False,
+)
+def render_engine_tab(tab_value, refresh_ts):
     builder = TAB_BUILDERS.get(tab_value)
     if builder is None:
         return html.Div("Unknown engine tab.", className="glass-panel rounded-xl p-6 font-body-md text-outline text-center")
@@ -977,6 +1179,7 @@ def layout():
     return html.Div(
         className="px-4 md:px-6 pt-6 pb-32 w-full flex flex-col gap-4 relative",
         children=[
+            dcc.Store(id="live-refresh-store", data=0),
             html.Section(
                 className="flex flex-col gap-1",
                 children=[
@@ -984,6 +1187,7 @@ def layout():
                     html.P("Multi-Strategy Execution Engine — high-conviction data signals for professional trading.", className="font-body-md text-on-surface-variant"),
                 ],
             ),
+            html.Div(id="live-risk-radar-container", children=render_risk_radar_banner()),
             html.Details(
                 className="glass-panel rounded-2xl font-body-md text-on-surface-variant",
                 children=[

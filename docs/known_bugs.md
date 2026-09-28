@@ -1451,6 +1451,40 @@ even after the user generated a fresh, valid 16-character Google App Password.
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: `fix_before_touch` report, `DEMONCORE: PLAN_DEEP` blast-radius audit, schema invariant verification, idempotent CSV persistence, and dual-remote sync.
 
+---
+
+## BUG-082: Missing Real-Time Intraday CMP & Blind SL/TP Proximity in Dashboard Active Tables
+**STATUS**: FIXED  
+**FILE**: `live_price_fetcher.py`, `dash_pages/institutional_signals.py`, `data/live_quotes_cache.json`  
+**DISCOVERED BY**: User Inquiry ("what about live price in dashboard to know about sl and tp"), Demon Core PLAN_DEEP, 2026-09-28  
+**SYMPTOM**: 
+1. During live market trading hours, the dashboard active tables (SBIA Alpha, FlexGate, FlexGate 2.0, Corner Spike) displayed static EOD closing prices frozen from the prior trading day.
+2. The `STOP_LOSS` and `TAKE_PROFIT` table columns only expressed percentages relative to the original `ENTRY_PRICE` (e.g. `-6.0%`), providing zero real-time visibility into whether an active open position was currently 1% away from being stopped out today.
+3. The dashboard lacked an overarching Live Risk Radar alerting traders to open positions approaching or breaching their exit thresholds.
+**ROOT CAUSE**: 
+1. Active trade tables rendered strictly from static CSVs (`sbia_alpha_watchlist.csv`, `dashboard_cloud.csv`) without an intraday quote-fetching bridge.
+2. No real-time proximity calculation existed between Current Market Price (CMP) and effective Stop Loss (`CHANDELIER_EXIT` or `STOP_LOSS`).
+**FIX**: 
+1. **Live Quote Fetcher Engine (`live_price_fetcher.py`)**:
+   - Built a multi-threaded (`ThreadPoolExecutor`) quote fetching utility resolving exchange routing (`.NS` for NSE, `.BO` for BSE) with 100% resolution across all 29 active symbols in under 2 seconds.
+   - Enforced a 60-second JSON disk cache (`data/live_quotes_cache.json`) to prevent rate-limits and eliminate UI blocking.
+   - Added `compute_trade_proximity()` calculating real-time CMP, live PnL %, distance to SL %, distance to TP %, and color-coded urgency classifications:
+     * 🚨 `BREACHED_SL`: `CMP <= SL`
+     * ⚠️ `NEAR_SL`: `0 < SL Dist <= 3.0%`
+     * 🎯 `NEAR_TP`: `0 <= TP Dist <= 3.0%`
+     * 🟢 `HEALTHY`: Comfortable buffer above SL
+2. **Top Live Risk Radar Banner (`dash_pages/institutional_signals.py`)**:
+   - Added an executive banner above engine tabs highlighting total active exposure, count of near-SL positions, high-urgency warning badges (`GRASIM` at 2.9% and `NBIFIN` at 2.4% to SL), last quote timestamp, and an interactive `"🔄 Refresh Live Quotes"` button.
+3. **Active Table Upgrades**:
+   - Added `CMP (LIVE)` column showing real-time price and live PnL %.
+   - Added `SL PROXIMITY` badge column with responsive status pills.
+4. **Empirical Verification**:
+   - Verified clean execution across layout and all tabs (`alpha`, `flexgate`, `corner`).
+   - All 45 pytest tests passed in 1.12s; zero ledger modification (`git diff --stat data/*ledger*.csv` is clean).
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` pre-flight checklist, `DEMONCORE: PLAN_DEEP` blast radius mapping, multi-threaded exchange quote bridge, Dash callback synchronization, and dual-remote sync.
+
+
 
 
 
