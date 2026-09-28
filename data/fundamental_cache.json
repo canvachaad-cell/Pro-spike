@@ -5970,97 +5970,97 @@
   }
  },
  "EXHICON": {
-  "ts": 1790344183.249715,
+  "ts": 1790579464.8156443,
   "data": {
-   "dii_holding": 1.54,
-   "pledge_trend": [
-    0.0
-   ],
-   "interest_coverage_trend": null,
-   "fii_trend": "Mar 2023: 0.00% -> Sep 2023: 2.63% -> Mar 2024: 0.00% -> Sep 2024: 0.13% -> Mar 2025: 0.13% -> Sep 2025: 0.15% -> Mar 2026: 0.00%",
-   "op_lev_inflecting": false,
-   "symbol": "EXHICON",
-   "borrowings_cr": 19.0,
-   "revenue_4q_growth": 1.3605442176870748,
-   "roice_pct": 21.1,
-   "dii_trend": "Mar 2023: 0.00% -> Sep 2023: 1.97% -> Mar 2024: 3.65% -> Sep 2024: 4.83% -> Mar 2025: 4.83% -> Sep 2025: 4.24% -> Mar 2026: 3.53%",
-   "fcf_pat_ratio": 0.17,
-   "free_float_cr": 432,
-   "promoter_trend": "Mar 2023: 86.20% -> Sep 2023: 62.25% -> Mar 2024: 62.25% -> Sep 2024: 57.03% -> Mar 2025: 57.15% -> Sep 2025: 56.19% -> Mar 2026: 55.33%",
-   "price": 520.0,
    "ebit_4q_growth": 1.7272727272727273,
-   "revenue_ttm_cr": 347.0,
-   "promoter_holding": 49.33,
-   "quarterly_quarters": 9,
-   "interest_coverage_recent": null,
+   "dii_trend": "Mar 2023: 0.00% -> Sep 2023: 1.97% -> Mar 2024: 3.65% -> Sep 2024: 4.83% -> Mar 2025: 4.83% -> Sep 2025: 4.24% -> Mar 2026: 3.53%",
+   "roice_pct": 21.1,
+   "borrowings_cr": 19.0,
+   "rpt_pct": null,
+   "rpt_status": "NOT_APPLICABLE",
+   "fcf_pat_ratio": 0.17,
+   "dii_holding": 1.54,
    "op_lev_ratio": 1.2695454545454545,
+   "op_lev_inflecting": false,
    "rpt_amount_cr": null,
-   "ocf_3yr_cr": [
-    -29.0,
-    17.0,
-    27.0
-   ],
-   "fii_holding": 0.0,
+   "roce_abs_pct": 25.1,
+   "market_cap_cr": 853.0,
    "name": "Exhicon Events Media Solutions Ltd",
-   "market_cap_cr": 852.0,
-   "url": "https://www.screener.in/company/543895/consolidated/",
+   "symbol": "EXHICON",
+   "fii_holding": 0.0,
+   "price": 520.0,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "promoter_holding": 49.33,
+   "interest_coverage_recent": null,
    "pat_3yr_cr": [
     14.0,
     30.0,
     45.0
    ],
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "rpt_status": "NOT_APPLICABLE",
-   "roce_abs_pct": 25.1,
-   "rpt_pct": null,
-   "pledge_direction": "flat"
-  }
- },
- "KABRAEXTRU": {
-  "ts": 1790344184.3205957,
-  "data": {
-   "dii_holding": 0.02,
+   "revenue_ttm_cr": 347.0,
+   "ocf_3yr_cr": [
+    -29.0,
+    17.0,
+    27.0
+   ],
+   "quarterly_quarters": 9,
+   "url": "https://www.screener.in/company/543895/consolidated/",
+   "interest_coverage_trend": null,
+   "pledge_direction": "flat",
+   "free_float_cr": 432,
    "pledge_trend": [
     0.0
    ],
-   "interest_coverage_trend": "deteriorating",
-   "fii_trend": "Sep 2023: 3.85% -> Dec 2023: 3.78% -> Mar 2024: 3.67% -> Jun 2024: 3.41% -> Sep 2024: 3.32% -> Dec 2024: 2.96% -> Mar 2025: 1.46% -> Jun 2025: 0.81% -> Sep 2025: 0.37% -> Dec 2025: 0.39% -> Mar 2026: 0.35% -> Jun 2026: 0.36%",
-   "op_lev_inflecting": false,
-   "symbol": "KABRAEXTRU",
-   "borrowings_cr": 145.0,
-   "revenue_4q_growth": 0.03138956770877218,
-   "roice_pct": -50.0,
-   "dii_trend": "Sep 2023: 0.01% -> Dec 2023: 0.01% -> Mar 2024: 0.01% -> Jun 2024: 0.01% -> Sep 2024: 0.01% -> Dec 2024: 0.33% -> Mar 2025: 0.69% -> Jun 2025: 0.69% -> Sep 2025: 0.65% -> Dec 2025: 0.06% -> Mar 2026: 0.02% -> Jun 2026: 0.02%",
-   "fcf_pat_ratio": 1.39,
-   "free_float_cr": 1171,
-   "promoter_trend": "Sep 2023: 60.24% -> Dec 2023: 60.24% -> Mar 2024: 60.24% -> Jun 2024: 60.24% -> Sep 2024: 60.24% -> Dec 2024: 60.23% -> Mar 2025: 60.23% -> Jun 2025: 60.21% -> Sep 2025: 60.50% -> Dec 2025: 60.50% -> Mar 2026: 60.49% -> Jun 2026: 60.44%",
-   "price": 846.0,
+   "fii_trend": "Mar 2023: 0.00% -> Sep 2023: 2.63% -> Mar 2024: 0.00% -> Sep 2024: 0.13% -> Mar 2025: 0.13% -> Sep 2025: 0.15% -> Mar 2026: 0.00%",
+   "revenue_4q_growth": 1.3605442176870748,
+   "promoter_trend": "Mar 2023: 86.20% -> Sep 2023: 62.25% -> Mar 2024: 62.25% -> Sep 2024: 57.03% -> Mar 2025: 57.15% -> Sep 2025: 56.19% -> Mar 2026: 55.33%"
+  }
+ },
+ "KABRAEXTRU": {
+  "ts": 1790579464.6999123,
+  "data": {
    "ebit_4q_growth": -0.47551511907947547,
-   "revenue_ttm_cr": 489.58,
-   "promoter_holding": 60.44,
-   "quarterly_quarters": 13,
-   "interest_coverage_recent": 1.61,
+   "dii_trend": "Sep 2023: 0.01% -> Dec 2023: 0.01% -> Mar 2024: 0.01% -> Jun 2024: 0.01% -> Sep 2024: 0.01% -> Dec 2024: 0.33% -> Mar 2025: 0.69% -> Jun 2025: 0.69% -> Sep 2025: 0.65% -> Dec 2025: 0.06% -> Mar 2026: 0.02% -> Jun 2026: 0.02%",
+   "roice_pct": -50.0,
+   "borrowings_cr": 145.0,
+   "rpt_pct": null,
+   "rpt_status": "NOT_APPLICABLE",
+   "fcf_pat_ratio": 1.39,
+   "dii_holding": 0.02,
    "op_lev_ratio": -15.14882662581515,
+   "op_lev_inflecting": false,
    "rpt_amount_cr": null,
-   "ocf_3yr_cr": [
-    33.0,
-    43.0,
-    9.0
-   ],
-   "fii_holding": 0.36,
+   "roce_abs_pct": 1.7,
+   "market_cap_cr": 3108.0,
    "name": "Kabra Extrusion Technik Ltd",
-   "market_cap_cr": 2960.0,
-   "url": "https://www.screener.in/company/KABRAEXTRU/consolidated/",
+   "symbol": "KABRAEXTRU",
+   "fii_holding": 0.36,
+   "price": 889.0,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "promoter_holding": 60.44,
+   "interest_coverage_recent": 1.61,
    "pat_3yr_cr": [
     34.0,
     32.0,
     -5.0
    ],
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "rpt_status": "NOT_APPLICABLE",
-   "roce_abs_pct": 1.7,
-   "rpt_pct": null,
-   "pledge_direction": "flat"
+   "revenue_ttm_cr": 489.58,
+   "ocf_3yr_cr": [
+    33.0,
+    43.0,
+    9.0
+   ],
+   "quarterly_quarters": 13,
+   "url": "https://www.screener.in/company/KABRAEXTRU/consolidated/",
+   "interest_coverage_trend": "deteriorating",
+   "pledge_direction": "flat",
+   "free_float_cr": 1230,
+   "pledge_trend": [
+    0.0
+   ],
+   "fii_trend": "Sep 2023: 3.85% -> Dec 2023: 3.78% -> Mar 2024: 3.67% -> Jun 2024: 3.41% -> Sep 2024: 3.32% -> Dec 2024: 2.96% -> Mar 2025: 1.46% -> Jun 2025: 0.81% -> Sep 2025: 0.37% -> Dec 2025: 0.39% -> Mar 2026: 0.35% -> Jun 2026: 0.36%",
+   "revenue_4q_growth": 0.03138956770877218,
+   "promoter_trend": "Sep 2023: 60.24% -> Dec 2023: 60.24% -> Mar 2024: 60.24% -> Jun 2024: 60.24% -> Sep 2024: 60.24% -> Dec 2024: 60.23% -> Mar 2025: 60.23% -> Jun 2025: 60.21% -> Sep 2025: 60.50% -> Dec 2025: 60.50% -> Mar 2026: 60.49% -> Jun 2026: 60.44%"
   }
  }
 }
