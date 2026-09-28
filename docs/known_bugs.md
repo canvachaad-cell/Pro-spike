@@ -591,10 +591,12 @@
 **SYMPTOM**: Vikram spinner never clears; input permanently disabled; requires hard page reload to recover. This is occurrence #8 of the same failure family (previous: BUG-016, 018, 022, 026, 030, 031, 036, 038).
 **ROOT CAUSE**:
 1. **No end-to-end budget**: sk_vikram() has zero monotonic() / deadline tracking. Worst-case execution � 202s (4 screener variants � 10s pre-pool + 19s context pool + 90s static model loop + 38s probe).
-2. **Single unguarded loader-clear**: esolve_message() calls sk_vikram() at L1446 with no 	ry/except. Any exception from ThreadPoolExecutor (thread exhaustion), uild_risk_architecture_context() (called synchronously, unguarded), or any future uncaught callsite -> Dash 500 -> disabled=True and _loader_bubble() permanently stuck.
+2. **Single unguarded loader-clear**: 
+esolve_message() calls sk_vikram() at L1446 with no 	ry/except. Any exception from ThreadPoolExecutor (thread exhaustion), uild_risk_architecture_context() (called synchronously, unguarded), or any future uncaught callsite -> Dash 500 -> disabled=True and _loader_bubble() permanently stuck.
 3. **No-op regression gate**: 	ests/audit_vikram_latency.spec.js L41 only asserts 	oBeEnabled({ timeout: 90000 }). No latency threshold assertion exists. BUG-038 ledger entry claims "verified <4.5s" � this assertion was **never in the committed file**. All 8 previous "FIXED" entries passed a gate that tolerates a 90-second hang.
 **FIX**:
-1. (PR-2) Wrapped sk_vikram(...) call in esolve_message with 	ry/except Exception � inputs are **always** re-enabled, even on unhandled exceptions. Fail-loudly print retained per AGENTS.md.
+1. (PR-2) Wrapped sk_vikram(...) call in 
+esolve_message with 	ry/except Exception � inputs are **always** re-enabled, even on unhandled exceptions. Fail-loudly print retained per AGENTS.md.
 2. (PR-1) Added MAX_TOTAL_S = 45 constant. Added 4 deadline checkpoints (A: before classify, B: after context, C: in static model loop, D: before probe). Passed absolute deadline into _probe_dynamic_fallback replacing its internal probe_start + PROBE_TOTAL_TIMEOUT. Raised pi_timeout_ms from 15000 -> 25000 to resolve the BUG-022/BUG-038 contradiction.
 3. (PR-3) Capped screener name-search to 2 variants � 5s (was 4 � 10s = 40s). Moved _classify_query into the thread pool to run concurrently with uild_engine_signals.
 4. (PR-4) Added real latency assertions to 	ests/audit_vikram_latency.spec.js: expect(t1).toBeLessThan(15), expect(t2).toBeLessThan(50), expect(t3).toBeLessThan(50), loader-dots count assertion, recovery 	oBeEnabled timeout reduced from 90s to 55s.
@@ -1564,3 +1566,19 @@ even after the user generated a fresh, valid 16-character Google App Password.
    - All 59 tests in `tests/` pass in 6.39s; `git diff --stat data/*ledger*.csv` is 100% clean (zero ledger mutation).
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: `fix_before_touch` pre-flight checklist, `DEMONCORE: DEEP_AUDIT` root cause analysis, Pandas 2.x datetime inference diagnosis, and dual-remote sync.
+---
+
+## BUG-085: Multi-Tranche Risk Radar Banner Duplicate Badges
+**STATUS**: FIXED  
+**FILE**: `live_price_fetcher.py`, `tests/test_live_price_fetcher.py`  
+**DISCOVERED BY**: User Inquiry ("why two indus tower?"), 2026-09-28  
+**SYMPTOM**: In the Live Risk Radar banner on `/watchlist`, `INDUSTOWER` was displayed twice as separate warning badges (`1.7% to SL (₹363.10)` and `2.0% to SL (₹361.91)`), creating visual clutter and confusion.  
+**ROOT CAUSE**: When an underlying asset has multiple active trade tranches in a strategy ledger (e.g., `INDUSTOWER` entered twice in `data/flexgate_ledger.csv` on 2026-08-14 and 2026-08-27 before trade stacking vetoes were enforced), `render_risk_radar_banner()` iterated directly over `breached_sl`, `near_sl`, and `near_tp` lists without grouping by `(symbol, engine)`.  
+**FIX**: 
+1. Added `_dedup_risk_items()` helper in `render_risk_radar_banner()` within `live_price_fetcher.py`.
+2. Grouped warning entries by `(symbol, engine)` and selected the tranche with the tightest/most urgent proximity threshold (lowest `sl_dist_pct` or `tp_dist_pct`).
+3. Appended a clean `[N tranches]` tag (e.g. `[2 tranches]`) when `tranche_count > 1` so the trader is immediately aware of multi-position exposure without cluttering the radar.
+4. Preserved strategy ledgers as 100% read-only (`git diff --stat data/*ledger*.csv` is clean).
+5. Added unit test `test_render_risk_radar_banner_deduplication()` in `tests/test_live_price_fetcher.py`.
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` pre-flight checklist, `DEMONCORE: PLAN_DEEP` blast radius mapping, Option A UI deduplication design, unit test validation, and dual-remote sync.

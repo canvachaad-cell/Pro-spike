@@ -386,25 +386,54 @@ def render_risk_radar_banner(summary=None):
     border_color = "rgba(239, 68, 68, 0.5)" if has_breach else ("rgba(245, 158, 11, 0.45)" if has_near_sl else "rgba(90, 240, 179, 0.25)")
     accent_glow = "rgba(239, 68, 68, 0.06)" if has_breach else ("rgba(245, 158, 11, 0.05)" if has_near_sl else "rgba(90, 240, 179, 0.03)")
 
+    def _dedup_risk_items(items, metric_key="sl_dist_pct", pick_min=True):
+        if not items:
+            return []
+        grouped = {}
+        for it in items:
+            key = (it.get("symbol"), it.get("engine"))
+            grouped.setdefault(key, []).append(it)
+        
+        deduped = []
+        for (sym, eng), group in grouped.items():
+            if pick_min:
+                best = min(group, key=lambda x: x.get(metric_key) if x.get(metric_key) is not None else float("inf"))
+            else:
+                best = max(group, key=lambda x: x.get(metric_key) if x.get(metric_key) is not None else float("-inf"))
+            item_copy = dict(best)
+            item_copy["tranche_count"] = len(group)
+            deduped.append(item_copy)
+        
+        if metric_key:
+            deduped.sort(key=lambda x: x.get(metric_key) if x.get(metric_key) is not None else float("inf"))
+        return deduped
+
+    dedup_breached = _dedup_risk_items(breached_sl, metric_key="sl_dist_pct", pick_min=True)
+    dedup_near_sl = _dedup_risk_items(near_sl, metric_key="sl_dist_pct", pick_min=True)
+    dedup_near_tp = _dedup_risk_items(near_tp, metric_key="tp_dist_pct", pick_min=True)
+
     warning_badges = []
-    for item in breached_sl:
+    for item in dedup_breached:
+        tranches_tag = f" [{item['tranche_count']} tranches]" if item.get("tranche_count", 1) > 1 else ""
         warning_badges.append(
             html.Div(
-                f"🚨 {item['symbol']} ({item['engine']}): CMP ₹{item['cmp']:.2f} BREACHED SL ₹{item['effective_sl']:.2f}",
+                f"🚨 {item['symbol']} ({item['engine']}): CMP ₹{item['cmp']:.2f} BREACHED SL ₹{item['effective_sl']:.2f}{tranches_tag}",
                 className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#ef4444]/20 text-[#f87171] border border-[#ef4444]/40"
             )
         )
-    for item in near_sl:
+    for item in dedup_near_sl:
+        tranches_tag = f" [{item['tranche_count']} tranches]" if item.get("tranche_count", 1) > 1 else ""
         warning_badges.append(
             html.Div(
-                f"⚠️ {item['symbol']} ({item['engine']}): CMP ₹{item['cmp']:.2f} · {item['sl_dist_pct']:.1f}% to SL (₹{item['effective_sl']:.2f})",
+                f"⚠️ {item['symbol']} ({item['engine']}): CMP ₹{item['cmp']:.2f} · {item['sl_dist_pct']:.1f}% to SL (₹{item['effective_sl']:.2f}){tranches_tag}",
                 className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#f59e0b]/20 text-[#fbbf24] border border-[#f59e0b]/40"
             )
         )
-    for item in near_tp:
+    for item in dedup_near_tp:
+        tranches_tag = f" [{item['tranche_count']} tranches]" if item.get("tranche_count", 1) > 1 else ""
         warning_badges.append(
             html.Div(
-                f"🎯 {item['symbol']} ({item['engine']}): CMP ₹{item['cmp']:.2f} · {item['tp_dist_pct']:.1f}% to TP (₹{item['take_profit']:.2f})",
+                f"🎯 {item['symbol']} ({item['engine']}): CMP ₹{item['cmp']:.2f} · {item['tp_dist_pct']:.1f}% to TP (₹{item['take_profit']:.2f}){tranches_tag}",
                 className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#38bdf8]/20 text-[#38bdf8] border border-[#38bdf8]/40"
             )
         )

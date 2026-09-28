@@ -10,6 +10,7 @@ from live_price_fetcher import (
     compute_trade_proximity,
     get_portfolio_proximity_summary,
     get_active_symbols,
+    render_risk_radar_banner,
 )
 
 
@@ -75,3 +76,43 @@ def test_get_portfolio_proximity_summary_contract():
     assert "quotes" in summary
     assert isinstance(summary["quotes"], dict)
     assert summary["total_active"] >= 0
+
+
+def test_render_risk_radar_banner_deduplication():
+    """Verify multiple tranches of the same symbol collapse into 1 badge with [N tranches] tag."""
+    synthetic_summary = {
+        "total_active": 2,
+        "unique_symbols": 1,
+        "near_sl": [
+            {
+                "symbol": "INDUSTOWER",
+                "engine": "FlexGate",
+                "cmp": 369.35,
+                "effective_sl": 361.91,
+                "sl_dist_pct": 2.0,
+            },
+            {
+                "symbol": "INDUSTOWER",
+                "engine": "FlexGate",
+                "cmp": 369.35,
+                "effective_sl": 363.10,
+                "sl_dist_pct": 1.7,
+            },
+        ],
+        "near_tp": [],
+        "breached_sl": [],
+        "healthy_count": 0,
+        "last_updated": "12:30 PM",
+    }
+    card = render_risk_radar_banner(synthetic_summary)
+    assert card is not None
+    badge_container = card.children[1]
+    badges = badge_container.children
+    # Should only have 1 badge because INDUSTOWER was deduplicated
+    assert len(badges) == 1
+    badge_text = badges[0].children
+    assert "INDUSTOWER" in badge_text
+    assert "[2 tranches]" in badge_text
+    # Should show the tighter SL distance (1.7% / 363.10)
+    assert "1.7%" in badge_text
+    assert "363.10" in badge_text
