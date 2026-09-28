@@ -1647,3 +1647,29 @@ even after the user generated a fresh, valid 16-character Google App Password.
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: `ui-audit` Playwright test suite, AxeBuilder AST inspection, `fix_before_touch` checklist, `DEMONCORE: PLAN_DEEP` diff gating, and dual-remote sync.
 
+---
+
+## BUG-089: Live Breach Notifications Never Fired (Intraday UI Decoupling & SL Breach Exclusion)
+**STATUS**: FIXED  
+**FILE**: `alert_engine.py`, `dash_pages/watchlist.py`, `tests/test_live_breach_alerts.py`  
+**DISCOVERED BY**: User Inquiry ("radar say indus tower breached but i didnt get any notifications in ntfy mobile and email"), Demon Core deep audit, 2026-09-28  
+**SYMPTOM**: The Watchlist live risk radar displayed a red `BREACHED_SL` alert (`🚨 INDUSTOWER [FlexGate]: CMP ₹358.65 BREACHED SL ₹363.10`), but no push notifications were delivered to ntfy mobile or Gmail inbox.  
+**ROOT CAUSE**: 
+1. **Intraday UI Decoupling**: `live_price_fetcher.py` and `dash_pages/watchlist.py` computed live CMP and generated Dash HTML Divs for display in `render_risk_radar_banner()`, but had zero dispatch bridge to `notify_channels.py`.
+2. **SL Breach Blind Spot**: In `alert_engine.py:347`, `compute_approach_alerts()` required `if sl not in (None, 0) and close > sl:`. Once a stock actually breached its SL (`close <= sl`), this condition evaluated to `False`, rendering the batch approach engine completely blind to actual active breaches.
+3. **Multi-Tranche Repetition**: Without deduplication by `(symbol, engine, urgency)`, multi-tranche positions like `INDUSTOWER` (2 tranches in FlexGate) would repeat lines in notification digests.  
+**FIX**: 
+1. **Live Breach Detection & Deduplication (`alert_engine.py`)**: Added `scan_live_breaches()`, `dedup_live_breaches()` (stored in `alerts_state.json` under `"live_breach_history"` with key format `YYYY-MM-DD|engine|symbol|urgency`), `build_live_breach_digest()` with multi-tranche indicator (`[FlexGate · 2 tranches]`), and `dispatch_live_breach_alerts()`.
+2. **Non-Blocking Background Worker (`alert_engine.py`)**: Added `_live_breach_worker(summary)` protected by `_LIVE_BREACH_LOCK` (`threading.Lock`) so notification delivery runs in a non-blocking daemon thread without adding latency to Dash callbacks.
+3. **Watchlist Integration (`dash_pages/watchlist.py`)**: Integrated `_live_breach_worker(summary)` into `refresh_watchlist_radar()` and initial layout render, and added a 120s `dcc.Interval` for automated continuous background monitoring when the page is active.
+4. **SL Breach Exclusion Fix (`alert_engine.py`)**: Updated `compute_approach_alerts()` to evaluate `dist_pct <= pct` so that both active breaches (`close <= sl`) and near-level positions are detected.
+5. **CLI Integration (`alert_engine.py`)**: Added `--live-breach` and `--live-breach-force` CLI arguments.
+6. **Empirical Verification**:
+   - `python alert_engine.py --live-breach` dispatched active breach alerts for `INDUSTOWER` [FlexGate · 2 tranches] and near SL positions directly to ntfy mobile push and Gmail (`ntfy: True (OK)`, `email: True (OK)`).
+   - Re-running confirmed 0-spam deduplication (`Live breach alerts: 0 dispatched`).
+   - All 5 new tests in `tests/test_live_breach_alerts.py` passed.
+   - All 66 pytest regression tests in the repository passed cleanly in 6.74s.
+   - Strategy ledgers (`data/*ledger*.csv`) 100% untouched (`git diff` clean).  
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` pre-flight checklist, `DEMONCORE: PLAN_DEEP` blast radius mapping, daemon thread non-blocking architecture, unit testing, and dual-remote sync.
+

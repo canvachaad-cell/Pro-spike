@@ -32,6 +32,7 @@ import os
 import sys
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
+import threading as _threading
 
 import pandas as pd
 
@@ -69,6 +70,7 @@ DATA_DIR = os.path.join(ROOT_DIR, "data")
 ALERTS_LOG = os.path.join(DATA_DIR, "alerts_log.csv")
 ALERTS_STATE = os.path.join(DATA_DIR, "alerts_state.json")
 LIVE_FILE = os.path.join(DATA_DIR, "dashboard_cloud.csv")
+_LIVE_BREACH_LOCK = _threading.Lock()
 
 # Engine -> ledger path.
 # ALPHA_MARKUPS (data/sbia_ledger.csv) is Path A, the "Alpha Markups Engine
@@ -344,16 +346,20 @@ def compute_approach_alerts(pct: float = 1.5) -> list:
             if close is None:
                 continue
 
-            if sl not in (None, 0) and close > sl:
-                if (close - sl) / close * 100 <= pct:
+            if sl not in (None, 0):
+                dist_pct = (close - sl) / close * 100
+                if dist_pct <= pct:
+                    ev_type = "BREACHED_SL" if close <= sl else "APPROACHING_SL"
                     out.append({"engine": engine, "symbol": symbol,
-                                "event_type": "APPROACHING_SL", "close": close,
-                                "level": sl, "distance_pct": round((close - sl) / close * 100, 2)})
-            if tp not in (None, 0) and close < tp:
-                if (tp - close) / close * 100 <= pct:
+                                "event_type": ev_type, "close": close,
+                                "level": sl, "distance_pct": round(dist_pct, 2)})
+            if tp not in (None, 0):
+                dist_pct = (tp - close) / close * 100
+                if dist_pct <= pct:
+                    ev_type = "HIT_TP" if close >= tp else "APPROACHING_TP"
                     out.append({"engine": engine, "symbol": symbol,
-                                "event_type": "APPROACHING_TP", "close": close,
-                                "level": tp, "distance_pct": round((tp - close) / close * 100, 2)})
+                                "event_type": ev_type, "close": close,
+                                "level": tp, "distance_pct": round(dist_pct, 2)})
     return out
 
 
@@ -567,6 +573,214 @@ def dispatch_approach_alerts(pct: float | None = None, dry_run: bool = False,
     return len(new_rows)
 
 
+# ---------------------------------------------------------------------------
+# Phase 5 — Intraday Live CMP Breach Alerts (uses live_price_fetcher)
+# ---------------------------------------------------------------------------
+_BREACH_PRIORITY_MAP = {
+    "BREACHED_SL": ("urgent",   "rotating_light,red_circle",    "🚨"),
+    "NEAR_SL":     ("high",     "warning,orange_circle",         "⚠️"),
+    "HIT_TP":      ("high",     "tada,green_circle",             "🚀"),
+    "NEAR_TP":     ("default",  "dart,blue_circle",              "🎯"),
+}
+
+
+def scan_live_breaches(summary: dict | None = None) -> list[dict]:
+    """Return actionable breach rows from a live portfolio proximity summary."""
+    if summary is None:
+        try:
+            from live_price_fetcher import get_portfolio_proximity_summary
+            summary = get_portfolio_proximity_summary(force_refresh=False)
+        except Exception:
+            logger.exception("scan_live_breaches: get_portfolio_proximity_summary failed")
+            return []
+
+    raw_items: list[dict] = []
+    target_urgencies = {"BREACHED_SL", "HIT_TP", "NEAR_SL", "NEAR_TP"}
+    for bucket_key in ("breached_sl", "near_sl", "near_tp"):
+        for item in summary.get(bucket_key, []):
+            urgency = item.get("urgency")
+            if urgency in target_urgencies:
+                raw_items.append({
+                    "engine": item.get("engine", ""),
+                    "symbol": item.get("symbol", ""),
+                    "urgency": urgency,
+                    "cmp": item.get("cmp"),
+                    "effective_sl": item.get("effective_sl"),
+                    "take_profit": item.get("take_profit"),
+                    "entry_price": item.get("entry_price"),
+                    "pnl_pct": item.get("pnl_pct"),
+                    "sl_dist_pct": item.get("sl_dist_pct"),
+                    "tp_dist_pct": item.get("tp_dist_pct"),
+                    "badge_text": item.get("badge_text", ""),
+                })
+
+    # Group by (symbol, engine, urgency) to eliminate multi-tranche duplication (BUG-085)
+    grouped: dict[tuple, list[dict]] = {}
+    for it in raw_items:
+        key = (it.get("symbol"), it.get("engine"), it.get("urgency"))
+        grouped.setdefault(key, []).append(it)
+
+    out: list[dict] = []
+    for (sym, eng, urg), group in grouped.items():
+        if urg in ("BREACHED_SL", "NEAR_SL"):
+            best = min(group, key=lambda x: x.get("sl_dist_pct") if x.get("sl_dist_pct") is not None else 999)
+        else:
+            best = min(group, key=lambda x: x.get("tp_dist_pct") if x.get("tp_dist_pct") is not None else 999)
+        item_copy = dict(best)
+        item_copy["tranche_count"] = len(group)
+        out.append(item_copy)
+
+    return out
+
+
+def dedup_live_breaches(rows: list[dict]) -> tuple[list[dict], dict]:
+    """Filter rows to only those not already dispatched today.
+
+    Dedup key format: YYYY-MM-DD|engine|symbol|urgency
+    History is stored in alerts_state.json under key 'live_breach_history'.
+    """
+    if not rows:
+        return [], {}
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    state = load_state()
+    history: dict = state.get("live_breach_history", {})
+
+    new_rows: list[dict] = []
+    seen_in_batch = set()
+    for r in rows:
+        key = f"{today_str}|{r['engine']}|{r['symbol']}|{r['urgency']}"
+        if key not in history and key not in seen_in_batch:
+            seen_in_batch.add(key)
+            new_rows.append({**r, "_dedup_key": key})
+
+    return new_rows, history
+
+
+def build_live_breach_digest(rows: list[dict]) -> tuple[str, str]:
+    """Format notification message for live CMP breach alerts."""
+    urgency_order = {"BREACHED_SL": 0, "HIT_TP": 1, "NEAR_SL": 2, "NEAR_TP": 3}
+    rows_sorted = sorted(rows, key=lambda r: urgency_order.get(r.get("urgency", ""), 9))
+
+    count = len(rows_sorted)
+    breached = sum(1 for r in rows_sorted if r.get("urgency") == "BREACHED_SL")
+    hit_tp = sum(1 for r in rows_sorted if r.get("urgency") == "HIT_TP")
+    near_sl = sum(1 for r in rows_sorted if r.get("urgency") == "NEAR_SL")
+    near_tp = sum(1 for r in rows_sorted if r.get("urgency") == "NEAR_TP")
+
+    title = (
+        f"🚨 Pro Spike — {count} live breach alert(s)"
+        if breached > 0 else
+        f"⚠️ Pro Spike — {count} live position alert(s)"
+    )
+
+    lines = [
+        f"*PRO SPIKE LIVE RADAR ALERT* — {count} alert(s)",
+        f"🚨 Breached SL: {breached}  ⚠️ Near SL: {near_sl}  🚀 Hit TP: {hit_tp}  🎯 Near TP: {near_tp}",
+        f"Time: {datetime.now().strftime('%I:%M %p')}",
+        "",
+    ]
+
+    for r in rows_sorted[:8]:
+        priority, tags, icon = _BREACH_PRIORITY_MAP.get(r.get("urgency", ""), ("default", "", "•"))
+        cmp_str = f"₹{r['cmp']:.2f}" if r.get("cmp") is not None else "—"
+        sl_str = f"₹{r['effective_sl']:.2f}" if r.get("effective_sl") is not None else "—"
+        tp_str = f"₹{r['take_profit']:.2f}" if r.get("take_profit") is not None else "—"
+        pnl_str = f" ({r['pnl_pct']:+.1f}%)" if isinstance(r.get("pnl_pct"), (int, float)) else ""
+
+        tranche_str = f" · {r['tranche_count']} tranches" if r.get("tranche_count", 1) > 1 else ""
+        urgency_label = str(r.get("urgency", "")).replace("_", " ")
+        lines.append(
+            f"{icon} *{urgency_label}* — *{r.get('symbol')}* [{r.get('engine')}{tranche_str}]\n"
+            f"   CMP {cmp_str} | SL {sl_str} | TP {tp_str}{pnl_str}"
+        )
+        lines.append("")
+
+    if count > 8:
+        lines.append(f"…and {count - 8} more — check /watchlist for full radar")
+
+    return title, "\n".join(lines).strip()
+
+
+
+def dispatch_live_breach_alerts(
+    dry_run: bool = False,
+    no_send: bool = False,
+    summary: dict | None = None,
+    force_refresh: bool = False,
+) -> int:
+    """Detect, dedup, and dispatch live CMP breach alerts."""
+    if not alerts_enabled():
+        logger.info("dispatch_live_breach_alerts: alerts disabled (ALERTS_ENABLED=0)")
+        return 0
+
+    if summary is None:
+        try:
+            from live_price_fetcher import get_portfolio_proximity_summary
+            summary = get_portfolio_proximity_summary(force_refresh=force_refresh)
+        except Exception:
+            logger.exception("dispatch_live_breach_alerts: portfolio fetch failed")
+            return 0
+
+    rows = scan_live_breaches(summary)
+    if not rows:
+        logger.debug("dispatch_live_breach_alerts: no actionable breaches")
+        return 0
+
+    new_rows, history = dedup_live_breaches(rows)
+    if not new_rows:
+        logger.info("dispatch_live_breach_alerts: %d breach(es) found but all already alerted today", len(rows))
+        return 0
+
+    title, body = build_live_breach_digest(new_rows)
+    logger.info("dispatch_live_breach_alerts: %d new breach alert(s)", len(new_rows))
+    print(f"Live breach alerts: {len(new_rows)} new alert(s)")
+    print(body)
+
+    if dry_run:
+        print("[DRY RUN] Live breach messages not sent.")
+        return len(new_rows)
+
+    if no_send:
+        print("[NO SEND] Live breach messages skipped.")
+        return len(new_rows)
+
+    top_priority = "urgent" if any(r.get("urgency") == "BREACHED_SL" for r in new_rows) else "high"
+    top_tags = "rotating_light,warning" if top_priority == "urgent" else "warning,chart_with_upwards_trend"
+
+    ok_wa, detail_wa = send_whatsapp(body)
+    ok_ntfy, detail_ntfy = send_ntfy(title, body, priority=top_priority, tags=top_tags)
+    ok_mail, detail_mail = send_email(title, body)
+
+    print(f"  whatsapp: {ok_wa} ({detail_wa})")
+    print(f"  ntfy    : {ok_ntfy} ({detail_ntfy})")
+    print(f"  email   : {ok_mail} ({detail_mail})")
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    for r in new_rows:
+        key = r.get("_dedup_key") or f"{today_str}|{r['engine']}|{r['symbol']}|{r['urgency']}"
+        history[key] = _now_str()
+
+    state = load_state()
+    state["live_breach_history"] = history
+    save_state(state)
+
+    return len(new_rows)
+
+
+def _live_breach_worker(summary: dict | None = None) -> None:
+    """Daemon-thread worker: acquires lock, dispatches, releases."""
+    if not _LIVE_BREACH_LOCK.acquire(blocking=False):
+        logger.debug("_live_breach_worker: another dispatch already running — skipped")
+        return
+    try:
+        dispatch_live_breach_alerts(summary=summary)
+    except Exception:
+        logger.exception("_live_breach_worker: unhandled exception")
+    finally:
+        _LIVE_BREACH_LOCK.release()
+
+
 def _test_channel():
     print("Configured channels:", channel_status())
     title = "Pro Spike — channel test"
@@ -599,7 +813,20 @@ def main() -> int:
                     help="Band width for --approaching (default 3.0)")
     ap.add_argument("--send", action="store_true",
                     help="Dispatch outbound notifications for --approaching instead of console-only output")
+    ap.add_argument("--live-breach", action="store_true",
+                    help="Fetch live CMP quotes and dispatch intraday breach alerts (ntfy + email + whatsapp)")
+    ap.add_argument("--live-breach-force", action="store_true",
+                    help="Force-refresh quotes from yfinance instead of cache")
     args = ap.parse_args()
+
+    if args.live_breach:
+        n = dispatch_live_breach_alerts(
+            dry_run=args.dry_run,
+            no_send=args.no_send,
+            force_refresh=args.live_breach_force,
+        )
+        print(f"Live breach alerts: {n} dispatched.")
+        return 0
 
     if args.test_channel:
         _test_channel()

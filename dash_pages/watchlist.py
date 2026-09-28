@@ -6,6 +6,8 @@ from functools import lru_cache
 from dash_iconify import DashIconify
 from watchlist_manager import WatchlistManager
 from live_price_fetcher import render_risk_radar_banner, get_portfolio_proximity_summary
+import threading as _threading
+from alert_engine import _live_breach_worker
 
 dash.register_page(__name__, path='/watchlist', name='Watchlist', title='Pro Spike - Watchlist')
 
@@ -241,6 +243,8 @@ def layout():
             html.Div(id="add-status", className="mt-3 font-body-md text-sm"),
         ]
     )
+    radar_summary = get_portfolio_proximity_summary(force_refresh=False)
+    _threading.Thread(target=_live_breach_worker, args=(radar_summary,), daemon=True).start()
 
     return html.Div(
         className="flex flex-col w-full px-[24px] py-[24px] max-w-[1600px] mx-auto gap-6",
@@ -251,7 +255,8 @@ def layout():
                     html.P("Active position tracking with automatic price updates and PnL.", className="font-body-md text-on-surface-variant"),
                 ]
             ),
-            html.Div(id="watchlist-live-radar-container", children=render_risk_radar_banner()),
+            dcc.Interval(id="watchlist-radar-interval", interval=120 * 1000, n_intervals=0),
+            html.Div(id="watchlist-live-radar-container", children=render_risk_radar_banner(radar_summary)),
             add_section,
             html.Div(
                 id="watchlist-body",
@@ -362,11 +367,14 @@ def handle_watchlist_actions(add_clicks, close_clicks, symbol, entry_price):
 
 @dash.callback(
     Output("watchlist-live-radar-container", "children"),
-    Input("btn-refresh-live-quotes", "n_clicks"),
+    [
+        Input("btn-refresh-live-quotes", "n_clicks"),
+        Input("watchlist-radar-interval", "n_intervals"),
+    ],
     prevent_initial_call=True,
 )
-def refresh_watchlist_radar(n_clicks):
-    if not n_clicks:
-        raise dash.exceptions.PreventUpdate
-    summary = get_portfolio_proximity_summary(force_refresh=True)
+def refresh_watchlist_radar(n_clicks, n_intervals):
+    force = (ctx.triggered_id == "btn-refresh-live-quotes")
+    summary = get_portfolio_proximity_summary(force_refresh=force)
+    _threading.Thread(target=_live_breach_worker, args=(summary,), daemon=True).start()
     return render_risk_radar_banner(summary)
