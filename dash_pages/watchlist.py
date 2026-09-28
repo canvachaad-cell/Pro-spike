@@ -5,6 +5,7 @@ import os
 from functools import lru_cache
 from dash_iconify import DashIconify
 from watchlist_manager import WatchlistManager
+from live_price_fetcher import render_risk_radar_banner, get_portfolio_proximity_summary
 
 dash.register_page(__name__, path='/watchlist', name='Watchlist', title='Pro Spike - Watchlist')
 
@@ -250,6 +251,7 @@ def layout():
                     html.P("Active position tracking with automatic price updates and PnL.", className="font-body-md text-on-surface-variant"),
                 ]
             ),
+            html.Div(id="watchlist-live-radar-container", children=render_risk_radar_banner()),
             add_section,
             html.Div(
                 id="watchlist-body",
@@ -356,3 +358,15 @@ def handle_watchlist_actions(add_clicks, close_clicks, symbol, entry_price):
         ],
         status,
     )
+
+
+@dash.callback(
+    Output("watchlist-live-radar-container", "children"),
+    Input("btn-refresh-live-quotes", "n_clicks"),
+    prevent_initial_call=True,
+)
+def refresh_watchlist_radar(n_clicks):
+    if not n_clicks:
+        raise dash.exceptions.PreventUpdate
+    summary = get_portfolio_proximity_summary(force_refresh=True)
+    return render_risk_radar_banner(summary)

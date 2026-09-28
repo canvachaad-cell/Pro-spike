@@ -8,7 +8,6 @@ from functools import lru_cache
 from live_price_fetcher import (
     get_live_quotes,
     compute_trade_proximity,
-    get_portfolio_proximity_summary,
 )
 
 dash.register_page(__name__, path='/institutional-signals', name='Institutional Signals', title='Pro Spike - Institutional Signals', description='Multi-Strategy Execution Engine — high-conviction data signals for professional trading.')
@@ -257,92 +256,6 @@ def legacy_table():
 
     return _grid_table(avail, rows, min_width=1140, wide=wide)
 
-
-def render_risk_radar_banner(summary=None):
-    if summary is None:
-        summary = get_portfolio_proximity_summary(force_refresh=False)
-
-    near_sl = summary.get("near_sl", [])
-    breached_sl = summary.get("breached_sl", [])
-    near_tp = summary.get("near_tp", [])
-    total_active = summary.get("total_active", 0)
-    healthy_count = summary.get("healthy_count", 0)
-    last_updated = summary.get("last_updated", "Just now")
-
-    has_breach = len(breached_sl) > 0
-    has_near_sl = len(near_sl) > 0
-
-    border_color = "rgba(239, 68, 68, 0.5)" if has_breach else ("rgba(245, 158, 11, 0.45)" if has_near_sl else "rgba(90, 240, 179, 0.25)")
-    accent_glow = "rgba(239, 68, 68, 0.06)" if has_breach else ("rgba(245, 158, 11, 0.05)" if has_near_sl else "rgba(90, 240, 179, 0.03)")
-
-    warning_badges = []
-    for item in breached_sl:
-        warning_badges.append(
-            html.Div(
-                f"🚨 {item['symbol']} ({item['engine']}): CMP ₹{item['cmp']:.2f} BREACHED SL ₹{item['effective_sl']:.2f}",
-                className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#ef4444]/20 text-[#f87171] border border-[#ef4444]/40"
-            )
-        )
-    for item in near_sl:
-        warning_badges.append(
-            html.Div(
-                f"⚠️ {item['symbol']} ({item['engine']}): CMP ₹{item['cmp']:.2f} · {item['sl_dist_pct']:.1f}% to SL (₹{item['effective_sl']:.2f})",
-                className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#f59e0b]/20 text-[#fbbf24] border border-[#f59e0b]/40"
-            )
-        )
-    for item in near_tp:
-        warning_badges.append(
-            html.Div(
-                f"🎯 {item['symbol']} ({item['engine']}): CMP ₹{item['cmp']:.2f} · {item['tp_dist_pct']:.1f}% to TP (₹{item['take_profit']:.2f})",
-                className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#38bdf8]/20 text-[#38bdf8] border border-[#38bdf8]/40"
-            )
-        )
-
-    if not warning_badges:
-        warning_badges.append(
-            html.Div(
-                "🛡️ All active positions trading comfortably above stop-loss thresholds",
-                className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#10b981]/15 text-[#34d399] border border-[#10b981]/30"
-            )
-        )
-
-    return html.Div(
-        id="live-risk-radar-card",
-        className="glass-panel rounded-2xl p-4 md:p-5 mb-2 border flex flex-col gap-3 transition-all duration-300",
-        style={"borderColor": border_color, "backgroundColor": accent_glow},
-        children=[
-            html.Div(
-                className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3",
-                children=[
-                    html.Div(
-                        children=[
-                            html.Div(
-                                [
-                                    html.Span("⚡ LIVE PORTFOLIO RISK & SL/TP RADAR", className="text-[10px] font-bold tracking-widest text-primary uppercase"),
-                                    html.Span(f" • Quotes: {last_updated}", className="text-[10px] text-on-surface-variant font-medium ml-1"),
-                                ],
-                                className="flex items-center gap-1 mb-1"
-                            ),
-                            html.Div(
-                                f"Active Positions: {total_active} · ⚠️ {len(near_sl)} Near SL (<3%) · 🚨 {len(breached_sl)} Breached · 🎯 {len(near_tp)} Near TP · 🛡️ {healthy_count} Healthy",
-                                className="text-sm font-semibold text-on-surface tracking-tight"
-                            ),
-                        ]
-                    ),
-                    html.Button(
-                        "🔄 Refresh Live Quotes",
-                        id="btn-refresh-live-quotes",
-                        n_clicks=0,
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 active:scale-95 text-on-surface border border-white/10 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
-                    ),
-                ]
-            ),
-            html.Div(
-                className="flex flex-wrap gap-2 pt-1 border-t border-white/5",
-                children=warning_badges
-            ),
-        ]
-    )
 
 
 def alpha_table(ledger_path=None):
@@ -1144,25 +1057,11 @@ TAB_BUILDERS = {
 
 
 @dash.callback(
-    Output("live-risk-radar-container", "children"),
-    Output("live-refresh-store", "data"),
-    Input("btn-refresh-live-quotes", "n_clicks"),
-    prevent_initial_call=True,
-)
-def refresh_live_quotes(n_clicks):
-    if not n_clicks:
-        raise dash.exceptions.PreventUpdate
-    summary = get_portfolio_proximity_summary(force_refresh=True)
-    return render_risk_radar_banner(summary), time.time()
-
-
-@dash.callback(
     Output("engine-tab-content", "children"),
     Input("engine-tabs", "value"),
-    Input("live-refresh-store", "data"),
     prevent_initial_call=False,
 )
-def render_engine_tab(tab_value, refresh_ts):
+def render_engine_tab(tab_value):
     builder = TAB_BUILDERS.get(tab_value)
     if builder is None:
         return html.Div("Unknown engine tab.", className="glass-panel rounded-xl p-6 font-body-md text-outline text-center")
@@ -1179,7 +1078,6 @@ def layout():
     return html.Div(
         className="px-4 md:px-6 pt-6 pb-32 w-full flex flex-col gap-4 relative",
         children=[
-            dcc.Store(id="live-refresh-store", data=0),
             html.Section(
                 className="flex flex-col gap-1",
                 children=[
@@ -1187,7 +1085,6 @@ def layout():
                     html.P("Multi-Strategy Execution Engine — high-conviction data signals for professional trading.", className="font-body-md text-on-surface-variant"),
                 ],
             ),
-            html.Div(id="live-risk-radar-container", children=render_risk_radar_banner()),
             html.Details(
                 className="glass-panel rounded-2xl font-body-md text-on-surface-variant",
                 children=[

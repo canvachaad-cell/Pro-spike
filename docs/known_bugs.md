@@ -1504,3 +1504,32 @@ even after the user generated a fresh, valid 16-character Google App Password.
 
 
 
+
+---
+
+## BUG-083: Live Quote Snake_Case KeyError (fast_info.get('last_price')) Causing Silent EOD Fallback & Radar Clutter Relocation to Watchlist
+**STATUS**: FIXED  
+**FILE**: `live_price_fetcher.py`, `dash_pages/institutional_signals.py`, `dash_pages/watchlist.py`, `tests/test_live_price_fetcher.py`  
+**DISCOVERED BY**: User Inquiry ("⚡ LIVE PORTFOLIO RISK & SL/TP RADAR looks cluttered in institutional page designwise... also i noticed many stocks not showing correct cmp price"), Demon Core PLAN_DEEP, 2026-09-28  
+**SYMPTOM**: 
+1. Real-time CMP price quotes displayed outdated EOD closing prices frozen from days ago instead of live market prices, and unmapped stocks (e.g. `GROWW`) displayed `None` / `null`.
+2. The Live Portfolio Risk & SL/TP Radar was mounted as an expansive 200px-tall glass panel at the top of `/institutional-signals`, pushing the primary engine tabs and signal tables below the fold and cluttering the signal discovery workflow.
+**ROOT CAUSE**: 
+1. In `live_price_fetcher._fetch_single_quote()`, the code queried `tk.fast_info.get("last_price")`. In `yfinance`, the dictionary key is camelCase `"lastPrice"`, while `"last_price"` is an object property that raises `KeyError: 'currentTradingPeriod'` when missing. Querying `.get("last_price")` returned `None` on 100% of symbols, silently dumping every active stock into the stale `dashboard_cloud.csv` EOD fallback (`"source": "eod_fallback"`).
+2. The Live Risk Radar is an open-position portfolio monitoring deck, creating a mental model mismatch when placed above candidate signal screening scanners in Institutional Signals.
+**FIX**: 
+1. **Resilient 3-Tier Live Price Fetcher (`live_price_fetcher.py`)**:
+   - Upgraded `_fetch_single_quote()` to query `tk.fast_info.get("lastPrice")`, falling back safely to `getattr(tk.fast_info, 'last_price', None)`, and falling back to `tk.history(period="1d")["Close"].dropna().iloc[-1]`.
+   - Empirically resolved **29/29 (100%)** active positions to live market quotes with `"source": "live_yfinance"`.
+2. **De-clutter `/institutional-signals`**:
+   - Removed the bulky Live Risk Radar banner and its refresh callback from `dash_pages/institutional_signals.py`.
+   - Kept the inline `CMP (LIVE)` and `SL PROXIMITY` badge columns on each table row for in-context price awareness.
+   - Raised engine tabs and signal tables directly to the top of the viewport.
+3. **Relocate Live Risk Radar to `/watchlist` (`dash_pages/watchlist.py`)**:
+   - Mounted the Live Portfolio Risk & SL/TP Radar at the top of `/watchlist`, contextually grouping portfolio risk monitoring, near-SL warnings (7 positions near SL), and 1-click quote refresh in the trader's position tracking book.
+4. **Automated Unit Tests (`tests/test_live_price_fetcher.py`)**:
+   - Added 4 unit tests verifying live quote resolution (NSE and BSE), proximity tier classification, and summary contract consistency.
+5. **Empirical Verification**:
+   - All 55 regression tests pass in 5.31s; zero ledger modification (`git diff --stat data/*ledger*.csv` is clean).
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` pre-flight checklist, `DEMONCORE: PLAN_DEEP` blast radius mapping, yfinance API dictionary key audit, and dual-remote sync.
