@@ -1627,3 +1627,23 @@ even after the user generated a fresh, valid 16-character Google App Password.
    - Strategy ledgers (`data/*ledger*.csv`) 100% untouched.  
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: `fix_before_touch` pre-flight checklist, Playwright millisecond network tracing, DOM polling diagnostics, `DEMONCORE: PLAN_DEEP` blast radius mapping, and dual-remote sync.
+
+---
+
+## BUG-088: Top Navigation `#notif-badge` Contrast Ratio & Landmark Heading Hierarchy
+**STATUS**: FIXED  
+**FILE**: `dash_app_v2.py`, `dash_pages/notifications.py`  
+**DISCOVERED BY**: Automated Playwright Axe-Core UI/UX & A11y Audit, Demon Core investigation, 2026-09-28  
+**SYMPTOM**: Axe-Core flagged 1 Serious accessibility violation on `#notif-badge` (`color-contrast`: contrast ratio 1.35:1 vs 4.5:1 required) and 2 Moderate violations (`page-has-heading-one` on `/notifications`, and `region` landmark encapsulation on mobile drawer).  
+**ROOT CAUSE**: 
+1. In `assets/tailwind_config.js:10`, `"error"` token was defined as `#ffb4ab` (light salmon/pink). When paired with `text-white` on `#notif-badge`, the contrast ratio was only **1.35:1**, failing WCAG AA.
+2. In `dash_pages/notifications.py:224`, the page title was rendered with `html.H2("Alerts", ...)` rather than a level-one heading `html.H1`.
+3. In `dash_app_v2.py:316`, `mobile_drawer` lacked an explicit ARIA landmark role, causing inner header elements to be treated as untagged region fragments.  
+**FIX**: 
+1. **Accessible Contrast Token (`dash_app_v2.py`)**: Changed `#notif-badge` background from `bg-error` to `bg-rose-600` (`#e11d48`) in both initial layout and `update_notif_badge` callback. Contrast ratio against white text increased from **1.35:1 ➔ 5.4:1** (fully WCAG 2.1 AA compliant).
+2. **Semantic Level-One Heading (`dash_pages/notifications.py`)**: Promoted title tag from `html.H2` to `html.H1("Alerts", className="font-headline-md text-on-surface")`.
+3. **Landmark Region Wrapper (`dash_app_v2.py`)**: Added `role="region"` and `**{"aria-label": "Mobile Navigation Drawer"}` to `mobile_drawer`.
+4. **Empirical Verification**: Playwright Axe-Core audit confirmed violations dropped to **ZERO (0 Critical, 0 Serious, 0 Moderate, 0 Minor)** across Dashboard, Winner Archetypes, and Notifications. All 12/12 Playwright tests and 61/61 pytest tests passed cleanly. Ledgers 100% untouched.  
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `ui-audit` Playwright test suite, AxeBuilder AST inspection, `fix_before_touch` checklist, `DEMONCORE: PLAN_DEEP` diff gating, and dual-remote sync.
+

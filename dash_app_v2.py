@@ -315,6 +315,8 @@ mobile_top_header = html.Header(
 
 mobile_drawer = html.Div(
     id="mobile-menu-drawer",
+    role="region",
+    **{"aria-label": "Mobile Navigation Drawer"},
     className="p-5 flex flex-col gap-3",
     children=[
         html.Div(
@@ -362,7 +364,7 @@ top_navbar = html.Header(
                         DashIconify(icon="material-symbols:notifications-outline", width=24, height=24),
                         html.Span(
                             id="notif-badge",
-                            className="hidden absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-error text-[10px] font-bold text-white items-center justify-center"
+                            className="hidden absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-[10px] font-bold text-white items-center justify-center"
                         )
                     ]
                 ),
@@ -612,9 +614,9 @@ def update_notif_badge(pathname):
     import pandas as _pd
 
     hidden = ("hidden absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-full "
-              "bg-error text-[10px] font-bold text-white items-center justify-center")
+              "bg-rose-600 text-[10px] font-bold text-white items-center justify-center")
     shown = ("flex absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-full "
-             "bg-error text-[10px] font-bold text-white items-center justify-center")
+             "bg-rose-600 text-[10px] font-bold text-white items-center justify-center")
 
     log_path = _os.path.join("data", "alerts_log.csv")
     if pathname == "/notifications" or not _os.path.exists(log_path):

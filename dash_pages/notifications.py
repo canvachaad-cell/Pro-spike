@@ -221,7 +221,7 @@ def layout():
             html.Div(
                 className="flex flex-col gap-xs",
                 children=[
-                    html.H2("Alerts", className="font-headline-md text-on-surface"),
+                    html.H1("Alerts", className="font-headline-md text-on-surface"),
                     html.P("Ledger exit events: take-profit, stop-loss, momentum loss, "
                            "suspensions and new entries.",
                            className="font-body-md text-on-surface-variant"),
