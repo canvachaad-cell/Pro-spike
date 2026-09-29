@@ -1673,3 +1673,38 @@ even after the user generated a fresh, valid 16-character Google App Password.
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: `fix_before_touch` pre-flight checklist, `DEMONCORE: PLAN_DEEP` blast radius mapping, daemon thread non-blocking architecture, unit testing, and dual-remote sync.
 
+---
+
+## BUG-090: Vikram False-Positive Ticker Extraction & Blanket 5-Metric Table on Non-Stock Queries
+**STATUS**: FIXED  
+**FILE**: `dash_pages/_vikram_callback.py`, `docs/system_guide.md`  
+**DISCOVERED BY**: User Inquiry ("when i ask anything even if its not about stocks vikram gives that 5 metric table... how we can implement that flawlessly"), Demon Core deep audit, 2026-09-29  
+**SYMPTOM**: Asking Vikram non-stock questions (such as "What about clean runner?", "Which stocks hit TP recently?", "How many small caps in trade this week?", or casual conversation) caused Vikram to generate the 5-metric Fundamental Quality Scorecard table with `⏳` or placeholder scores, instead of answering in clear Markdown prose.  
+**ROOT CAUSE**: 
+1. **Ticker Collision on Concept Terms**: `_known_symbols()` contained 4,400+ equity symbols where ordinary English and financial terms are registered tickers (e.g. `CLEAN` for Clean Science & Technology Ltd, `RUN`, `ALL`, `CAN`, `KEY`, `STAR`, `MAX`, `BEST`). When asking *"What about clean runner?"*, `extract_query_symbols()` extracted `['CLEAN']`, erroneously classifying the query as `stock_analysis`.
+2. **Blanket Formatting Rule in System Prompt**: `VIKRAM_SYSTEM_PROMPT` hardcoded `Structure: summary table FIRST (see MANDATORY VISUAL SUMMARY TABLE)` at line 225 and declared `MANDATORY VISUAL SUMMARY TABLE (TOP OF RESPONSE)` with no alternative format for non-stock questions. Gemini defaulted to the only structure provided in its prompt.
+3. **Missing Pro-Spike Intelligence Streams**: Vikram lacked context loaders for `data/winner_archetypes_ranked.csv`, Corner Spike engine files, live alerts log, and pipeline freshness dates.  
+**FIX**: 
+1. **Protected Concept Masking (`dash_pages/_vikram_callback.py`)**: Added `_mask_concepts()` to mask multi-word concept phrases (`"clean runner"`, `"winner archetype"`, `"trade ledger"`, `"operating leverage"`, etc.) before symbol tokenization.
+2. **Stopwords Expansion**: Added 30+ ticker collision words (`CLEAN`, `GRIND`, `RUN`, `WINNER`, `KEY`, `CAN`, `ALL`, `FAST`, `STAR`, `MAX`, `BEST`, `TRUE`, `IDEA`, `CARE`, `GATE`, `HIT`, `MANY`, `WEEK`, `TODAY`) to `_SYMBOL_STOPWORDS`.
+3. **Intent Classifier Upgrade**: Refined `_classify_query()` to route greetings to `'general'`, concept queries to `'concept_explainer'`, and ledger queries to `'engine_audit'` before falling back to Screener.in search.
+4. **Dynamic Prompt Partitioning**: Split prompt into `VIKRAM_BASE_PROMPT`, `VIKRAM_STOCK_TABLE_DIRECTIVE` (enforces table FIRST strictly for stocks), and `VIKRAM_NO_TABLE_DIRECTIVE` (explicitly prohibits scorecard tables, enforcing structured Markdown prose, analogies, and bullet points for non-stock queries).
+5. **Pro-Spike 7-Stream Intelligence Integration**:
+   - Added Corner Spike Engine and Consolidated Portfolio to `ENGINE_FILES` and `LEDGER_FILES`.
+   - Implemented `build_archetype_context()` (`winner_archetypes_ranked.csv`).
+   - Implemented `build_freshness_context()` (`data_status.json`).
+   - Implemented `build_alerts_context()` (`alerts_log.csv`).
+   - Implemented `build_ledger_query_context()` (pre-aggregates TP winners, SL breaches, small-cap trades < ₹2000 Cr, and win rates).
+   - Added § 8b (Winner Archetypes Engine) and § 8c (Institutional Edge & Live Signals) to `docs/system_guide.md`.
+6. **Empirical Verification**:
+   - Live query test sweep confirmed:
+     - *"What about clean runner?"* ➔ `HAS 5-METRIC TABLE: False` (Plain-English sprinter analogy, CDH ≥ 0.50).
+     - *"Which stocks hit TP recently?"* ➔ `HAS 5-METRIC TABLE: False` (Direct trade citations: `NOVUS (+30.5%)`, `PRARUH (+14.4%)`, `ASIANHOTNR (+14.4%)`, etc.).
+     - *"How many small caps in trade in this week?"* ➔ `HAS 5-METRIC TABLE: False` (Cites 8 active small-cap positions in Corner Spike).
+     - *"What about TATACHEM?"* ➔ `HAS 5-METRIC TABLE: True` (Authoritative 5-metric Quality Scorecard table FIRST + prose).
+     - Multi-turn follow-up (*"Explain its operating leverage in simple words"*) ➔ `HAS 5-METRIC TABLE: False` (Conversational train/airline analogy, no table repetition).
+   - Zero syntax errors (`python -m py_compile dash_pages/_vikram_callback.py`).  
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: `fix_before_touch` checklist, `DEMONCORE: PLAN_DEEP` part-by-part task list, concept token masking, modular prompt partitioning, and live test matrix.
+
+

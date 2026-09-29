@@ -33,6 +33,7 @@ ENGINE_FILES = [
     ("SBIA Alpha Engine (Path A: High-Velocity)", os.path.join("data", "sbia_alpha_watchlist.csv")),
     ("SBIA FlexGate Engine (Path B: Base-Loading)", os.path.join("data", "sbia_flexgate_watchlist.csv")),
     ("FlexGate 2.0 (ML Engine)", os.path.join("data", "sbia_flexgate2_watchlist.csv")),
+    ("Corner Spike Engine (Micro/Small-Cap)", os.path.join("data", "corner_engine_watchlist.csv")),
 ]
 MAX_ENGINE_ROWS = 10
 MAX_HISTORY = 20
@@ -42,9 +43,11 @@ LEDGER_FILES = [
     ("SBIA Alpha Engine", os.path.join("data", "sbia_ledger.csv")),
     ("FlexGate Engine", os.path.join("data", "flexgate_ledger.csv")),
     ("FlexGate 2.0 (ML Engine)", os.path.join("data", "flexgate2_ledger.csv")),
+    ("Corner Spike Engine", os.path.join("data", "corner_engine_ledger.csv")),
+    ("Consolidated Portfolio", os.path.join("data", "trades_ledger.csv")),
 ]
 
-VIKRAM_SYSTEM_PROMPT = """You are Vikram Menon — a senior equity analyst with 22 years of experience
+VIKRAM_BASE_PROMPT = """You are Vikram Menon — a senior equity analyst with 22 years of experience
 in Indian capital markets (NSE/BSE). You have operated at both institutional
 fund level (deploying ₹500Cr+ in mid/large caps) and as a special situations
 analyst covering small cap momentum and operator-driven accumulation plays.
@@ -197,11 +200,20 @@ hasn't moved yet but is showing delivery accumulation signals.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 LIVE DATA (INJECTED AT QUERY TIME)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DATA FRESHNESS & MARKET SESSION:
+{DATA_FRESHNESS}
+
 ACTIVE POSITIONS:
 {PORTFOLIO_CONTEXT}
 
 TODAY'S ENGINE SIGNALS:
 {ENGINE_SIGNALS}
+
+WINNER ARCHETYPES UNIVERSE:
+{WINNER_ARCHETYPES}
+
+LIVE ALERTS & INTRADAY EVENTS:
+{LIVE_ALERTS}
 
 FUNDAMENTAL DATA (fetched from screener.in seconds before this query —
 use these figures, not your memory, for market cap class / promoter-DII-FII
@@ -220,17 +232,13 @@ against these when auditing):
 {RISK_ARCHITECTURE}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FORMATTING RULES (every answer is rendered as rich Markdown)
+GENERAL FORMATTING RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Structure: summary table FIRST (see MANDATORY VISUAL SUMMARY TABLE), then
-  short prose, then ONE bold **🎯 Bottom line:** sentence
-- Use ### headings with one emoji each; **bold** every key number and
-  verdict; bullets over paragraphs
-- Separate paragraphs with a BLANK line (single newlines do not render as
-  breaks)
-- Emojis: generously, at line starts to highlight key points — ✅ ⚠️ 🚫 🚀 🎯 📌
-  — never mid-sentence
-- Numbers always with units and periods (₹1,113 Cr, 0.38x, Jun 2026)
+- Render every answer as rich, well-structured Markdown.
+- Use ### headings with one emoji each; **bold** every key number, symbol, and verdict.
+- Separate paragraphs with a BLANK line (single newlines do not render as breaks).
+- Emojis: generously, at line starts to highlight key points — ✅ ⚠️ 🚫 🚀 🎯 📌 🏃 🐢 💡 📊 — never mid-sentence.
+- Numbers always with units and periods (₹1,113 Cr, 0.38x, Jun 2026).
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RESPONSE RULES
@@ -238,8 +246,6 @@ RESPONSE RULES
 - Your prose analysis must be short, punchy, and easy for everyday retail
   investors to understand. Use emojis generously to highlight key points,
   avoid overly dense jargon, and get straight to the point.
-- State the stock's CLASS (S/M/L) and market cap in the first prose line
-  after the table
 - "From your data:" = facts from injected context
 - "My view:" = your analysis and opinion
 - "FLAG:" = a risk the user must investigate before acting
@@ -249,19 +255,21 @@ RESPONSE RULES
   active for a symbol, you do NOT give a buy view on it, full stop.
 - Class M prose must mention the injected CONVICTION SCORE's biggest
   boosters and drags
-- Class L: the table's Fundamental Strength line IS the verdict — prose
-  reinforces the rebalancing disclaimer briefly
 - MANDATORY SEARCH RULE: for any question about DII/FII holdings, OCF/PAT,
   pledge, promoter buying, dilution, recent results, or news where data is
   NOT already injected in FUNDAMENTAL DATA, you MUST use your Google Search
   tool FIRST and ground the answer in what it returns. Saying "I don't have"
   for publicly available data without having searched is a failure mode.
-- When asked to audit closed trades or find alpha leaks: skip the table,
-  go engine by engine through the SIMULATION LEDGERS with concrete numbers,
-  name specific symbols, and compare against the RISK ARCHITECTURE limits
-- Position sizing recommendation for S/M goes in the **🎯 Bottom line:**
-  sentence (S/M: momentum-sized, trailed; M adds quality gates; L: no
-  accumulation sizing)
+"""
+
+VIKRAM_STOCK_TABLE_DIRECTIVE = """━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FORMATTING RULES (STOCK ANALYSIS QUERY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Structure: summary table FIRST (see MANDATORY VISUAL SUMMARY TABLE), then
+  short prose, then ONE bold **🎯 Bottom line:** sentence
+- State the stock's CLASS (S/M/L) and market cap in the first prose line after the table
+- Class L: the table's Fundamental Strength line IS the verdict — prose reinforces rebalancing disclaimer briefly
+- Position sizing recommendation for S/M goes in the **🎯 Bottom line:** sentence (S/M: momentum-sized, trailed; M adds quality gates; L: no accumulation sizing)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 MANDATORY VISUAL SUMMARY TABLE (TOP OF RESPONSE)
@@ -291,8 +299,6 @@ Format it EXACTLY like this (replace values with real data):
 
 ---
 
-Then (and only then) a SHORT prose analysis (see PROSE RULES below).
-
 TABLE SCORING RULES:
 - Use the injected per-metric gate scores EXACTLY as given in
   FUNDAMENTAL_DATA — do not recompute or adjust them. Use N/A / ⏳ when a
@@ -306,7 +312,6 @@ TABLE SCORING RULES:
   '| 🤝 RPT % of Revenue | 🔍 Manual | ⏳ Not in BSE Reg23 cache |'
   If 'rpt_fetch_status: NOT_SCRAPED' appears in the context, output
   '| 🤝 RPT % of Revenue | 🔍 Manual | ⏳ Not yet scraped — check BSE |'
-  (this overrides the not_applicable_metrics rule for RPT)
 - Signal column emoji rules (applied to the injected scores):
   - 🔥🔥 = exceptional (≥ 9/10)
   - 🔥 = good (7–8.9 / 10)
@@ -346,29 +351,37 @@ WHEN TO SHOW THE TABLE:
   results with 🔍 markers on searched values. Only if search also fails,
   show ⏳ cells and note: "Fundamental data unavailable — run a manual
   screener.in check." Never show an all-⏳ table without having searched.
-- Non-stock questions (portfolio audit, engine alpha, general education)
-  do not need the table.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PROSE RULES — SHORT, PUNCHY, RETAIL-FRIENDLY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Your prose analysis must be short, punchy, and easy for everyday retail
-investors to understand. Use emojis generously to highlight key points,
-avoid overly dense jargon, and get straight to the point.
-
-- After the table: at most 5–8 short lines of prose, 1–2 sentences each,
-  separated by blank lines
-- Lead with the verdict, not the process. No long framework walkthroughs —
-  the table already carries the scores
-- Explain any necessary jargon in plain words in the same breath (e.g.
-  "OCF/PAT — is the cash real, not just accounting profit")
-- Use emoji line-starters to make key points scannable: ✅ strengths,
-  ⚠️ worries, 🚫 deal-breakers, 🎯 what to do next
-- End with ONE line: **🎯 Bottom line:** [one plain-English sentence with
-  your verdict and, for S/M, the position sizing]
-- Keep the analytical rigor — you still never fabricate numbers and still
-  flag what must be manually verified
+- After the table: at most 5–8 short lines of prose, 1–2 sentences each, separated by blank lines.
+- Lead with the verdict, not the process. No long framework walkthroughs — the table already carries the scores.
+- Explain any necessary jargon in plain words in the same breath (e.g. "OCF/PAT — is the cash real, not just accounting profit").
+- Use emoji line-starters to make key points scannable: ✅ strengths, ⚠️ worries, 🚫 deal-breakers, 🎯 what to do next.
+- End with ONE line: **🎯 Bottom line:** [one plain-English sentence with your verdict and, for S/M, the position sizing].
 """
+
+VIKRAM_NO_TABLE_DIRECTIVE = """━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RESPONSE DIRECTIVE: NON-STOCK / EXPLANATORY / AUDIT QUERY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚫 CRITICAL DIRECTIVE: DO NOT OUTPUT ANY QUALITY SCORECARD TABLE,
+5-METRIC TABLE, OR PARAMETER/SIGNAL TABLE FOR THIS QUERY.
+The user is asking an educational, architectural, ledger, or general question — NOT a stock scorecard.
+
+FORMAT YOUR ANSWER AS CLEAN, STRUCTURED MARKDOWN:
+- Structure: Clear ### headings with one emoji each, concise bullet points, bold key numbers/conclusions, and a bold **🎯 Summary:** or **🎯 Bottom line:** sentence at the end.
+- For concepts / engines / archetypes (e.g. Winner Archetypes, FlexGate, Corner Spike):
+  - Always explain in plain, simple terms first with intuitive real-world analogies (e.g., Clean Runner = sprinter closing near daily highs with power; Grind Compounder = marathon runner closing lower while institutions quietly absorb supply).
+  - Follow with the deep-dive quantitative criteria (CDH, VWAP_DIV, Whale Density, delivery sweet spots) when relevant.
+- For ledger / trade audit queries (e.g. TP hits, SL breaches, small-cap counts):
+  - Answer directly with concrete trade data: cite symbol names, entry dates, exit prices, gain percentages, and holding days in clean, readable bullets.
+  - Never fabricate ledger entries — cite only trades present in your data.
+- Emojis: Use generously at line starts — ✅ ⚠️ 🎯 📌 🏃 🐢 💡 📊 — never mid-sentence.
+- Separate paragraphs with a blank line.
+"""
+
+VIKRAM_SYSTEM_PROMPT = VIKRAM_BASE_PROMPT + "\n\n" + VIKRAM_STOCK_TABLE_DIRECTIVE
 
 
 # ---------------------------------------------------------------------------
@@ -487,7 +500,53 @@ def build_engine_signals():
             rows.append("- " + ", ".join(parts))
         extra = f" (+{len(df) - MAX_ENGINE_ROWS} more)" if len(df) > MAX_ENGINE_ROWS else ""
         blocks.append(f"{name} ({len(df)} signals{extra}):\n" + "\n".join(rows))
+
+    inst_path = os.path.join("data", "institutional_edge_report.csv")
+    if os.path.exists(inst_path):
+        try:
+            idf = pd.read_csv(inst_path)
+            if not idf.empty and "SYMBOL" in idf.columns:
+                irows = []
+                for _, r in idf.head(6).iterrows():
+                    iparts = [str(r.get("SYMBOL", "?"))]
+                    if "MARKET_CAP_CR" in idf.columns and pd.notna(r.get("MARKET_CAP_CR")):
+                        iparts.append(f"mcap ₹{r.get('MARKET_CAP_CR'):,.0f}Cr")
+                    if "DII_HOLDING_PCT" in idf.columns and pd.notna(r.get("DII_HOLDING_PCT")):
+                        iparts.append(f"DII {r.get('DII_HOLDING_PCT'):.1f}%")
+                    if "CONVICTION_RATING" in idf.columns and pd.notna(r.get("CONVICTION_RATING")):
+                        iparts.append(f"rating {r.get('CONVICTION_RATING')}")
+                    irows.append("- " + ", ".join(iparts))
+                blocks.append(f"🏛️ Institutional Edge Highlights ({len(idf)} flagged):\n" + "\n".join(irows))
+        except Exception:
+            pass
+
     return "\n\n".join(blocks)
+
+
+_SYSTEM_GUIDE_CACHE = {"content": None, "mtime": -1.0}
+
+def build_system_guide_context():
+    """Load docs/system_guide.md once per mtime, so Vikram always has the
+    full engine knowledge base available for general / architecture questions.
+    Returns empty string if the file is missing (graceful degradation)."""
+    guide_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "docs", "system_guide.md",
+    )
+    try:
+        mtime = os.path.getmtime(guide_path)
+    except OSError:
+        return ""  # File missing — graceful degradation
+    if _SYSTEM_GUIDE_CACHE["mtime"] == mtime and _SYSTEM_GUIDE_CACHE["content"] is not None:
+        return _SYSTEM_GUIDE_CACHE["content"]
+    try:
+        with open(guide_path, "r", encoding="utf-8") as fh:
+            content = fh.read()
+        _SYSTEM_GUIDE_CACHE["content"] = content
+        _SYSTEM_GUIDE_CACHE["mtime"] = mtime
+        return content
+    except Exception:
+        return ""
 
 
 # ---------------------------------------------------------------------------
@@ -501,7 +560,7 @@ _MAX_SCREENER_LOOKUPS = 3  # raised from 2; allows NATFIT+SPICELOUNGE+one other 
 _fetcher = FundamentalFetcher()
 _scorer = ConvictionScorer()
 
-# Uppercase words that are never stock symbols
+# Uppercase words that are never stock symbols (expanded with common English words that collide with tickers)
 _SYMBOL_STOPWORDS = {
     "AND", "FOR", "THE", "NOT", "NOW", "BUY", "SELL", "ADD", "EXIT", "HOLD",
     "YES", "OK", "WHY", "HOW", "WHAT", "WHEN", "WHO", "NSE", "BSE", "TP",
@@ -509,7 +568,37 @@ _SYMBOL_STOPWORDS = {
     "ATR", "ICT", "EPS", "CMP", "LTP", "HDFC?", "SIM", "GDP", "INR", "USD",
     "IPO", "QIP", "MCAP", "PE", "PB", "ETF", "NAV", "AUM", "ROICE", "OCF",
     "PAT", "QOQ", "YOY", "VETO", "EOD", "FYI", "VIKRAM",
+    "CAN", "ALL", "KEY", "RUN", "FAST", "BEST", "TRUE", "IDEA", "CARE",
+    "GATE", "STAR", "MAX", "TOTAL", "STOCK", "STOCKS", "SHARE", "SHARES",
+    "TRADE", "TRADES", "WEEK", "TODAY", "YESTERDAY", "HIT", "MANY", "TOP",
+    "LOW", "HIGH", "MID", "CAP", "SMALL", "LARGE", "MICRO", "NEW", "OLD",
+    "CLEAN", "GRIND", "WIN", "WINNER", "DESK", "RISK", "FUND", "RATE",
+    "SOME", "ANY", "TELL", "VIEW", "LOOK", "MUCH", "MORE", "LESS", "TABLE",
 }
+
+PROTECTED_CONCEPTS = [
+    "clean runner", "clean runners", "grind compounder", "grind compounders",
+    "quality cohort", "winner archetype", "winner archetypes", "winner archetype engine",
+    "corner spike", "corner spike engine", "corner engine",
+    "institutional edge", "progressive screener", "legacy screener",
+    "alpha engine", "flexgate engine", "flexgate 2.0", "flexgate",
+    "operating leverage", "interest coverage", "promoter pledge", "roice",
+    "stop loss", "take profit", "win rate", "trade ledger", "trades ledger",
+    "active watchlist", "small cap", "small caps", "mid cap", "mid caps",
+    "large cap", "large caps", "micro cap", "micro caps",
+    "intraday breach", "data status", "pipeline status",
+    "rule 3", "rule 3 composite", "whale density", "cdh", "vwap div",
+]
+
+def _mask_concepts(text):
+    """Masks known multi-word concept phrases so their sub-words (e.g. 'clean' in 'clean runner')
+    are never erroneously extracted as exchange ticker symbols."""
+    if not text:
+        return ""
+    masked = text
+    for i, c in enumerate(PROTECTED_CONCEPTS):
+        masked = re.sub(r"\b" + re.escape(c) + r"\b", f"__CONCEPT_{i}__", masked, flags=re.IGNORECASE)
+    return masked
 
 
 SYMBOL_ALIASES = {
@@ -575,7 +664,8 @@ def extract_query_symbols(question):
     """
     known = _known_symbols()
     q = question or ""
-    q_upper = q.upper()
+    q_masked = _mask_concepts(q)
+    q_upper = q_masked.upper()
 
     # 1) Token-level O(query_words) match against known universe (any casing)
     # Extracts word tokens of length 2-20 containing letters, numbers, &, -
@@ -584,7 +674,7 @@ def extract_query_symbols(question):
     seen = set()
     for tok in query_tokens:
         tok_clean = tok.rstrip("&-")
-        if tok_clean in _SYMBOL_STOPWORDS or tok_clean in seen or len(tok_clean) < 3:
+        if tok_clean in _SYMBOL_STOPWORDS or tok_clean in seen or len(tok_clean) < 3 or tok_clean.startswith("__CONCEPT"):
             continue
         resolved = SYMBOL_ALIASES.get(tok_clean, tok_clean)
         if resolved in known and resolved not in seen:
@@ -595,11 +685,11 @@ def extract_query_symbols(question):
         return matched_known[:_MAX_SCREENER_LOOKUPS]
 
     # 2) Fallback to uppercase tokens that might be unlisted / new tickers
-    tokens = re.findall(r"\b[A-Z][A-Z0-9&-]{2,19}\b", q)
+    tokens = re.findall(r"\b[A-Z][A-Z0-9&-]{2,19}\b", q_masked)
     candidates = []
     for t in tokens:
         t = t.rstrip("&-")
-        if t in _SYMBOL_STOPWORDS or t in seen or len(t) < 3:
+        if t in _SYMBOL_STOPWORDS or t in seen or len(t) < 3 or t.startswith("__CONCEPT"):
             continue
         resolved = SYMBOL_ALIASES.get(t, t)
         if resolved not in seen:
@@ -617,7 +707,10 @@ def extract_query_symbols(question):
                   "and", "for", "you", "today", "best", "good", "bad", "buy",
                   "sell", "give", "take", "need", "know", "when", "why", "how",
                   "my", "portfolio", "positions", "trades", "audit", "alpha",
-                  "leaking", "engines", "mode", "fundamentals", "indian"}
+                  "leaking", "engines", "mode", "fundamentals", "indian",
+                  "clean", "runner", "runners", "grind", "compounder", "compounders",
+                  "archetype", "archetypes", "cohort", "winner", "winners",
+                  "metric", "metrics", "table", "scorecard"}
     words = [w for w in re.findall(r"[A-Za-z][A-Za-z&-]{2,}", q) if w.lower() not in _NAME_STOP]
     if len(words) >= 2 or (len(words) == 1 and len(words[0]) >= 3):
         variants = [q[:60].strip(), " ".join(words[:3])]
@@ -1110,13 +1203,15 @@ def _extract_empirical_symbol(question: str):
 # ---------------------------------------------------------------------------
 
 def _trade_line(r):
-    sym = str(r.get("SYMBOL", "?"))
+    sym = str(r.get("SYMBOL", r.get("ticker", "?")))
     entry, exit_ = r.get("ENTRY_PRICE"), r.get("EXIT_PRICE")
-    status = str(r.get("STATUS", "?"))
-    ed, xd = r.get("ENTRY_DATE"), r.get("EXIT_DATE")
+    status = str(r.get("STATUS", r.get("raw_status", "?")))
+    ed, xd = r.get("ENTRY_DATE", r.get("trigger_date")), r.get("EXIT_DATE")
     date_s = f"{str(ed)[:10]}→{str(xd)[:10]}" if pd.notna(xd) else f"{str(ed)[:10]}→open"
     px_s = f"₹{_fmt_num(entry, 2)}→₹{_fmt_num(exit_, 2)}" if pd.notna(exit_) else f"₹{_fmt_num(entry, 2)}→open"
-    if pd.notna(entry) and pd.notna(exit_) and float(entry) > 0:
+    if "return_pct" in r and pd.notna(r.get("return_pct")):
+        ret_s = f"{float(r.get('return_pct')):+.1f}%"
+    elif pd.notna(entry) and pd.notna(exit_) and float(entry) > 0:
         ret = (float(exit_) - float(entry)) / float(entry) * 100
         ret_s = f"{ret:+.1f}%"
     else:
@@ -1126,40 +1221,162 @@ def _trade_line(r):
     return f"- {sym} {date_s} {px_s} {status} {ret_s}{ai_s}"
 
 
-def build_ledger_context():
-    """Per-engine closed-trade history from the simulation ledgers."""
+def build_freshness_context():
+    """Reads data_status.json for pipeline and session date freshness."""
+    path = os.path.join("data", "data_status.json")
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                d = json.load(f)
+            bhav_date = d.get("nse_bhav_date") or d.get("bse_bhav_date") or "Latest"
+            last_run = d.get("last_run", "Recently")
+            return f"DATA FRESHNESS ANCHOR: Latest Market Bhavcopy Session: {bhav_date} | Pipeline Last Completed: {last_run}"
+        except Exception:
+            pass
+    return "DATA FRESHNESS: Live data active"
+
+
+_ARCHETYPE_CACHE = {"content": None, "mtime": -1.0}
+
+def build_archetype_context():
+    """Reads winner_archetypes_ranked.csv with mtime cache.
+    Returns top Clean Runners, Grind Compounders, and Rule 3 Quality Cohort."""
+    global _ARCHETYPE_CACHE
+    path = os.path.join("data", "winner_archetypes_ranked.csv")
+    if not os.path.exists(path):
+        return "(Winner archetypes data not available)"
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        return "(Winner archetypes data unavailable)"
+    if _ARCHETYPE_CACHE["mtime"] == mtime and _ARCHETYPE_CACHE["content"] is not None:
+        return _ARCHETYPE_CACHE["content"]
+    try:
+        df = pd.read_csv(path)
+        if df.empty or "ARCHETYPE" not in df.columns:
+            return "(Winner archetypes pool is empty)"
+        date_str = str(df["DATE"].iloc[0])[:10] if "DATE" in df.columns else "latest"
+        lines = [f"WINNER ARCHETYPES UNIVERSE (Ranked as of {date_str}, {len(df)} setups evaluated):"]
+        cr = df[df["ARCHETYPE"] == "CLEAN_RUNNER"].head(4)
+        if not cr.empty:
+            lines.append("\n🏃 TOP CLEAN RUNNERS (Sprinters — CDH ≥ 0.50, Close > VWAP):")
+            for _, r in cr.iterrows():
+                lines.append(f"- {r.get('SYMBOL')} | CMP: ₹{r.get('CLOSE', 0):,.2f} | CDH: {r.get('CDH', 0):.2f} | VWAP Div: {r.get('VWAP_DIV', 0):+.2f}% | Mcap: ₹{r.get('MKTCAP_CR', 0):,.0f}Cr | Score: {r.get('RULE3_SCORE', 0):.1f}")
+        gc = df[df["ARCHETYPE"] == "GRIND_COMPOUNDER"].head(4)
+        if not gc.empty:
+            lines.append("\n🐢 TOP GRIND COMPOUNDERS (Marathon Runners — CDH < 0.40, Whale Density ≥ 12.0):")
+            for _, r in gc.iterrows():
+                lines.append(f"- {r.get('SYMBOL')} | CMP: ₹{r.get('CLOSE', 0):,.2f} | CDH: {r.get('CDH', 0):.2f} | Whale Density: {r.get('Whale_Density', 0):.1f} | Mcap: ₹{r.get('MKTCAP_CR', 0):,.0f}Cr | Score: {r.get('RULE3_SCORE', 0):.1f}")
+        content = "\n".join(lines)
+        _ARCHETYPE_CACHE["content"] = content
+        _ARCHETYPE_CACHE["mtime"] = mtime
+        return content
+    except Exception as e:
+        return f"(Error loading archetypes: {e})"
+
+
+def build_alerts_context():
+    """Reads data/alerts_log.csv for recent trigger/breach events."""
+    path = os.path.join("data", "alerts_log.csv")
+    if not os.path.exists(path):
+        return "(No live alerts log found)"
+    try:
+        df = pd.read_csv(path)
+        if df.empty:
+            return "(No recent alerts recorded)"
+        lines = ["RECENT LIVE ALERTS & BREACHES (from alerts_log.csv):"]
+        for _, r in df.tail(6).iloc[::-1].iterrows():
+            sym = r.get("symbol", "?")
+            etype = r.get("event_type", "?")
+            engine = r.get("engine", "?")
+            pnl = f"{r.get('pnl_pct'):+.1f}%" if pd.notna(r.get("pnl_pct")) else ""
+            dt = str(r.get("detected_at", ""))[:16]
+            lines.append(f"- [{dt}] {sym} ({engine}): {etype} {pnl}".strip())
+        return "\n".join(lines)
+    except Exception as e:
+        return f"(Alerts context error: {e})"
+
+
+def build_ledger_query_context(question=""):
+    """Performs natural-language targeted ledger audits across all 5 ledgers."""
+    q = (question or "").lower()
+    is_tp = any(k in q for k in ["tp", "take profit", "hit tp", "winner", "winners", "profit"])
+    is_sl = any(k in q for k in ["sl", "stop loss", "hit sl", "loser", "loss"])
+    is_small_cap = any(k in q for k in ["small cap", "smallcap", "small-cap", "small caps", "micro"])
+
     blocks = []
+
+    # 1. Targeted TP Winners
+    if is_tp:
+        tp_lines = ["🏆 RECENT TAKE PROFIT (HIT_TP) WINNERS ACROSS LEDGERS:"]
+        t_path = os.path.join("data", "trades_ledger.csv")
+        if os.path.exists(t_path):
+            try:
+                tdf = pd.read_csv(t_path)
+                tp_sub = tdf[tdf["raw_status"] == "HIT_TP"].tail(8).iloc[::-1]
+                for _, r in tp_sub.iterrows():
+                    tp_lines.append(f"- {r.get('ticker')} ({r.get('engine')}): +{r.get('return_pct', 0):.1f}% gain | Triggered: {r.get('trigger_date')} | Class: {r.get('market_cap_class', '?')}")
+            except Exception:
+                pass
+        blocks.append("\n".join(tp_lines))
+
+    # 2. Targeted Small-Cap Trades
+    if is_small_cap:
+        sc_lines = ["🐣 SMALL-CAP TRADES IN LEDGERS (< ₹2,000 Cr Market Cap):"]
+        c_path = os.path.join("data", "corner_engine_ledger.csv")
+        if os.path.exists(c_path):
+            try:
+                cdf = pd.read_csv(c_path)
+                sc_lines.append(f"Corner Spike Engine Active Small-Caps ({len(cdf)} positions):")
+                for _, r in cdf.iterrows():
+                    sc_lines.append(f"- {r.get('SYMBOL')}: Entry ₹{r.get('ENTRY_PRICE', 0):,.2f} | Status: {r.get('STATUS')} | Mcap: ₹{r.get('MARKET_CAP_CR', 0):,.0f}Cr | Target TP: ₹{r.get('TAKE_PROFIT', 0):,.2f} | Date: {r.get('ENTRY_DATE')}")
+            except Exception:
+                pass
+        t_path = os.path.join("data", "trades_ledger.csv")
+        if os.path.exists(t_path):
+            try:
+                tdf = pd.read_csv(t_path)
+                sc_trades = tdf[(tdf.get("market_cap_class") == "S") | (tdf.get("market_cap_cr", 99999) < 2000)].tail(5).iloc[::-1]
+                if not sc_trades.empty:
+                    sc_lines.append("Recent Closed Small-Cap Trades:")
+                    for _, r in sc_trades.iterrows():
+                        sc_lines.append(f"- {r.get('ticker')} ({r.get('engine')}): {r.get('raw_status')} {r.get('return_pct', 0):+.1f}% | Mcap: ₹{r.get('market_cap_cr', 0):,.0f}Cr")
+            except Exception:
+                pass
+        blocks.append("\n".join(sc_lines))
+
+    # 3. Standard Engine Ledgers Summary
+    engine_blocks = ["📊 SIMULATION LEDGERS SUMMARY:"]
     for name, path in LEDGER_FILES:
         if not os.path.exists(path):
-            blocks.append(f"{name}: ledger file not found.")
             continue
         try:
             df = pd.read_csv(path)
+            if df.empty:
+                continue
+            st_col = "STATUS" if "STATUS" in df.columns else ("raw_status" if "raw_status" in df.columns else None)
+            if not st_col:
+                continue
+            counts = df[st_col].value_counts().to_dict()
+            n_tp = int(counts.get("HIT_TP", 0))
+            n_sl = int(counts.get("HIT_SL", 0))
+            n_ml = int(counts.get("MOMENTUM_LOST", 0))
+            decided = n_tp + n_sl + n_ml
+            win_rate = (n_tp / decided * 100) if decided else 0.0
+            engine_blocks.append(
+                f"- {name}: {len(df)} total trades (ACTIVE: {int(counts.get('ACTIVE', 0))}, "
+                f"HIT_TP: {n_tp}, HIT_SL: {n_sl}, Win Rate: {win_rate:.0f}%)"
+            )
         except Exception:
-            blocks.append(f"{name}: could not read ledger.")
-            continue
-        if df.empty or "STATUS" not in df.columns:
-            blocks.append(f"{name}: empty ledger.")
-            continue
-        closed = df[df["STATUS"] != "ACTIVE"]
-        counts = df["STATUS"].value_counts().to_dict()
-        n_tp = int(counts.get("HIT_TP", 0))
-        n_sl = int(counts.get("HIT_SL", 0))
-        n_ml = int(counts.get("MOMENTUM_LOST", 0))
-        decided = n_tp + n_sl + n_ml
-        win_rate = (n_tp / decided * 100) if decided else 0.0
-        header = (
-            f"{name}: {len(df)} total trades "
-            f"(ACTIVE {int(counts.get('ACTIVE', 0))}, HIT_TP {n_tp}, HIT_SL {n_sl}, "
-            f"MOMENTUM_LOST {n_ml}, SUSPENDED {int(counts.get('SUSPENDED', 0))}; "
-            f"simple win rate {win_rate:.0f}% = HIT_TP / (HIT_TP+HIT_SL+MOMENTUM_LOST))"
-        )
-        if "ENTRY_DATE" in closed.columns:
-            closed = closed.sort_values("ENTRY_DATE", ascending=False)
-        trades = "\n".join(_trade_line(r) for _, r in closed.head(MAX_LEDGER_TRADES).iterrows())
-        extra = f" (+{len(closed) - MAX_LEDGER_TRADES} older closed trades)" if len(closed) > MAX_LEDGER_TRADES else ""
-        blocks.append(f"{header}{extra}\n{trades}")
+            pass
+    blocks.append("\n".join(engine_blocks))
+
     return "\n\n".join(blocks)
+
+
+def build_ledger_context():
+    """Backwards compatibility alias."""
+    return build_ledger_query_context()
 
 
 def build_risk_architecture_context():
@@ -1340,20 +1557,60 @@ def _probe_dynamic_fallback(system_prompt, contents, search_requested, deadline)
 
 
 def _classify_query(question):
-    """Returns: 'empirical_fundamental' | 'stock_analysis' | 'portfolio_audit' | 'engine_audit' | 'general'"""
-    # Check empirical fundamental trigger FIRST — it short-circuits to a direct scorecard response.
+    """Returns: 'empirical_fundamental' | 'stock_analysis' | 'concept_explainer' | 'portfolio_audit' | 'engine_audit' | 'general'"""
+    # 1. Check empirical fundamental trigger FIRST — it short-circuits to a direct scorecard response.
     if _extract_empirical_symbol(question):
         return "empirical_fundamental"
-    q = (question or "").upper()
+
+    q = (question or "").strip()
+    q_lower = q.lower()
+
+    # 2. Casual greetings & hello
+    if re.match(r"^(hi|hello|hey|greetings|good\s+(morning|afternoon|evening)|who\s+are\s+you|what\s+can\s+you\s+do)[\s!?.]*$", q_lower):
+        return "general"
+
+    # 3. Known concept keywords (winner archetypes, engines, metrics, system concepts)
+    concept_keywords = [
+        "clean runner", "clean runners", "grind compounder", "grind compounders",
+        "quality cohort", "winner archetype", "winner archetypes", "archetype", "archetypes",
+        "flexgate", "alpha engine", "corner spike", "progressive screener",
+        "operating leverage", "interest coverage", "roice", "whale density", "cdh", "vwap div",
+        "system guide", "how does pro-spike", "what is pro-spike"
+    ]
+    if any(k in q_lower for k in concept_keywords):
+        return "concept_explainer"
+
+    # 4. Explanatory intent patterns ("what is", "how does", "explain", "tell me about", "define")
+    expl_patterns = [
+        "what is", "what are", "how does", "how do", "explain", "tell me about",
+        "meaning of", "define", "why does", "difference between", "how works"
+    ]
+    is_explanatory = any(q_lower.startswith(p) or f" {p} " in f" {q_lower} " for p in expl_patterns)
+
+    # 5. Ledger & Trade Audit Questions
+    audit_words = {"AUDIT", "ALPHA", "LEAK", "LEDGER", "ENGINE", "TRADE", "TRADES", "WIN RATE", "SL", "TP", "HIT TP", "HIT SL", "SMALL CAP", "SMALL CAPS", "IN TRADE"}
+    is_audit = any(w in q.upper() for w in audit_words)
+
+    # 6. Extract symbols (with concept masking applied)
     symbols = extract_query_symbols(question)
+
     if symbols:
+        # If symbols were found, but the user is asking an explanatory question about an engine/concept,
+        # concept takes priority over spurious ticker matches.
+        if is_explanatory and any(k in q_lower for k in concept_keywords):
+            return "concept_explainer"
         return "stock_analysis"
-    audit_words = {"AUDIT", "ALPHA", "LEAK", "LEDGER", "ENGINE", "TRADE", "WIN RATE", "SL", "TP"}
-    if any(w in q for w in audit_words):
+
+    if is_audit:
         return "engine_audit"
-    portfolio_words = {"PORTFOLIO", "POSITIONS", "WATCHLIST", "HOLDING"}
-    if any(w in q for w in portfolio_words):
+
+    portfolio_words = {"PORTFOLIO", "POSITIONS", "WATCHLIST", "HOLDING", "HOLDINGS"}
+    if any(w in q.upper() for w in portfolio_words):
         return "portfolio_audit"
+
+    if is_explanatory:
+        return "concept_explainer"
+
     return "general"
 
 def _should_force_search(question, fundamental_context):
@@ -1421,13 +1678,21 @@ def ask_vikram(question, history):
         # Now decide remaining context tasks based on resolved q_type.
         f_port = pool.submit(build_portfolio_context) if q_type != "engine_audit" else None
         f_fund = pool.submit(_build_fundamental_context_safe, question) if q_type == "stock_analysis" else None
-        f_ledg = pool.submit(build_ledger_context) if q_type == "engine_audit" else None
+        f_ledg = pool.submit(build_ledger_query_context, question) if q_type in ("engine_audit", "concept_explainer") else None
+        f_guide = pool.submit(build_system_guide_context) if q_type in ("general", "concept_explainer", "engine_audit") else None
+        f_archetype = pool.submit(build_archetype_context) if q_type in ("concept_explainer", "engine_audit", "stock_analysis", "general") else None
+        f_freshness = pool.submit(build_freshness_context)
+        f_alerts = pool.submit(build_alerts_context) if any(w in question.lower() for w in ["alert", "breach", "trigger", "notification", "today", "recent"]) else None
 
         port_ctx = _safe_result(f_port, 3, "Portfolio data unavailable.") if f_port else "(Portfolio context skipped)"
         sig_ctx  = _safe_result(f_sig, 3, "Engine signals unavailable.")
         fund_ctx = _safe_result(f_fund, 9, "(LIVE FUNDAMENTAL FETCH TIMED OUT)") if f_fund else "(Fundamental fetch skipped)"
         ledg_ctx = _safe_result(f_ledg, 4, "Ledger data unavailable.") if f_ledg else "(Ledger context skipped)"
         risk_ctx = build_risk_architecture_context() if q_type in ("engine_audit", "portfolio_audit") else "(Risk architecture skipped)"
+        guide_ctx = _safe_result(f_guide, 2, "") if f_guide else ""
+        archetype_ctx = _safe_result(f_archetype, 2, "") if f_archetype else ""
+        freshness_ctx = _safe_result(f_freshness, 1, "DATA FRESHNESS: Live data active")
+        alerts_ctx = _safe_result(f_alerts, 2, "") if f_alerts else ""
     finally:
         try:
             pool.shutdown(wait=False, cancel_futures=True)
@@ -1438,14 +1703,36 @@ def ask_vikram(question, history):
     if _time.monotonic() > _deadline:
         return None, [], f"Vikram timed out during context build ({MAX_TOTAL_S}s budget)."
 
+    # --- Dynamic Prompt Directive: Enforce Table ONLY for Stock Analysis ---
+    active_directive = (
+        VIKRAM_STOCK_TABLE_DIRECTIVE
+        if q_type in ("stock_analysis", "empirical_fundamental")
+        else VIKRAM_NO_TABLE_DIRECTIVE
+    )
+
     system_prompt = (
-        VIKRAM_SYSTEM_PROMPT
+        VIKRAM_BASE_PROMPT
+        .replace("{DATA_FRESHNESS}", freshness_ctx)
         .replace("{PORTFOLIO_CONTEXT}", port_ctx)
         .replace("{ENGINE_SIGNALS}", sig_ctx)
+        .replace("{WINNER_ARCHETYPES}", archetype_ctx or "(No archetype data)")
+        .replace("{LIVE_ALERTS}", alerts_ctx or "(No active intraday alerts)")
         .replace("{FUNDAMENTAL_DATA}", fund_ctx)
         .replace("{SIMULATION_LEDGER}", ledg_ctx)
         .replace("{RISK_ARCHITECTURE}", risk_ctx)
+        + "\n\n"
+        + active_directive
     )
+    # Append system guide so Vikram can answer architecture / engine questions
+    # from the knowledge base (docs/system_guide.md) instead of hallucinating.
+    if guide_ctx:
+        system_prompt = (
+            system_prompt
+            + "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            + "PRO-SPIKE SYSTEM KNOWLEDGE BASE (use this to answer all \"what is X\" or \"how does X work\" questions)\n"
+            + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            + guide_ctx
+        )
     contents = _sanitize_contents(history, question)
     
     search_requested = bool(_SEARCH_TRIGGER.search(question or ""))

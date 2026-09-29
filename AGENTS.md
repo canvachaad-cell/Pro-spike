@@ -45,6 +45,8 @@ All run inside `Pro-spike` root directory:
 - Before touching Dashboard UI / Streamlit pages -> read `.agents/rules/SKILL-dashboard.md` & `dashboard.py`
 - Before touching Data Schemas / CSVs -> read `.agents/rules/DATA-SCHEMA.md`
 - Before touching Core Components / Data Loaders -> read `docs/known_bugs.md`
+- Before explaining any engine, signal, or metric to the user -> read `docs/system_guide.md` (Vikram Knowledge Base — Simple Terms + Deep Dive for every engine)
+- When user asks "what is X" or "how does X work" about any Pro-spike engine or metric -> read `docs/system_guide.md` first
 - When user types `update !!` -> read `docs/future-updates.md` (if present) or `PROJECT_HISTORY.md`
 - When user types `update session log`, `session handoff`, or `wrap up session` -> invoke the `session_handoff` skill (`.agents/skills/session_handoff/SKILL.md`). Append dated summary to `scratch/last_session.md`. Never overwrite.
 

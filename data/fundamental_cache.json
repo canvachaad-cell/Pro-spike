@@ -6062,5 +6062,52 @@
    "revenue_4q_growth": 0.03138956770877218,
    "promoter_trend": "Sep 2023: 60.24% -> Dec 2023: 60.24% -> Mar 2024: 60.24% -> Jun 2024: 60.24% -> Sep 2024: 60.24% -> Dec 2024: 60.23% -> Mar 2025: 60.23% -> Jun 2025: 60.21% -> Sep 2025: 60.50% -> Dec 2025: 60.50% -> Mar 2026: 60.49% -> Jun 2026: 60.44%"
   }
+ },
+ "TATACHEM": {
+  "ts": 1790657806.4579287,
+  "data": {
+   "rpt_pct": null,
+   "pledge_direction": "flat",
+   "name": "Tata Chemicals Ltd",
+   "revenue_ttm_cr": 15120.0,
+   "rpt_status": "NOT_APPLICABLE",
+   "ebit_4q_growth": -0.16469428007889547,
+   "op_lev_ratio": -8.05371335950163,
+   "revenue_4q_growth": 0.02044948370115408,
+   "roice_pct": -63.2,
+   "roce_abs_pct": 6.2,
+   "op_lev_inflecting": false,
+   "symbol": "TATACHEM",
+   "pat_3yr_cr": [
+    435.0,
+    387.0,
+    -1715.0
+   ],
+   "fii_trend": "Sep 2023: 14.16% -> Dec 2023: 14.07% -> Mar 2024: 13.84% -> Jun 2024: 13.76% -> Sep 2024: 13.56% -> Dec 2024: 13.60% -> Mar 2025: 13.29% -> Jun 2025: 12.85% -> Sep 2025: 13.73% -> Dec 2025: 12.26% -> Mar 2026: 11.90% -> Jun 2026: 12.06%",
+   "url": "https://www.screener.in/company/TATACHEM/consolidated/",
+   "dii_trend": "Sep 2023: 20.91% -> Dec 2023: 20.44% -> Mar 2024: 19.97% -> Jun 2024: 19.91% -> Sep 2024: 20.34% -> Dec 2024: 21.68% -> Mar 2025: 21.96% -> Jun 2025: 22.61% -> Sep 2025: 22.17% -> Dec 2025: 22.40% -> Mar 2026: 22.83% -> Jun 2026: 21.11%",
+   "price": 624.0,
+   "fii_holding": 12.06,
+   "quarterly_quarters": 13,
+   "free_float_cr": 9859,
+   "market_cap_cr": 15897.0,
+   "dii_holding": 21.11,
+   "borrowings_cr": 8001.0,
+   "fcf_pat_ratio": -6.77,
+   "promoter_trend": "Sep 2023: 37.98% -> Dec 2023: 37.98% -> Mar 2024: 37.98% -> Jun 2024: 37.98% -> Sep 2024: 37.98% -> Dec 2024: 37.98% -> Mar 2025: 37.98% -> Jun 2025: 37.98% -> Sep 2025: 37.98% -> Dec 2025: 37.98% -> Mar 2026: 37.98% -> Jun 2026: 37.98%",
+   "pledge_trend": [
+    0.0
+   ],
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "ocf_3yr_cr": [
+    3016.0,
+    1761.0,
+    1269.0
+   ],
+   "interest_coverage_trend": "deteriorating",
+   "rpt_amount_cr": null,
+   "interest_coverage_recent": 2.88,
+   "promoter_holding": 37.98
+  }
  }
 }
