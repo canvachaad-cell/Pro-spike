@@ -489,6 +489,9 @@ app.layout = html.Div(
                 ),
                 dcc.Store(id="vikram-history", data=[]),
                 dcc.Store(id="vikram-pending", data=None),
+                # Watchdog: fires every second while a query is in flight.
+                # Cleared by resolve_message. Self-heals the "infinite thinking" wedge (BUG-091).
+                dcc.Interval(id="vikram-watchdog", interval=1000, disabled=True, n_intervals=0),
             ]
         ),
         html.Main(

@@ -653,7 +653,14 @@ def _known_symbols():
     return syms
 
 
-@lru_cache(maxsize=128)
+# BUG-091 FIX (F7): Replace @lru_cache with a TTL dict cache.
+# lru_cache has no TTL — a transient Screener.in 500/timeout permanently cached [] for
+# that exact question string, preventing symbol resolution until process restart.
+# The new cache never stores an empty result from a network fallback; only positive
+# symbol matches (step 1/2 from the local known universe) are cached indefinitely.
+_extract_sym_cache: dict = {}      # question -> (result, ts)
+_EXTRACT_SYM_TTL = 300             # 5-minute TTL for positive results
+
 def extract_query_symbols(question):
     """Uppercase tokens that look like stock symbols; known ones first.
 
@@ -661,7 +668,18 @@ def extract_query_symbols(question):
     "sjlogistic", "tcs", "544735") in sub-millisecond time via O(1) set matching against the
     full 4,400+ equity universe. Falls back to screener.in's company-search API for
     longer queries with company names ("indus towers", "sj logistics").
+
+    BUG-091: Uses TTL dict cache instead of @lru_cache to avoid caching empty
+    results from transient network errors.
     """
+    global _extract_sym_cache
+    now = time.monotonic()
+    cached = _extract_sym_cache.get(question)
+    if cached is not None:
+        result, ts = cached
+        if result and (now - ts) < _EXTRACT_SYM_TTL:  # only cache non-empty results
+            return result
+
     known = _known_symbols()
     q = question or ""
     q_masked = _mask_concepts(q)
@@ -680,9 +698,11 @@ def extract_query_symbols(question):
         if resolved in known and resolved not in seen:
             seen.add(resolved)
             matched_known.append(resolved)
-            
+
     if matched_known:
-        return matched_known[:_MAX_SCREENER_LOOKUPS]
+        result = matched_known[:_MAX_SCREENER_LOOKUPS]
+        _extract_sym_cache[question] = (result, now)
+        return result
 
     # 2) Fallback to uppercase tokens that might be unlisted / new tickers
     tokens = re.findall(r"\b[A-Z][A-Z0-9&-]{2,19}\b", q_masked)
@@ -696,9 +716,12 @@ def extract_query_symbols(question):
             seen.add(resolved)
             candidates.append(resolved)
     if candidates:
-        return candidates[:_MAX_SCREENER_LOOKUPS]
+        result = candidates[:_MAX_SCREENER_LOOKUPS]
+        _extract_sym_cache[question] = (result, now)
+        return result
 
-    # 3) Fallback: Screener API search for company names
+    # 3) Fallback: Screener API search for company names.
+    # BUG-091 (F7): Do NOT cache [] from this branch — only cache a successful match.
     _NAME_STOP = {"what", "about", "tell", "should", "would", "could", "think",
                   "view", "analysis", "analyze", "analyse", "framework", "stock",
                   "company", "share", "this", "that", "have", "does", "your",
@@ -747,10 +770,12 @@ def extract_query_symbols(question):
                         or (n_core and (n_core in q_norm or q_norm in n_core))
                     ):
                         resolved = SYMBOL_ALIASES.get(sym, sym)
-                        return [resolved]
+                        result = [resolved]
+                        _extract_sym_cache[question] = (result, now)  # only cache a HIT
+                        return result
             except Exception:
                 pass
-    return []
+    return []  # transient failure — deliberately NOT cached (BUG-091 F7)
 
 
 def _pct(v, nd=2):
@@ -1763,14 +1788,20 @@ def ask_vikram(question, history):
     last_err = None
     search_was_requested = search_requested
     skip_search_due_to_quota = False
+    # BUG-091 (F2): Cap attempt list to 4 tuples max (was 7) to reduce worst-case time.
+    attempts = attempts[:4]
     for model_name, use_search in attempts:
-        # --- CHECKPOINT C: before each model attempt ---
+        # --- CHECKPOINT C (outer): before each model attempt ---
         if _time.monotonic() > _deadline:
             print(f"[VIKRAM BUDGET] Global {MAX_TOTAL_S}s budget exhausted in static loop. Aborting.")
             return None, [], f"Vikram timed out after {MAX_TOTAL_S}s — all models were too slow. Try again."
         if use_search and skip_search_due_to_quota:
             continue
         for attempt in range(3):
+            # --- CHECKPOINT C (inner): BUG-091 (F2b) — check INSIDE the retry loop too ---
+            if _time.monotonic() > _deadline:
+                print(f"[VIKRAM BUDGET] Global {MAX_TOTAL_S}s budget exhausted on attempt {attempt} of {model_name}. Aborting.")
+                return None, [], f"Vikram timed out after {MAX_TOTAL_S}s — upstream model stall. Try again."
             try:
                 text, sources = _generate(model_name, system_prompt, contents, use_search)
                 _working_model = model_name
@@ -1913,12 +1944,19 @@ def vikram_panel_visibility(trigger_clicks, close_clicks, mobile_clicks, backdro
     return PANEL_HIDDEN_STYLE, ""
 
 
+# Budget constant mirrored from ask_vikram for the watchdog threshold.
+# The watchdog fires 5 seconds past the backend budget so a late-arriving
+# resolve_message can still win and will just disable the watchdog normally.
+_WATCHDOG_S = MAX_TOTAL_S + 5  # 50 seconds
+
+
 @dash.callback(
     Output("vikram-input", "value"),
     Output("vikram-chat", "children", allow_duplicate=True),
     Output("vikram-pending", "data"),
     Output("vikram-input", "disabled"),
     Output("vikram-send", "disabled"),
+    Output("vikram-watchdog", "disabled"),
     Input("vikram-send", "n_clicks"),
     Input("vikram-input", "n_submit"),
     State("vikram-input", "value"),
@@ -1928,16 +1966,18 @@ def vikram_panel_visibility(trigger_clicks, close_clicks, mobile_clicks, backdro
 def ack_message(n_clicks, n_submit, question, history):
     """Instant ack: clear the input, show the user bubble + animated loader,
     and disable input/button while the query is resolving.
+    Also enables the watchdog interval so a stall can be self-healed (BUG-091).
     """
     question = (question or "").strip()
     if not question:
-        return no_update, no_update, no_update, no_update, no_update
+        return no_update, no_update, no_update, no_update, no_update, no_update
     history = history or []
     chat = render_chat(history)
     chat.append(html.Div(question, className=_USER_BUBBLE))
     chat.append(_loader_bubble())
     pending = {"q": question, "n": time.time()}
-    return "", chat, pending, True, True
+    # Start the watchdog — it will self-heal the UI if resolve_message never arrives.
+    return "", chat, pending, True, True, False
 
 
 @dash.callback(
@@ -1945,6 +1985,8 @@ def ack_message(n_clicks, n_submit, question, history):
     Output("vikram-history", "data"),
     Output("vikram-input", "disabled"),
     Output("vikram-send", "disabled"),
+    Output("vikram-watchdog", "disabled", allow_duplicate=True),
+    Output("vikram-pending", "data", allow_duplicate=True),
     Input("vikram-pending", "data"),
     State("vikram-history", "data"),
     prevent_initial_call=True,
@@ -1953,12 +1995,18 @@ def resolve_message(pending, history):
     """Slow half: run the Gemini query (screener fetch + Google Search) and
     replace the loader with Vikram's answer, then re-enable the input.
 
-    SAFETY GUARANTEE: This function ALWAYS returns with disabled=False,
-    regardless of what happens inside ask_vikram. No exception may leave the
-    UI in a permanently-wedged state requiring a hard page reload.
+    BUG-091 SAFETY GUARANTEE:
+    1. This function ALWAYS returns with disabled=False — no exception wedges the UI.
+    2. Always disables the watchdog and nulls vikram-pending so the watchdog
+       cannot fire redundantly after a response is delivered.
+    3. F4 Fix: the early-exit branch now renders chat (not no_update) so a
+       stranded loader bubble cannot persist in the DOM.
     """
     if not pending or not pending.get("q"):
-        return no_update, no_update, False, False
+        # F4 FIX: return rendered chat instead of no_update to ensure any stale
+        # loader bubble is cleared even if we hit this branch.
+        history = history or []
+        return render_chat(history), history, False, False, True, None
     question = pending["q"]
     history = history or []
     try:
@@ -1977,5 +2025,58 @@ def resolve_message(pending, history):
         {"role": "user", "text": question},
         {"role": "model", "text": reply, "sources": sources},
     ])[-MAX_HISTORY:]
-    # CRITICAL: disabled=False is returned unconditionally — inputs are always re-enabled.
-    return render_chat(new_history), new_history, False, False
+    # CRITICAL: disabled=False returned unconditionally; watchdog disabled; pending cleared.
+    return render_chat(new_history), new_history, False, False, True, None
+
+
+@dash.callback(
+    Output("vikram-chat", "children", allow_duplicate=True),
+    Output("vikram-history", "data", allow_duplicate=True),
+    Output("vikram-input", "disabled", allow_duplicate=True),
+    Output("vikram-send", "disabled", allow_duplicate=True),
+    Output("vikram-watchdog", "disabled", allow_duplicate=True),
+    Output("vikram-pending", "data", allow_duplicate=True),
+    Input("vikram-watchdog", "n_intervals"),
+    State("vikram-pending", "data"),
+    State("vikram-history", "data"),
+    prevent_initial_call=True,
+)
+def watchdog_tick(n_intervals, pending, history):
+    """BUG-091 Self-Healing Watchdog.
+
+    Fires every second while a query is in-flight. If the backend has not
+    resolved within _WATCHDOG_S seconds (backend budget + 5s grace), it:
+      - Re-renders the chat from history (clearing any stranded loader bubble),
+      - Appends an explicit timeout notification to the chat,
+      - Re-enables the input and send button,
+      - Disables itself,
+      - Clears vikram-pending.
+
+    This guarantees recovery from ALL server-side failure modes:
+      - Gunicorn worker timeout/SIGKILL on Render
+      - TCP connection drop on mobile (user sleeping phone mid-request)
+      - ask_vikram budget exhaustion that exceeds proxy timeout
+      - Any future unhandled exception path
+    """
+    if not pending or not pending.get("q"):
+        # No query in flight — watchdog should not be running. Self-disable.
+        return no_update, no_update, False, False, True, None
+
+    elapsed = time.time() - pending.get("n", 0)
+    if elapsed < _WATCHDOG_S:
+        # Budget not yet exceeded — keep waiting.
+        return no_update, no_update, no_update, no_update, no_update, no_update
+
+    # Budget exceeded — self-heal.
+    print(f"[VIKRAM WATCHDOG] Query '{pending.get('q', '')[:40]}' exceeded {_WATCHDOG_S}s budget. Self-healing UI.")
+    history = history or []
+    timeout_msg = (
+        f"\u26a0\ufe0f Vikram did not respond within {_WATCHDOG_S}s — the upstream model or "
+        "network stalled. Your input has been re-enabled.\n\n"
+        "*Tip: Try asking again. If this happens repeatedly, the model cluster "
+        "is under high load — it usually clears within a few minutes.*"
+    )
+    timeout_history = (history + [
+        {"role": "model", "text": timeout_msg, "sources": []},
+    ])[-MAX_HISTORY:]
+    return render_chat(timeout_history), timeout_history, False, False, True, None

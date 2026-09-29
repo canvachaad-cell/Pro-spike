@@ -317,6 +317,10 @@ class FundamentalFetcher:
             return None
 
     def _save_cache(self, symbol, data):
+        # BUG-091 (F6): Atomic write via tmp file + os.replace.
+        # The old open("w") pattern would truncate the 225KB cache to 0 bytes if the
+        # process was killed mid-write (Gunicorn SIGKILL, Ctrl+C, power loss).
+        # os.replace() is atomic on POSIX and atomic-ish on Windows (same volume).
         try:
             with _lock:
                 cache = {}
@@ -328,8 +332,12 @@ class FundamentalFetcher:
                         cache = {}
                 cache[symbol] = {"ts": time.time(), "data": data}
                 os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
-                with open(CACHE_PATH, "w", encoding="utf-8") as f:
+                tmp_path = CACHE_PATH + ".tmp"
+                with open(tmp_path, "w", encoding="utf-8") as f:
                     json.dump(cache, f, indent=1)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_path, CACHE_PATH)
         except Exception:
             pass
     # ---- live fetch ------------------------------------------------------
