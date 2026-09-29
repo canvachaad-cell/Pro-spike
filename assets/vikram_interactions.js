@@ -124,4 +124,85 @@
         sanitizeAriaHiddenFocus();
     });
     bodyObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
+
+    // 4. Client-side Vikram Watchdog (BUG-091 Safety Net Layer 2)
+    // If the server never delivers resolve_message (proxy timeout, mobile drop, SIGKILL),
+    // the dcc.Interval watchdog also never fires (it's server-driven).
+    // This pure JS watchdog catches that last-resort case and clears the loader directly
+    // from the browser DOM, re-enabling the input so the user is not permanently locked out.
+    var _vikramQueryStart = null;
+    var _CLIENT_WATCHDOG_MS = 55000;  // 55s: backend 45s + proxy grace + client round-trip
+
+    function _clientWatchdogCheck() {
+        if (!_vikramQueryStart) return;
+        var elapsed = Date.now() - _vikramQueryStart;
+        if (elapsed < _CLIENT_WATCHDOG_MS) return;
+
+        var loader = document.querySelector('#vikram-chat .vikram-status');
+        if (!loader) {
+            // Loader already gone — query resolved normally.
+            _vikramQueryStart = null;
+            return;
+        }
+
+        console.warn('[VIKRAM CLIENT WATCHDOG] Loader still present after ' + Math.round(elapsed / 1000) + 's. Self-healing UI.');
+
+        // Remove the stranded loader bubble
+        if (loader.parentElement) loader.parentElement.remove();
+
+        // Re-enable the input and send button
+        var input = document.getElementById('vikram-input');
+        var sendBtn = document.getElementById('vikram-send');
+        if (input) {
+            input.disabled = false;
+            input.placeholder = 'Ask Vikram anything…';
+        }
+        if (sendBtn) sendBtn.disabled = false;
+
+        // Append a timeout notice to the chat
+        var chat = document.getElementById('vikram-chat');
+        if (chat) {
+            var notice = document.createElement('div');
+            notice.className = 'self-start max-w-[95%] bg-white/5 border border-outline-variant/60 text-on-surface rounded-xl rounded-bl-sm px-4 py-3 text-sm font-body-md leading-relaxed';
+            notice.innerHTML = '⚠️ <em>Vikram did not respond within 55s — the server or network stalled. Your input is re-enabled. Please try asking again.</em>';
+            chat.appendChild(notice);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        _vikramQueryStart = null;
+    }
+
+    // Detect when a query is submitted (the loader bubble appears in #vikram-chat)
+    var _chatForWatchdog = null;
+    function _attachChatWatchdogObserver() {
+        _chatForWatchdog = document.getElementById('vikram-chat');
+        if (!_chatForWatchdog || _chatForWatchdog.dataset.watchdogObserved) return;
+        _chatForWatchdog.dataset.watchdogObserved = 'true';
+
+        var wdObserver = new MutationObserver(function (mutations) {
+            for (var i = 0; i < mutations.length; i++) {
+                for (var j = 0; j < mutations[i].addedNodes.length; j++) {
+                    var node = mutations[i].addedNodes[j];
+                    if (node && node.querySelector && node.querySelector('.vikram-status')) {
+                        // A loader bubble was just added — start the client watchdog.
+                        _vikramQueryStart = Date.now();
+                    }
+                }
+                // If all .vikram-status elements are gone, the query resolved — reset.
+                if (!_chatForWatchdog.querySelector('.vikram-status')) {
+                    _vikramQueryStart = null;
+                }
+            }
+        });
+        wdObserver.observe(_chatForWatchdog, { childList: true, subtree: true });
+    }
+
+    setInterval(_clientWatchdogCheck, 2000);  // poll every 2s (low overhead)
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _attachChatWatchdogObserver);
+    } else {
+        _attachChatWatchdogObserver();
+    }
+    document.addEventListener('click', function () { _attachChatWatchdogObserver(); });
 })();

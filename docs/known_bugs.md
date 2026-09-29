@@ -1707,4 +1707,29 @@ even after the user generated a fresh, valid 16-character Google App Password.
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: `fix_before_touch` checklist, `DEMONCORE: PLAN_DEEP` part-by-part task list, concept token masking, modular prompt partitioning, and live test matrix.
 
+---
+
+## BUG-091: Vikram "Infinite Thinking" (Occurrence #10) — UI State Machine Has No Failure Path
+**STATUS**: FIXED  
+**FILES**: `dash_pages/_vikram_callback.py`, `dash_app_v2.py`, `assets/vikram_interactions.js`, `fundamental_fetcher.py`  
+**DISCOVERED BY**: User report ("vikram is in infinite thinking"), DEMONCORE: DEEP_AUDIT with DeepSeek grounding, 2026-09-29  
+**SYMPTOM**: Vikram spinner never clears; input permanently disabled (`#vikram-input[disabled]`); requires hard page reload. Occurrence #10 (family: BUG-016, 018, 022, 026, 030, 031, 036, 038, 043).  
+**ROOT CAUSE**:  
+1. **(F1) UI State Machine — No Failure Transition**: `ack_message` appended `_loader_bubble()` and set `disabled=True` on input/send button. `resolve_message` was the ONLY code that could remove the loader. If the server/network dropped the HTTP response (Gunicorn SIGKILL, mobile TCP drop, worker timeout), `resolve_message` never arrived and the loader spun forever. The `assets/vikram_interactions.js` had zero client-side timeout or watchdog.  
+2. **(F2) Budget Leaks — Inner Loop Undeadlined**: `MAX_TOTAL_S = 45` was only checked in the outer `for model_name, use_search in attempts:` loop. The inner `for attempt in range(3):` had NO deadline check. One outer iteration could burn 3 × 25s httpx timeout + 3s sleep ≈ 78s. Up to 7 model/search tuples × 3 retries = 21 API calls. Worst case ≈ 133s > Gunicorn `--timeout 120` → worker SIGKILL → response never delivered → F1.  
+3. **(F4) Silent `no_update` Stranded Loader**: The early-exit branch in `resolve_message` (`if not pending or not pending.get("q"): return no_update, no_update, False, False`) returned `no_update` for `vikram-chat`, leaving any previously-injected loader bubble permanently stranded in the DOM with the input re-enabled.  
+4. **(F6) Non-Atomic Cache Writes**: `fundamental_fetcher.py:_save_cache` used `open(CACHE_PATH, "w")` — a truncate-then-write pattern. A SIGKILL mid-write truncated `data/fundamental_cache.json` (225 KB) to 0 bytes, causing a cold-fetch storm on restart that amplified model timeout risk.  
+5. **(F7) Permanent Negative Caching**: `@lru_cache(maxsize=128)` on `extract_query_symbols()` cached `[]` permanently on transient Screener.in network errors, preventing symbol resolution until process restart.  
+**FIX**:  
+1. **(P0-1 — F1/F4)** Added `dcc.Interval(id="vikram-watchdog", interval=1000, disabled=True)` to `dash_app_v2.py`. `ack_message` enables it on every send. `resolve_message` disables it on every exit. New `watchdog_tick` callback: if `pending["n"]` is > 50s old, re-renders chat (clearing loader), appends explicit timeout notice, re-enables inputs, disables watchdog, and nulls `vikram-pending`. Also fixed F4: `resolve_message` early-exit now returns `render_chat(history)` instead of `no_update`.  
+2. **(P0-2 — F2)** Added `CHECKPOINT C (inner)` inside `for attempt in range(3):` — the inner retry loop now aborts immediately if `_time.monotonic() > _deadline`. Capped `attempts` to 4 tuples max (was up to 7).  
+3. **(P0-3 — JS Watchdog)** Added dual-layer client-side watchdog to `assets/vikram_interactions.js`: a `MutationObserver` on `#vikram-chat` detects loader injection and starts a `setInterval` check. After 55s, if `.vikram-status` is still in the DOM, it removes the loader, re-enables input/send, and appends a user-friendly timeout notice. This catches all failure modes where the HTTP response is dropped entirely (proxy timeout, SIGKILL, mobile sleep).  
+4. **(P1-4 — F6)** Made `_save_cache` in `fundamental_fetcher.py` atomic: writes to `{CACHE_PATH}.tmp` first, calls `flush() + fsync()`, then `os.replace(tmp, dest)` (atomic on POSIX, atomic-ish on Windows same-volume). Eliminates cache truncation.  
+5. **(P1-5 — F7)** Replaced `@lru_cache` on `extract_query_symbols` with a manual TTL dict (`_extract_sym_cache`, 5-minute TTL). Empty results from transient network exceptions are deliberately NOT cached; only successful non-empty symbol matches are cached.  
+**EMPIRICAL VERIFICATION**:  
+- `python -m py_compile dash_pages/_vikram_callback.py dash_app_v2.py fundamental_fetcher.py` → 0 errors.  
+- `python -m pytest tests/test_conviction_golden.py tests/test_ledger_burst_cap.py tests/test_live_breach_alerts.py tests/test_live_price_fetcher.py` → **28/28 PASSED in 4.78s**.  
+- Strategy ledgers (`data/*ledger*.csv`) 100% untouched.  
+**FAILED ATTEMPTS**: None (this is a new fix). Prior failures (BUG-016–043) all attempted to patch backend timeout values without curing the UI state machine's missing failure transition.  
+**AI PROCESS**: DEMONCORE: DEEP_AUDIT (DeepSeek grounding cross-validated), `fix_before_touch` pre-flight checklist (5/5 items), `DEMONCORE: PLAN_DEEP` blast-radius mapping, dual-layer watchdog architecture (server `dcc.Interval` + client-side JS MutationObserver), atomic cache writes, TTL cache replacement.
 
