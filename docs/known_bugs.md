@@ -1759,4 +1759,39 @@ even after the user generated a fresh, valid 16-character Google App Password.
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: Full `fz-uidesigner` 8-step visual audit (`design-audits/design-audit-2026-10-02.md`), `fix_before_touch` checklist, `DEMONCORE: PLAN_DEEP` implementation plan v2 (`implementation_plan_mobile_ui_polish_v2.md`), high-fidelity UI mockup generation (`mobile_ui_mockup_walkthrough.md`), targeted `multi_replace_file_content` execution, and empirical validation script.
 
+---
+
+## BUG-093: Mobile Dashboard Signal Cards Information Asymmetry (Missing CMP & Delivery %), Ragged Stair-Stepping, & Inert Dropdown Chevron
+**STATUS**: FIXED  
+**FILES**: `dash_pages/dashboard.py`, `design-audits/design-audit-2026-10-02-dashboard-cards.md`, `scratch/verify_dashboard_cards_ux.py`  
+**DISCOVERED BY**: User inquiry ("check dashboard and visual hierarchy those cards of 12 condition screener signal stocks"), `fz-uidesigner` Mobile Viewport Deep Audit, 2026-10-02  
+**SYMPTOM**:  
+1. On mobile viewports (<640px / <768px), stock cards in the 12-Condition Screener (`#signals-grid`) completely hid the stock's closing price (`CLOSE` / CMP) and delivery volume (`DELIVERY %`), leaving traders on mobile blind to the two most critical data points of an institutional delivery volume screener.
+2. Mobile cards rendered in an unstructured, ragged flexbox layout where orphan market-cap chips (`[S]`) dropped below the symbol, and lengthy veto tags caused multi-tier stair-stepping with cards swelling to ~180px in height.
+3. Every card displayed an `arrow_drop_down` chevron icon on the far right that suggested the card was expandable/collapsible or had an accordion menu, but clicking it did nothing (misleading affordance).
+4. Header area above the signals grid had excessive vertical spacing (`gap-6 mb-6`), an oversized live scanning badge, and a `text-[56px]` counter that crowded the "Hide T2T" toggle on smaller 360–390px screens.  
+**ROOT CAUSE**:  
+1. In `dash_pages/dashboard.py:177`, `CLOSE` price was wrapped in `html.Div(..., className="hidden md:flex flex-col items-end")`.
+2. In `dash_pages/dashboard.py:192`, `DELIVERY %` metric was wrapped in `html.Div(..., className="hidden sm:flex flex-col items-end ...")`.
+3. Market-cap class (`[S]`, `[M]`, `[L]`) was rendered as an independent chip adjacent to the veto/conviction badge. In a flexbox with `flex-wrap`, long veto reasons caused the badge to wrap awkwardly onto arbitrary new lines.
+4. Non-functional `html.Span("arrow_drop_down", className="material-symbols-outlined ...")` was statically embedded in every card header.  
+**FIX**:  
+1. **Structured 3-Row Card Architecture (`dash_pages/dashboard.py`)**:
+   - **Row 1 (Identity Bar)**: Symbol + Exchange on left (`font-bold font-mono text-base tracking-tight`), live price (`₹ {close:,.2f}`) right-aligned on right with `font-mono tabular-nums text-white text-base font-bold`, always visible across mobile and desktop.
+   - **Row 2 (Governance & Classification Bar)**: Merged the market cap class `[cls]` directly into the status badge (`_signal_badges`), outputting a single unified component (e.g. `🚫 [S] VETO: ...` or `🛡️ [S] HIGH CONVICTION ...`) with truncated text and clean margins, eliminating orphan chips and wrapping stair-steps.
+   - **Row 3 (High-Density Metric Strip)**: Displayed `DELIVERY %` (with vibrant `#2ecc71` green tabular number) and `TURNOVER` in a dedicated metric strip visible on all viewports. Maintained sparkline positioning on desktop viewports (`hidden sm:block`) without occluding mobile data.
+   - Excised the misleading `arrow_drop_down` chevron completely.
+2. **Above-the-Fold Header Streamlining**:
+   - Softened header spacing from `gap-6 mb-6` to `gap-3 sm:gap-6 mb-4 sm:mb-6`.
+   - Streamlined the "Live Scanning" chip to a compact, single-line indicator.
+   - Scaled the active signals counter dynamically (`text-[36px] sm:text-[48px] md:text-[56px] font-mono`) to prevent crowding the "Hide T2T" toggle.
+3. **Empirical Verification**:
+   - `python -m py_compile dash_pages/dashboard.py` passed with 0 errors.
+   - Contract verification script `scratch/verify_dashboard_cards_ux.py` confirmed 4/4 assertions: chevron removed, delivery % present and not hidden, price present and not hidden on mobile, and tabular numbers used.
+   - Captured visual screenshots on 390px viewport (`mobile_dashboard_after_fix_390.png` and `mobile_dashboard_after_fix_crop.png`) confirming 30% reduction in card height (~125px vs ~180px) with crystal clear typography and immediate price/delivery visibility.
+   - Strategy ledgers (`data/*ledger*.csv`) 100% untouched.  
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: Full `fz-uidesigner` mobile viewport deep audit (`design-audits/design-audit-2026-10-02-dashboard-cards.md`), `fix_before_touch` 5-point report and user-approved implementation plan (`implementation_plan_mobile_dashboard_cards.md`), 3-row card architecture re-engineering in `dash_pages/dashboard.py`, Playwright automated contract and screenshot validation, and dual-remote sync.
+
+
 

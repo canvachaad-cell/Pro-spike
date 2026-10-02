@@ -109,20 +109,14 @@ def _signal_badges(symbol, cache_mtime):
                "rating": "FUNDAMENTALS_UNAVAILABLE", "display_badge": "❓ Fundamentals unavailable",
                "veto_reasons": []}
     cls = res.get("stock_class", "U")
-    badges = [
-        html.Span(
-            f"[{cls}]",
-            title=_CLASS_TITLE.get(cls, ""),
-            className=f"text-xs font-semibold tracking-wider px-2 py-0.5 rounded-full border {_CLASS_PILL.get(cls, _CLASS_PILL['U'])}",
-        )
-    ]
+    cls_title = f"[{cls}] {_CLASS_TITLE.get(cls, '')}"
     if res.get("veto"):
         reason = (res.get("veto_reasons") or ["fundamental veto"])[0]
-        badges.append(html.Span(
-            f"🚫 VETO: {reason}",
-            className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#e74c3c]/20 text-[#ff6b6b] border border-[#e74c3c]/40",
-        ))
-        return badges
+        return html.Span(
+            f"🚫 [{cls}] VETO: {reason}",
+            title=cls_title,
+            className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/30 inline-flex items-center gap-1.5",
+        )
     display = res.get("display_badge") or "❓ Fundamentals unavailable"
     color = {
         "HIGH_CONVICTION": "text-[#2ecc71] border-[#2ecc71]/40 bg-[#2ecc71]/10",
@@ -131,11 +125,11 @@ def _signal_badges(symbol, cache_mtime):
         "LARGE_CAP_DISCLAIMER": "text-[#FFB300] border-[#FFB300]/40 bg-[#FFB300]/10",
         "FUNDAMENTALS_UNAVAILABLE": "text-on-surface-variant border-outline-variant/60 bg-white/5",
     }.get(res.get("rating"), "text-on-surface-variant border-outline-variant/60 bg-white/5")
-    badges.append(html.Span(
-        display,
-        className=f"text-xs font-semibold px-2 py-0.5 rounded-full border {color}",
-    ))
-    return badges
+    return html.Span(
+        f"[{cls}] {display}",
+        title=cls_title,
+        className=f"text-xs font-semibold px-2.5 py-1 rounded-lg border {color} inline-flex items-center gap-1.5",
+    )
 
 
 def _badges_for(symbol):
@@ -173,62 +167,67 @@ def build_signal_rows(df):
 
         # Exchange badge styling
         badge_bg = "bg-[#38bdf8]/15 text-[#38bdf8] border-[#38bdf8]/30" if exch.upper() == "NSE" else "bg-[#34d399]/20 text-[#34d399] border-[#34d399]/30"
+        status_badge = _badges_for(sym)
 
         rows.append(html.Div(
-            className="glass-panel p-4 rounded-xl mb-3 flex flex-wrap items-center justify-between gap-4 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 cursor-pointer group relative z-10 hover:z-20",
+            className="glass-panel p-3.5 sm:p-4 rounded-xl mb-3 flex flex-col hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 relative z-10",
             children=[
-                # Left side: Symbol & Exchange
+                # Row 1: Identity & Price Bar
                 html.Div(
-                    className="flex items-center gap-4 min-w-[150px]",
+                    className="flex items-center justify-between gap-2 pb-1.5",
                     children=[
-                        html.Span(className="w-2.5 h-2.5 rounded-full bg-primary inline-block shadow-[0_0_8px_rgba(90,240,179,0.8)]"),
                         html.Div(
+                            className="flex items-center gap-2 min-w-0",
                             children=[
-                                html.Div(sym, className="font-headline-sm text-lg font-semibold text-on-surface group-hover:text-primary transition-colors"),
-                                html.Div(exch, className=f"text-xs uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border {badge_bg} inline-block mt-1"),
-                                html.Div(_badges_for(sym), className="flex items-center gap-1.5 mt-1.5 flex-wrap"),
+                                html.Span(className="w-2 h-2 rounded-full bg-primary inline-block shadow-[0_0_6px_rgba(90,240,179,0.8)] flex-shrink-0"),
+                                html.Span(sym, className="font-bold text-[16px] sm:text-[17px] text-on-surface tracking-tight group-hover:text-primary transition-colors truncate"),
+                                html.Span(exch, className=f"text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border {badge_bg} flex-shrink-0"),
+                            ]
+                        ),
+                        html.Div(
+                            className="text-right flex-shrink-0",
+                            children=[
+                                html.Span(f"₹ {close:,.2f}", className="font-mono text-[16px] sm:text-[17px] font-bold text-on-surface tabular-nums")
                             ]
                         )
                     ]
                 ),
-                # Middle: Micro-chart (Sparkline representation)
+                # Row 2: Conviction / Veto Status Badge (with [Class])
                 html.Div(
-                    className="hidden md:flex flex-1 max-w-[120px] items-center gap-2",
+                    className="my-1.5",
+                    children=[status_badge]
+                ),
+                # Row 3: High-Density Metric Strip (Delivery % + Turnover + Sparkline)
+                html.Div(
+                    className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 pt-2 border-t border-white/5 bg-surface-container-high/30 rounded-lg p-2.5 items-center",
                     children=[
-                        html.Div("CLOSE", className="text-xs text-on-surface-variant font-label-caps"),
-                        html.Div(f"{close:,.2f}", className="font-data-md text-on-surface font-medium"),
-                        # Fake sparkline
                         html.Div(
-                            className="flex items-end gap-0.5 h-6",
+                            className="flex flex-col",
                             children=[
-                                html.Div(className="w-1 bg-on-surface-variant/40 rounded-t-sm h-[30%]"),
-                                html.Div(className="w-1 bg-on-surface-variant/40 rounded-t-sm h-[50%]"),
-                                html.Div(className="w-1 bg-on-surface-variant/40 rounded-t-sm h-[40%]"),
-                                html.Div(className="w-1 bg-on-surface-variant/40 rounded-t-sm h-[80%]"),
-                                html.Div(className="w-1 bg-primary rounded-t-sm h-[100%] shadow-[0_0_4px_rgba(90,240,179,0.8)]"),
+                                html.Span("DELIVERY", className="text-[10px] font-mono text-outline uppercase font-semibold tracking-wider"),
+                                html.Span(f"{deliv_per:.1f}%", className="font-mono text-[14px] text-[#2ecc71] font-bold tabular-nums")
+                            ]
+                        ),
+                        html.Div(
+                            className="flex flex-col text-right md:text-left",
+                            children=[
+                                html.Span("TURNOVER", className="text-[10px] font-mono text-outline uppercase font-semibold tracking-wider"),
+                                html.Span(turnover_str, className="font-mono text-[14px] text-on-surface font-bold tabular-nums")
+                            ]
+                        ),
+                        html.Div(
+                            className="hidden md:flex items-center justify-end gap-1.5",
+                            children=[
+                                html.Span("TREND", className="text-[10px] font-mono text-outline uppercase font-semibold tracking-wider mr-1"),
+                                html.Div(className="flex items-end gap-0.5 h-5", children=[
+                                    html.Div(className="w-1 bg-on-surface-variant/40 rounded-t-sm h-[30%]"),
+                                    html.Div(className="w-1 bg-on-surface-variant/40 rounded-t-sm h-[50%]"),
+                                    html.Div(className="w-1 bg-on-surface-variant/40 rounded-t-sm h-[40%]"),
+                                    html.Div(className="w-1 bg-on-surface-variant/40 rounded-t-sm h-[80%]"),
+                                    html.Div(className="w-1 bg-primary rounded-t-sm h-[100%] shadow-[0_0_4px_rgba(90,240,179,0.8)]"),
+                                ])
                             ]
                         )
-                    ]
-                ),
-                # Right side: Stats
-                html.Div(
-                    className="flex items-center gap-6",
-                    children=[
-                        html.Div(
-                            className="flex flex-col text-right hidden sm:flex",
-                            children=[
-                                html.Span("DELIVERY", className="text-xs text-on-surface-variant font-label-caps"),
-                                html.Span(f"{deliv_per:.1f}%", className="font-data-md text-[#2ecc71] font-medium")
-                            ]
-                        ),
-                        html.Div(
-                            className="flex flex-col text-right",
-                            children=[
-                                html.Span("TURNOVER", className="text-xs text-on-surface-variant font-label-caps"),
-                                html.Span(turnover_str, className="font-data-md text-on-surface font-medium")
-                            ]
-                        ),
-                        html.Span("arrow_drop_down", className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors")
                     ]
                 )
             ]
@@ -272,11 +271,11 @@ def layout():
         children=[
             # Header Row
             html.Header(
-                className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8",
+                className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-6 mb-4 sm:mb-6",
                 children=[
                     html.Div([
                         html.H1(
-                            className="font-display-lg text-[28px] md:text-[48px] leading-[1.2] md:leading-[56px] font-bold text-on-surface mb-2 tracking-tight",
+                            className="font-display-lg text-[28px] md:text-[48px] leading-[1.2] md:leading-[56px] font-bold text-on-surface tracking-tight",
                             children=[
                                 html.Span("Pro Spike", className="block font-label-sm text-[12px] leading-[16px] font-bold text-primary tracking-widest uppercase mb-1"),
                                 html.Span("Dashboard", className="block font-display-lg text-[28px] md:text-[48px] leading-[1.2] md:leading-[56px] font-bold text-on-surface tracking-tight")
@@ -285,10 +284,10 @@ def layout():
                     ]),
                     # Live Status Pill
                     html.Div(
-                        className="relative flex items-center gap-3 px-4 py-2 rounded-full bg-primary/5 border border-primary/20 backdrop-blur-md overflow-hidden animate-shimmer",
+                        className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-primary/5 border border-primary/20 backdrop-blur-md overflow-hidden animate-shimmer",
                         children=[
-                            html.Div(className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse-glow z-10"),
-                            html.Span("Live Scanning: Phase 1 MVP", className="font-label-sm text-[12px] font-bold text-primary uppercase tracking-widest z-10 relative")
+                            html.Div(className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse-glow z-10 flex-shrink-0"),
+                            html.Span("Live Scanning: Phase 1 MVP", className="font-label-sm text-[11px] sm:text-[12px] font-bold text-primary uppercase tracking-widest z-10 relative whitespace-nowrap")
                         ]
                     )
                 ]
@@ -307,25 +306,25 @@ def layout():
                                 children=[
                                     html.Div(className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none"),
                                     html.Div(
-                                        className="flex justify-between items-end mb-6 z-10",
+                                        className="flex justify-between items-end mb-4 sm:mb-6 z-10",
                                         children=[
                                             html.Div(
                                                 children=[
-                                                    html.H2("12-Condition Signals", className="font-headline-lg text-[24px] font-semibold text-on-surface-variant"),
+                                                    html.H2("12-Condition Signals", className="font-headline-lg text-[20px] sm:text-[24px] font-semibold text-on-surface-variant"),
                                                     html.Div(
-                                                        className="flex items-baseline gap-2 mt-2",
+                                                        className="flex items-baseline gap-2 mt-1 sm:mt-2",
                                                         children=[
-                                                            html.Span(str(active_signals), id="signals-count", className="font-display-lg text-[64px] font-bold text-primary leading-none tracking-tighter animate-number-roll"),
-                                                            html.Span("Signals Passing", className="font-label-sm text-on-surface-variant uppercase tracking-wider")
+                                                            html.Span(str(active_signals), id="signals-count", className="font-display-lg text-[36px] sm:text-[48px] md:text-[56px] font-bold text-primary leading-none tracking-tighter animate-number-roll font-mono"),
+                                                            html.Span("Signals Passing", className="font-label-sm text-on-surface-variant uppercase tracking-wider text-xs sm:text-sm font-mono")
                                                         ]
                                                     ),
-                                                    html.Div(f"As of {signals_asof} (signals file)", className="text-xs text-outline mt-2")
+                                                    html.Div(f"As of {signals_asof} (signals file)", className="text-[11px] text-outline mt-1 font-mono")
                                                 ]
                                             ),
                                             html.Div(
                                                 className="flex flex-col items-end justify-center min-h-[44px] gap-1",
                                                 children=[
-                                                    html.Span("Hide T2T", className="font-label-sm text-xs font-bold text-on-surface-variant uppercase"),
+                                                    html.Span("Hide T2T", className="font-label-sm text-xs font-bold text-on-surface-variant uppercase font-mono"),
                                                     html.Div(
                                                         html.Div(
                                                             id="toggle",
