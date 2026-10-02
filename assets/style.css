@@ -167,12 +167,12 @@ nav { flex: 1; padding: 0 12px; }
 .mobile-bottom-nav {
     display: none;
     position: fixed;
-    bottom: 12px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     left: 8px;
     right: 8px;
     z-index: 200;
-    height: 60px;
-    border-radius: 30px;
+    height: 64px;
+    border-radius: 32px;
     background: rgba(15, 17, 23, 0.94);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -189,7 +189,7 @@ nav { flex: 1; padding: 0 12px; }
         display: flex;
     }
     .page-content-mobile-pad {
-        padding-bottom: 96px !important;
+        padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
     }
 }
 
@@ -200,13 +200,14 @@ nav { flex: 1; padding: 0 12px; }
     justify-content: center;
     flex: 1 1 0;
     min-width: 0;
-    gap: 2px;
-    padding: 4px 1px;
+    min-height: 48px;
+    gap: 3px;
+    padding: 6px 2px;
     color: var(--text-muted);
     text-decoration: none;
-    font-size: 8.5px;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: -0.1px;
+    letter-spacing: 0.01em;
     text-transform: uppercase;
     transition: all 0.2s ease;
     -webkit-tap-highlight-color: transparent;

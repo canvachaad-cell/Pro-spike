@@ -113,14 +113,14 @@ def _signal_badges(symbol, cache_mtime):
         html.Span(
             f"[{cls}]",
             title=_CLASS_TITLE.get(cls, ""),
-            className=f"text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded-full border {_CLASS_PILL.get(cls, _CLASS_PILL['U'])}",
+            className=f"text-xs font-semibold tracking-wider px-2 py-0.5 rounded-full border {_CLASS_PILL.get(cls, _CLASS_PILL['U'])}",
         )
     ]
     if res.get("veto"):
         reason = (res.get("veto_reasons") or ["fundamental veto"])[0]
         badges.append(html.Span(
             f"🚫 VETO: {reason}",
-            className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#e74c3c]/20 text-[#ff6b6b] border border-[#e74c3c]/40",
+            className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#e74c3c]/20 text-[#ff6b6b] border border-[#e74c3c]/40",
         ))
         return badges
     display = res.get("display_badge") or "❓ Fundamentals unavailable"
@@ -133,7 +133,7 @@ def _signal_badges(symbol, cache_mtime):
     }.get(res.get("rating"), "text-on-surface-variant border-outline-variant/60 bg-white/5")
     badges.append(html.Span(
         display,
-        className=f"text-[9px] font-semibold px-1.5 py-0.5 rounded-full border {color}",
+        className=f"text-xs font-semibold px-2 py-0.5 rounded-full border {color}",
     ))
     return badges
 
@@ -185,7 +185,7 @@ def build_signal_rows(df):
                         html.Div(
                             children=[
                                 html.Div(sym, className="font-headline-sm text-lg font-semibold text-on-surface group-hover:text-primary transition-colors"),
-                                html.Div(exch, className=f"text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border {badge_bg} inline-block mt-1"),
+                                html.Div(exch, className=f"text-xs uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border {badge_bg} inline-block mt-1"),
                                 html.Div(_badges_for(sym), className="flex items-center gap-1.5 mt-1.5 flex-wrap"),
                             ]
                         )
@@ -195,7 +195,7 @@ def build_signal_rows(df):
                 html.Div(
                     className="hidden md:flex flex-1 max-w-[120px] items-center gap-2",
                     children=[
-                        html.Div("CLOSE", className="text-[10px] text-on-surface-variant font-label-caps"),
+                        html.Div("CLOSE", className="text-xs text-on-surface-variant font-label-caps"),
                         html.Div(f"{close:,.2f}", className="font-data-md text-on-surface font-medium"),
                         # Fake sparkline
                         html.Div(
@@ -217,14 +217,14 @@ def build_signal_rows(df):
                         html.Div(
                             className="flex flex-col text-right hidden sm:flex",
                             children=[
-                                html.Span("DELIVERY", className="text-[10px] text-on-surface-variant font-label-caps"),
-                                html.Span(f"{deliv_per:.1f}%", className="font-data-md text-primary font-medium")
+                                html.Span("DELIVERY", className="text-xs text-on-surface-variant font-label-caps"),
+                                html.Span(f"{deliv_per:.1f}%", className="font-data-md text-[#2ecc71] font-medium")
                             ]
                         ),
                         html.Div(
                             className="flex flex-col text-right",
                             children=[
-                                html.Span("TURNOVER", className="text-[10px] text-on-surface-variant font-label-caps"),
+                                html.Span("TURNOVER", className="text-xs text-on-surface-variant font-label-caps"),
                                 html.Span(turnover_str, className="font-data-md text-on-surface font-medium")
                             ]
                         ),
@@ -268,7 +268,7 @@ def layout():
             signal_rows = [html.Div("All of today's signals are T2T (100% delivery) — toggle 'Hide T2T' off to view them.", className="p-4 font-body-md text-outline text-center glass-panel rounded-xl")]
 
     return html.Div(
-        className="flex flex-col w-full px-[24px] py-[24px] max-w-[1600px] mx-auto",
+        className="flex flex-col w-full px-3 sm:px-6 py-4 sm:py-6 max-w-[1600px] mx-auto",
         children=[
             # Header Row
             html.Header(
@@ -319,13 +319,13 @@ def layout():
                                                             html.Span("Signals Passing", className="font-label-sm text-on-surface-variant uppercase tracking-wider")
                                                         ]
                                                     ),
-                                                    html.Div(f"As of {signals_asof} (signals file)", className="text-[10px] text-outline mt-2")
+                                                    html.Div(f"As of {signals_asof} (signals file)", className="text-xs text-outline mt-2")
                                                 ]
                                             ),
                                             html.Div(
-                                                className="flex flex-col items-end gap-2",
+                                                className="flex flex-col items-end justify-center min-h-[44px] gap-1",
                                                 children=[
-                                                    html.Span("Hide T2T", className="font-label-sm text-[10px] font-bold text-on-surface-variant uppercase"),
+                                                    html.Span("Hide T2T", className="font-label-sm text-xs font-bold text-on-surface-variant uppercase"),
                                                     html.Div(
                                                         html.Div(
                                                             id="toggle",

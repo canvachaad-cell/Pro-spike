@@ -1733,3 +1733,30 @@ even after the user generated a fresh, valid 16-character Google App Password.
 **FAILED ATTEMPTS**: None (this is a new fix). Prior failures (BUG-016–043) all attempted to patch backend timeout values without curing the UI state machine's missing failure transition.  
 **AI PROCESS**: DEMONCORE: DEEP_AUDIT (DeepSeek grounding cross-validated), `fix_before_touch` pre-flight checklist (5/5 items), `DEMONCORE: PLAN_DEEP` blast-radius mapping, dual-layer watchdog architecture (server `dcc.Interval` + client-side JS MutationObserver), atomic cache writes, TTL cache replacement.
 
+---
+
+## BUG-092: Mobile Viewport & Ergonomics Overhaul (Safe Area Insets, Micro-Font Eradication, Numeric Alignment, Touch Targets)
+**STATUS**: FIXED  
+**FILES**: `assets/style.css`, `dash_app_v2.py`, `dash_pages/dashboard.py`, `dash_pages/institutional_signals.py`, `dash_pages/winner_archetypes.py`, `scratch/verify_mobile_ux.py`  
+**DISCOVERED BY**: User request & `fz-uidesigner` Full 8-Step Trading Dashboard UI Audit (`design-audits/design-audit-2026-10-02.md`), 2026-10-02  
+**SYMPTOM**:  
+1. Floating mobile bottom navigation bar collided with the iOS home indicator bar and Android gesture pill due to missing `env(safe-area-inset-bottom)`.
+2. Microscopic font sizing (`text-[8px]`, `text-[9px]`, `text-[10px]`, `font-size: 8.5px`) in navigation items, card pills, and table headers caused extreme squinting, optical chromatic bleeding on OLED/dark themes, and failed mobile accessibility guidelines.
+3. Interactive elements (mobile drawer close button `w-8 h-8`, hamburger toggle `w-10 h-10`, and "Hide T2T" toggle) had touch bounding boxes below the 44×44px standard, creating tap anxiety.
+4. Quantitative prices and returns in Institutional Signals 4 engine tables were left-aligned without fixed-width tabular figures, preventing vertical decimal scanning.
+5. Mobile drawer padding was cramped at `p-5` (20px), under-padded compared to the 24px–32px standard.
+**ROOT CAUSE**: The dashboard was developed primarily on wide desktop viewports with responsive adaptations added as ad-hoc font shrinkage (`text-[8px]`, `8.5px`) rather than true mobile-first responsive scaling, safe-area inset accounting, and numeric typography standards.  
+**FIX**:  
+1. **Safe-Area Insets & Bottom Nav (`assets/style.css`)**: Injected `bottom: calc(10px + env(safe-area-inset-bottom, 0px))` and `height: 64px; border-radius: 32px;` to `.mobile-bottom-nav`. Increased `.mobile-nav-item` font-size to `11px` with `min-height: 48px; gap: 3px; padding: 6px 2px;`. Added dynamic safe-area bottom padding to `.page-content-mobile-pad` (`calc(100px + env(safe-area-inset-bottom, 0px)) !important;`).
+2. **Mobile Chrome & Drawer Polish (`dash_app_v2.py`)**: Enlarge `#mobile-drawer-toggle` and `#mobile-drawer-close` to `w-11 h-11 min-w-[44px] min-h-[44px]`. Upgraded `#mobile-menu-drawer` internal padding to `p-6 md:p-8` (24px mobile / 32px tablet). Upgraded "LIVE" header badge to `text-[10px] font-mono font-bold px-2 py-0.5`.
+3. **Dashboard Viewport & Typography (`dash_pages/dashboard.py`)**: Replaced `text-[9px]` in classification and veto pills with `text-xs font-semibold px-2 py-0.5`. Scaled exchange and stat labels to `text-xs`. Softened mobile outer container padding from `px-[24px]` to `px-3 sm:px-6`. Padded "Hide T2T" toggle hit area to `min-h-[44px] min-w-[44px]`.
+4. **Institutional Signals 4 Tabs Overhaul (`dash_pages/institutional_signals.py`)**: Upgraded table headers across all 4 engine tables from `text-[10px]` to `text-xs font-bold font-mono tracking-wider`. Added automatic right-alignment (`text-right font-mono tabular-nums`) to all numeric columns (CMP, SL, TP, Entry Price, Exit Price, Close, ATR14, Turnover, ATW). Harmonized positive profit green to `#2ecc71` emerald. Upgraded strategy accordion summary headers to `min-h-[44px] text-xs font-semibold`.
+5. **Winner Archetypes Micro-Font Cleanup (`dash_pages/winner_archetypes.py`)**: Replaced extreme `text-[8px] sm:text-[9px]` in card metrics (`ATR14 %`, `DELIVERY %`, `WHALE DENSITY`, `AI WIN PROB`) with crisp `text-[11px] font-mono font-semibold`. Upgraded badges to `text-xs`.  
+**EMPIRICAL VERIFICATION**:  
+- `python -m py_compile dash_app_v2.py dash_pages/dashboard.py dash_pages/institutional_signals.py dash_pages/winner_archetypes.py` → **0 syntax errors**.
+- Automated verification script `python scratch/verify_mobile_ux.py` → **Passed all 5 file contracts**.
+- Strategy ledgers (`data/*ledger*.csv`) 100% untouched.  
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: Full `fz-uidesigner` 8-step visual audit (`design-audits/design-audit-2026-10-02.md`), `fix_before_touch` checklist, `DEMONCORE: PLAN_DEEP` implementation plan v2 (`implementation_plan_mobile_ui_polish_v2.md`), high-fidelity UI mockup generation (`mobile_ui_mockup_walkthrough.md`), targeted `multi_replace_file_content` execution, and empirical validation script.
+
+

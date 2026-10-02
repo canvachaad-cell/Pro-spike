@@ -300,14 +300,14 @@ mobile_top_header = html.Header(
             children=[
                 html.Span("emoji_events", className="material-symbols-outlined text-primary text-xl"),
                 html.Div("Pro Spike", className="font-headline-sm text-base font-bold text-primary tracking-tight"),
-                html.Span("LIVE", className="text-[9px] font-mono font-bold bg-primary/10 text-primary border border-primary/30 px-1.5 py-0.5 rounded"),
+                html.Span("LIVE", className="text-[10px] font-mono font-bold bg-primary/10 text-primary border border-primary/30 px-2 py-0.5 rounded"),
             ]
         ),
         html.Button(
             id="mobile-drawer-toggle",
             title="Open all navigation pages",
             **{"aria-label": "Open all navigation pages"},
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-on-surface-variant transition-colors border border-white/10",
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-on-surface-variant transition-colors border border-white/10",
             children=[DashIconify(icon="material-symbols:menu", width=22, height=22, id="mobile-drawer-icon")]
         )
     ]
@@ -317,7 +317,7 @@ mobile_drawer = html.Div(
     id="mobile-menu-drawer",
     role="region",
     **{"aria-label": "Mobile Navigation Drawer"},
-    className="p-5 flex flex-col gap-3",
+    className="p-6 md:p-8 flex flex-col gap-4",
     children=[
         html.Div(
             className="flex items-center justify-between pb-3 border-b border-white/10",
@@ -333,8 +333,8 @@ mobile_drawer = html.Div(
                     id="mobile-drawer-close",
                     title="Close navigation",
                     **{"aria-label": "Close navigation"},
-                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-on-surface-variant hover:text-white",
-                    children=[DashIconify(icon="material-symbols:close", width=18, height=18)]
+                    className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-white/5 text-on-surface-variant hover:text-white active:scale-95 transition-colors border border-white/10",
+                    children=[DashIconify(icon="material-symbols:close", width=22, height=22)]
                 )
             ]
         ),

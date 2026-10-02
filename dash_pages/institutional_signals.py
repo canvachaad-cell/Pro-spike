@@ -105,6 +105,13 @@ def _template(columns, wide=None):
     return " ".join(wide.get(c, "minmax(0, 1fr)") for c in columns)
 
 
+NUMERIC_COLS = {
+    "CMP", "STOP_LOSS", "TAKE_PROFIT", "ENTRY_PRICE", "EXIT_PRICE",
+    "CLOSE", "ATR14", "ATR_PCT", "REC_POS_SIZE_INR", "FREE_FLOAT_CR",
+    "FLOAT_ABSORBED_PCT", "TURNOVER", "DELIVERY_TURNOVER", "DELIV_PER", "ATW"
+}
+
+
 def _grid_table(columns, rows, min_width=760, wide=None, labels=None):
     style = {"gridTemplateColumns": _template(columns, wide)}
     labels = labels or {}
@@ -112,13 +119,14 @@ def _grid_table(columns, rows, min_width=760, wide=None, labels=None):
     header_cells = []
     for i, c in enumerate(columns):
         display_label = labels.get(c, c)
+        align_cls = " text-right" if c in NUMERIC_COLS else ""
         if i == 0:
             header_cells.append(html.Div(display_label, className="sticky left-0 z-30 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 max-md:pl-3 py-3 max-md:py-2 -my-3 shadow-[8px_0_12px_-8px_rgba(0,0,0,0.55)]"))
         else:
-            header_cells.append(html.Div(display_label))
+            header_cells.append(html.Div(display_label, className=align_cls.strip() or None))
             
     header = html.Div(
-        className="grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words sticky top-0 z-20 bg-[#0a0a0a]",
+        className="grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 font-label-caps text-xs text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words sticky top-0 z-20 bg-[#0a0a0a]",
         style=style,
         children=header_cells,
     )
@@ -368,17 +376,17 @@ def alpha_table(ledger_path=None):
             elif c == "AI_WIN_PROBABILITY":
                 cells.append(_prob_cell(r.get(c)))
             elif c == "STOP_LOSS":
-                cells.append(html.Div(_sl_tp_str(r.get(c), entry), className="text-error"))
+                cells.append(html.Div(_sl_tp_str(r.get(c), entry), className="text-error text-right font-mono tabular-nums"))
             elif c == "TAKE_PROFIT":
-                cells.append(html.Div(_sl_tp_str(r.get(c), entry, "+"), className="text-primary"))
+                cells.append(html.Div(_sl_tp_str(r.get(c), entry, "+"), className="text-[#2ecc71] text-right font-mono tabular-nums font-semibold"))
             elif c in ("ENTRY_PRICE", "CLOSE", "ATR14"):
-                cells.append(html.Div(_f(r.get(c), "{:.2f}", "₹"), className="text-on-surface"))
+                cells.append(html.Div(_f(r.get(c), "{:.2f}", "₹"), className="text-on-surface text-right font-mono tabular-nums"))
             elif c == "REC_POS_SIZE_INR":
-                cells.append(html.Div(_f(r.get(c), "{:,.0f}", "₹"), className="text-on-surface"))
+                cells.append(html.Div(_f(r.get(c), "{:,.0f}", "₹"), className="text-on-surface text-right font-mono tabular-nums"))
             elif c in ("SIS", "Whale_Density"):
-                cells.append(html.Div(_f(r.get(c), "{:.2f}"), className="text-on-surface"))
+                cells.append(html.Div(_f(r.get(c), "{:.2f}"), className="text-on-surface text-right font-mono tabular-nums"))
             elif c == "Implied_Trades":
-                cells.append(html.Div(_f(r.get(c), "{:,.0f}"), className="text-on-surface"))
+                cells.append(html.Div(_f(r.get(c), "{:,.0f}"), className="text-on-surface text-right font-mono tabular-nums"))
             else:
                 raw = r.get(c)
                 cells.append(html.Div("-" if raw is None or pd.isna(raw) else str(raw), className="text-on-surface"))
@@ -436,24 +444,24 @@ def completed_trades():
             elif c == "ENTRY_WHALE_DENSITY":
                 cells.append(html.Div(_f(r.get(c), "{:.2f}"), className="text-on-surface"))
             elif c == "ENTRY_PRICE":
-                cells.append(html.Div(_f(r.get(c), "{:.2f}", "₹"), className="text-on-surface"))
+                cells.append(html.Div(_f(r.get(c), "{:.2f}", "₹"), className="text-on-surface text-right font-mono tabular-nums"))
             elif c == "EXIT_PRICE":
                 exit_n = _num(r.get(c))
                 entry_n = _num(entry)
                 if exit_n is None:
-                    cells.append(html.Div("N/A", className="text-on-surface-variant"))
+                    cells.append(html.Div("N/A", className="text-on-surface-variant text-right font-mono tabular-nums"))
                 else:
                     if entry_n is not None and entry_n > 0:
                         sign = "+" if exit_n >= entry_n else ""
                         s = f"₹{exit_n:.2f} ({sign}{(exit_n - entry_n) / entry_n * 100:.1f}%)"
                     else:
                         s = f"₹{exit_n:.2f}"
-                    color = "text-primary" if (entry_n is not None and exit_n >= entry_n) else "text-error"
-                    cells.append(html.Div(s, className=f"{color}"))
+                    color = "text-[#2ecc71] font-semibold" if (entry_n is not None and exit_n >= entry_n) else "text-error"
+                    cells.append(html.Div(s, className=f"{color} text-right font-mono tabular-nums"))
             elif c == "STOP_LOSS":
-                cells.append(html.Div(_sl_tp_str(r.get(c), entry), className="text-error"))
+                cells.append(html.Div(_sl_tp_str(r.get(c), entry), className="text-error text-right font-mono tabular-nums"))
             elif c == "TAKE_PROFIT":
-                cells.append(html.Div(_sl_tp_str(r.get(c), entry, "+"), className="text-primary"))
+                cells.append(html.Div(_sl_tp_str(r.get(c), entry, "+"), className="text-[#2ecc71] text-right font-mono tabular-nums font-semibold"))
             else:
                 raw = r.get(c)
                 cells.append(html.Div("-" if raw is None or pd.isna(raw) else str(raw), className="text-on-surface"))
@@ -464,12 +472,12 @@ def completed_trades():
         completed_footer.append(
             html.Div(
                 f"Showing {MAX_COMPLETED_ROWS} most recent of {total_completed} completed trades.",
-                className="px-4 py-2 font-label-caps text-[10px] text-outline uppercase tracking-wider",
+                className="px-4 py-2 font-label-caps text-xs text-outline uppercase tracking-wider",
             )
         )
 
     header_cells = [
-        html.Div(c, className="sticky left-0 z-30 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 max-md:pl-3 py-3 max-md:py-2 -my-3 shadow-[8px_0_12px_-8px_rgba(0,0,0,0.55)]") if i == 0 else html.Div(c)
+        html.Div(c, className="sticky left-0 z-30 bg-[#0a0a0a] pr-2 border-r border-white/10 -ml-4 pl-4 max-md:pl-3 py-3 max-md:py-2 -my-3 shadow-[8px_0_12px_-8px_rgba(0,0,0,0.55)]") if i == 0 else html.Div(c, className="text-right" if c in NUMERIC_COLS else None)
         for i, c in enumerate(avail)
     ]
 
@@ -483,7 +491,7 @@ def completed_trades():
                 style={"minWidth": "1150px"},
                 children=[
                     html.Div(
-                        className="grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words sticky top-0 z-20 bg-[#0a0a0a]",
+                        className="grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 font-label-caps text-xs text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words sticky top-0 z-20 bg-[#0a0a0a]",
                         style={"gridTemplateColumns": tpl},
                         children=header_cells,
                     )
@@ -824,7 +832,7 @@ def velocity_simulation(ledger_csv, risk_pct, ai_threshold=None, title="₹10L V
                         style={"minWidth": "950px"},
                         children=[
                             html.Div(
-                                className="grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words sticky top-0 z-20 bg-[#0a0a0a]",
+                                className="grid gap-2 px-4 max-md:px-3 py-3 max-md:py-2 font-label-caps text-xs text-on-surface-variant uppercase tracking-wider border-b border-outline-variant break-words sticky top-0 z-20 bg-[#0a0a0a]",
                                 style={"gridTemplateColumns": sim_tpl},
                                 children=sim_header_cells,
                             )
@@ -991,19 +999,19 @@ def corner_table():
                 else:
                     cells.append(html.Div("✓ Clean", className="px-2 py-0.5 rounded-md text-xs font-medium w-fit bg-[rgba(46,204,113,0.15)] text-[#2ecc71] border border-[rgba(46,204,113,0.3)]"))
             elif c == "STOP_LOSS":
-                cells.append(html.Div(_sl_tp_str(r.get(c), close), className="text-error font-medium whitespace-nowrap font-mono tabular-nums"))
+                cells.append(html.Div(_sl_tp_str(r.get(c), close), className="text-error font-medium whitespace-nowrap font-mono tabular-nums text-right"))
             elif c == "TAKE_PROFIT":
-                cells.append(html.Div(_sl_tp_str(r.get(c), close, "+"), className="text-primary font-medium whitespace-nowrap font-mono tabular-nums"))
+                cells.append(html.Div(_sl_tp_str(r.get(c), close, "+"), className="text-[#2ecc71] font-medium whitespace-nowrap font-mono tabular-nums text-right"))
             elif c in ("CLOSE", "ATR14"):
-                cells.append(html.Div(_f(r.get(c), "{:.2f}", "₹"), className="text-on-surface whitespace-nowrap font-mono tabular-nums"))
+                cells.append(html.Div(_f(r.get(c), "{:.2f}", "₹"), className="text-on-surface whitespace-nowrap font-mono tabular-nums text-right"))
             elif c == "ATR_PCT":
-                cells.append(html.Div(_f(r.get(c), "{:.2f}%"), className="text-primary font-semibold whitespace-nowrap font-mono tabular-nums"))
+                cells.append(html.Div(_f(r.get(c), "{:.2f}%"), className="text-primary font-semibold whitespace-nowrap font-mono tabular-nums text-right"))
             elif c == "FREE_FLOAT_CR":
-                cells.append(html.Div(_f(r.get(c), "{:,.1f} Cr", "₹"), className="text-on-surface whitespace-nowrap font-mono tabular-nums"))
+                cells.append(html.Div(_f(r.get(c), "{:,.1f} Cr", "₹"), className="text-on-surface whitespace-nowrap font-mono tabular-nums text-right"))
             elif c == "FLOAT_ABSORBED_PCT":
-                cells.append(html.Div(_f(r.get(c), "{:.2f}%"), className="text-on-surface font-semibold whitespace-nowrap font-mono tabular-nums"))
+                cells.append(html.Div(_f(r.get(c), "{:.2f}%"), className="text-on-surface font-semibold whitespace-nowrap font-mono tabular-nums text-right"))
             elif c == "ATW":
-                cells.append(html.Div(_f(r.get(c), "{:,.0f}", "₹"), className="text-on-surface whitespace-nowrap font-mono tabular-nums"))
+                cells.append(html.Div(_f(r.get(c), "{:,.0f}", "₹"), className="text-on-surface whitespace-nowrap font-mono tabular-nums text-right"))
             elif c == "CONVINCING_REASON":
                 cells.append(html.Div(str(r.get(c, "-")), className="text-on-surface text-xs leading-relaxed"))
             else:
@@ -1093,7 +1101,7 @@ def layout():
             html.Details(
                 className="glass-panel rounded-2xl font-body-md text-on-surface-variant",
                 children=[
-                    html.Summary("ℹ️ Path A: High-Velocity Alpha Markups · Path B: Quiet Base-Loading Breakouts", className="px-4 py-3 font-label-caps text-on-surface-variant uppercase tracking-wider text-[11px] cursor-pointer select-none outline-none"),
+                    html.Summary("ℹ️ Path A: High-Velocity Alpha Markups · Path B: Quiet Base-Loading Breakouts", className="px-4 py-2.5 font-label-caps text-on-surface-variant uppercase tracking-wider text-xs cursor-pointer select-none outline-none min-h-[44px] flex items-center"),
                     html.Div(
                         className="px-4 pb-4 border-t border-white/10 pt-3",
                         children=[

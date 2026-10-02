@@ -87,7 +87,7 @@ def _stat_tile(label, value, accent="text-on-surface", icon=None, sub_text=None)
                 children=[
                     html.Div(
                         label,
-                        className="font-label-sm text-[9px] sm:text-[10px] font-bold text-on-surface-variant uppercase tracking-widest",
+                        className="font-label-sm text-xs font-bold text-on-surface-variant uppercase tracking-wider",
                     ),
                     html.Span(
                         icon,
@@ -123,7 +123,7 @@ def _tier_chip(mktcap_cr):
 
     return html.Span(
         label,
-        className=f"text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border {cls} whitespace-nowrap",
+        className=f"text-xs font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full border {cls} whitespace-nowrap",
     )
 
 
@@ -319,15 +319,15 @@ def _ticker_card(row):
                 children=[
                     html.Span(
                         style_spec["badge"],
-                        className=f"text-[9px] font-bold uppercase tracking-widest px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border {style_spec['badge_cls']}",
+                        className=f"text-xs font-semibold uppercase tracking-wider px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border {style_spec['badge_cls']}",
                     ),
                     html.Span(
                         "🏆 80% TIER",
-                        className="bg-primary/15 text-primary border border-primary/40 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 sm:py-1 rounded-full",
+                        className="bg-primary/15 text-primary border border-primary/40 text-xs font-semibold uppercase tracking-wider px-2 py-0.5 sm:py-1 rounded-full",
                     ) if is_quality else None,
                     html.Span(
                         deliv_grade,
-                        className=f"text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 sm:py-1 rounded-full border {deliv_badge_cls}",
+                        className=f"text-xs font-semibold uppercase tracking-wider px-2 py-0.5 sm:py-1 rounded-full border {deliv_badge_cls}",
                     ) if deliv_grade != "UNKNOWN" else None,
                     _tier_chip(row.get("MKTCAP_CR")),
                 ],
@@ -401,21 +401,21 @@ def _ticker_card(row):
             html.Div(
                 className="bg-white/5 rounded-lg sm:rounded-xl p-2 sm:p-2.5 flex flex-col gap-0.5 border border-white/5",
                 children=[
-                    html.Div("ATR14 %", className="text-[8px] sm:text-[9px] uppercase tracking-widest text-on-surface-variant font-bold"),
+                    html.Div("ATR14 %", className="text-[11px] uppercase tracking-wider text-on-surface-variant font-mono font-semibold"),
                     html.Div(f"{atr_pct:.2f}%" if atr_pct > 0 else "—", className=f"text-[12px] sm:text-[14px] font-mono font-semibold {atr_color}"),
                 ],
             ),
             html.Div(
                 className="bg-white/5 rounded-lg sm:rounded-xl p-2 sm:p-2.5 flex flex-col gap-0.5 border border-white/5",
                 children=[
-                    html.Div("DELIVERY %", className="text-[8px] sm:text-[9px] uppercase tracking-widest text-on-surface-variant font-bold"),
+                    html.Div("DELIVERY %", className="text-[11px] uppercase tracking-wider text-on-surface-variant font-mono font-semibold"),
                     html.Div(f"{deliv_per:.1f}%" if deliv_per > 0 else "—", className=f"text-[12px] sm:text-[14px] font-mono font-semibold {deliv_color}"),
                 ],
             ),
             html.Div(
                 className="bg-white/5 rounded-lg sm:rounded-xl p-2 sm:p-2.5 flex flex-col gap-0.5 border border-white/5",
                 children=[
-                    html.Div("WHALE DENSITY", className="text-[8px] sm:text-[9px] uppercase tracking-widest text-on-surface-variant font-bold"),
+                    html.Div("WHALE DENSITY", className="text-[11px] uppercase tracking-wider text-on-surface-variant font-mono font-semibold"),
                     html.Div(f"{whd:.1f}x" if whd > 0 else "—", className=f"text-[12px] sm:text-[14px] font-mono font-semibold {whd_color}"),
                 ],
             ),
@@ -430,7 +430,7 @@ def _ticker_card(row):
     ai_bar = html.Div(
         className="flex items-center gap-2 sm:gap-3 px-1",
         children=[
-            html.Span("AI WIN PROB", className="text-[8px] sm:text-[9px] uppercase tracking-widest text-on-surface-variant font-bold whitespace-nowrap"),
+            html.Span("AI WIN PROB", className="text-[11px] uppercase tracking-wider text-on-surface-variant font-mono font-semibold whitespace-nowrap"),
             html.Div(
                 className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden",
                 children=[
