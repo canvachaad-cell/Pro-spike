@@ -1791,7 +1791,45 @@ even after the user generated a fresh, valid 16-character Google App Password.
    - Captured visual screenshots on 390px viewport (`mobile_dashboard_after_fix_390.png` and `mobile_dashboard_after_fix_crop.png`) confirming 30% reduction in card height (~125px vs ~180px) with crystal clear typography and immediate price/delivery visibility.
    - Strategy ledgers (`data/*ledger*.csv`) 100% untouched.  
 **FAILED ATTEMPTS**: None.  
-**AI PROCESS**: Full `fz-uidesigner` mobile viewport deep audit (`design-audits/design-audit-2026-10-02-dashboard-cards.md`), `fix_before_touch` 5-point report and user-approved implementation plan (`implementation_plan_mobile_dashboard_cards.md`), 3-row card architecture re-engineering in `dash_pages/dashboard.py`, Playwright automated contract and screenshot validation, and dual-remote sync.
+---
+
+## BUG-094: 12-Condition Screener Zero-Signal Date Desynchronization, In-Memory Cache Freezing, & 5-Day Historical Leak
+**STATUS**: FIXED  
+**FILES**: `dash_pages/dashboard.py`, `dash_pages/signals.py`, `dash_pages/verify_conditions.py`, `progressive_screener.py`, `auto_update_smart.py`, `tests/test_alpha_table_integrity.py`, `scratch/verify_signals_dates_playwright.py`  
+**DISCOVERED BY**: User inquiry ("in prospike 12 condition screenr signals are from 7th of october....when i check signals page date is 8th of october ..pro spike is fucked up /deep_audit"), Demon Core DEEP_AUDIT & ROOT_CAUSE, 2026-10-09  
+**SYMPTOM**:  
+1. On 8 Oct 2026, the Main Dashboard (`/`) displayed 12-Condition Signals as "As of 07 Oct 2026 (signals file)" with 3 passing signals (`AFCOM`, `COROMANDEL`, `GKWLIMITED`), while adjacent Total Scanned tile displayed "As of 08 Oct 2026".
+2. The Signals page (`/signals`) displayed "Data as of 08 Oct 2026" with "0 passing" ("No signals found today").
+3. In `logs/metrics_errors.log`, `auto_update_smart.py` logged a false alarm `[FRESHNESS WARNING] signal_scores_today.csv is stale! (Live: 2026-10-08, Signals: nan)`.
+**ROOT CAUSE**:  
+1. **Zero-Signal Historical Fallback (`dash_pages/dashboard.py`)**: `data/survivors_archive.csv` only logs positive occurrences. On 8 Oct 2026, 0 stocks passed the 12 conditions. `load_latest_signals()` did `dates.max()`, returning 7 Oct 2026 without verifying against the universe `as_of` market date from `combined_dashboard_live.csv`.
+2. **Permanent In-Memory Cache Poisoning (`dash_pages/dashboard.py`)**: `load_universe_stats()` and `load_t2t_map()` used `@lru_cache(maxsize=1)` without arguments. Once called, running server processes cached dates and stats in RAM forever, ignoring disk updates until process restart.
+3. **5-Day Historical Leak (`progressive_screener.py`)**: `ProgressiveSpiker` filtered `df["DATE"] >= (max_dt - pd.Timedelta(days=5))` instead of strictly `df["DATE"] == max_dt`, allowing multi-day historical leakage.
+4. **Data Source Divergence**: `/verify-conditions` read `data/dashboard_cloud.csv` instead of canonical `data/combined_dashboard_live.csv`.
+5. **Client Clock Side-Effect**: `dash_pages/signals.py` logged to `signal_history.csv` using `datetime.now()` instead of the actual bhavcopy market settlement date.
+**FIX**:  
+1. **Date Synchronization & Explicit Zero-Signal Contract (`dash_pages/dashboard.py`)**:
+   - Upgraded `load_universe_stats(mtime)` and `load_t2t_map(mtime)` to invalidate cache dynamically on file modification.
+   - In `layout()` and `toggle_t2t_filter()`, compared `latest_date` against `as_of`. If `latest_date < as_of` (zero signals on today's market date), the UI explicitly displays `0 signals on {as_of_str} • Prior triggers: {signals_asof}` and clean zero-breakout notice instead of masquerading previous days' signals as active breakouts.
+2. **Strict Single-Date Isolation (`progressive_screener.py`)**:
+   - Changed `df[df["DATE"] >= (max_dt - pd.Timedelta(days=5))]` to `df[df["DATE"] == max_dt]`.
+3. **Canonical Live Data Binding (`dash_pages/verify_conditions.py`)**:
+   - Swapped `data/dashboard_cloud.csv` for `os.path.join("data", "combined_dashboard_live.csv")`.
+4. **Market Date History Stamping (`dash_pages/signals.py`)**:
+   - Passed `date_str=row["DATE"]` to `log_signal_to_history()`.
+5. **Freshness Alarm Refinement (`auto_update_smart.py`)**:
+   - Guarded against false stale alarms when `sig_df.empty` on clean zero-signal days.
+**EMPIRICAL VERIFICATION**:  
+- `python -m py_compile` across all modified files passed with 0 errors.
+- Automated Playwright end-to-end browser test (`scratch/verify_signals_dates_playwright.py`) passed all 3 pages against live Dash server:
+  - Dashboard (`/`): Total Scanned "As of 09 Oct 2026", 12-Condition Signals: 4 passing "As of 09 Oct 2026" (`JHACC`, `SERA`, `SHREEJISPG`, `VHL`).
+  - Signals (`/signals`): Data as of "09 Oct 2026", 4 passing.
+  - Verify Conditions (`/verify-conditions`): All 4 stocks present.
+- Full pytest regression suite: 66/66 tests passed cleanly in 7.16s.
+- Strategy ledgers (`data/*ledger*.csv`) 100% untouched.  
+**FAILED ATTEMPTS**: None.  
+**AI PROCESS**: DEMONCORE: DEEP_AUDIT & ROOT_CAUSE, `fix_before_touch` pre-flight checklist, dynamic `mtime` cache invalidation, single-date screener isolation, and Playwright headless Chrome browser verification.
+
 
 
 

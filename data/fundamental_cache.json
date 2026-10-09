@@ -557,50 +557,50 @@
   }
  },
  "JHACC": {
-  "ts": 1789484242.8516397,
+  "ts": 1791560796.6501288,
   "data": {
-   "symbol": "JHACC",
-   "url": "https://www.screener.in/company/531550/consolidated/",
-   "name": "Jhaveri Credits & Capital Ltd",
-   "market_cap_cr": 216.0,
-   "price": 195.0,
+   "roice_pct": null,
    "promoter_trend": "Sep 2023: 74.25% -> Dec 2023: 74.25% -> Mar 2024: 53.00% -> Jun 2024: 53.04% -> Sep 2024: 53.03% -> Dec 2024: 53.03% -> Mar 2025: 53.19% -> Jun 2025: 53.25% -> Sep 2025: 50.45% -> Dec 2025: 50.76% -> Mar 2026: 50.91% -> Jun 2026: 64.40%",
    "promoter_holding": 64.4,
+   "rpt_amount_cr": null,
    "dii_trend": "Sep 2023: 0.00% -> Dec 2023: 0.00% -> Mar 2024: 0.78% -> Jun 2024: 0.78% -> Sep 2024: 0.78% -> Dec 2024: 0.78% -> Mar 2025: 0.00% -> Jun 2025: 0.00% -> Sep 2025: 0.00% -> Dec 2025: 0.00% -> Mar 2026: 0.00% -> Jun 2026: 0.00%",
-   "dii_holding": 0.0,
-   "fii_trend": "Sep 2023: 0.00% -> Dec 2023: 0.00% -> Mar 2024: 3.51% -> Jun 2024: 3.51% -> Sep 2024: 3.51% -> Dec 2024: 3.61% -> Mar 2025: 4.40% -> Jun 2025: 4.40% -> Sep 2025: 4.17% -> Dec 2025: 4.17% -> Mar 2026: 4.17% -> Jun 2026: 3.56%",
-   "fii_holding": 3.56,
-   "pledge_trend": [
-    0.0
-   ],
-   "pledge_direction": "flat",
-   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
-   "quarterly_quarters": 5,
-   "revenue_ttm_cr": 88.53,
-   "op_lev_data_note": "limited_history_5q",
-   "revenue_4q_growth": 0.694354066985646,
-   "ebit_4q_growth": -1.2582116788321167,
-   "op_lev_ratio": -1.8120606455065627,
-   "op_lev_inflecting": false,
-   "interest_coverage_data_note": "limited_history_5q",
-   "interest_coverage_trend": "deteriorating",
-   "interest_coverage_recent": -16.64,
-   "ocf_3yr_cr": [
-    -0.0,
-    -5.0
-   ],
+   "rpt_pct": null,
    "pat_3yr_cr": [
     3.0,
     2.0
    ],
-   "fcf_pat_ratio": -1.0,
+   "name": "Jhaveri Credits & Capital Ltd",
+   "op_lev_inflecting": false,
+   "pledge_trend": [
+    0.0
+   ],
+   "rpt_status": "NOT_APPLICABLE",
+   "ebit_4q_growth": -1.2582116788321167,
+   "dii_holding": 0.0,
+   "market_cap_cr": 210.0,
+   "pledge_direction": "flat",
+   "symbol": "JHACC",
+   "price": 189.0,
+   "revenue_4q_growth": 0.694354066985646,
+   "free_float_cr": 75,
+   "interest_coverage_recent": -16.64,
    "roce_abs_pct": -2.3,
+   "url": "https://www.screener.in/company/531550/consolidated/",
+   "revenue_ttm_cr": 88.53,
+   "interest_coverage_trend": "deteriorating",
+   "ocf_3yr_cr": [
+    -0.0,
+    -5.0
+   ],
+   "fcf_pat_ratio": -1.0,
+   "quarterly_quarters": 5,
    "borrowings_cr": 10.0,
-   "free_float_cr": 77,
-   "rpt_status": "NOT_SCRAPED",
-   "rpt_pct": null,
-   "rpt_amount_cr": null,
-   "roice_pct": null
+   "fii_holding": 3.56,
+   "op_lev_ratio": -1.8120606455065627,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "fii_trend": "Sep 2023: 0.00% -> Dec 2023: 0.00% -> Mar 2024: 3.51% -> Jun 2024: 3.51% -> Sep 2024: 3.51% -> Dec 2024: 3.61% -> Mar 2025: 4.40% -> Jun 2025: 4.40% -> Sep 2025: 4.17% -> Dec 2025: 4.17% -> Mar 2026: 4.17% -> Jun 2026: 3.56%",
+   "op_lev_data_note": "limited_history_5q",
+   "interest_coverage_data_note": "limited_history_5q"
   }
  },
  "VENTIVE": {
@@ -6108,6 +6108,148 @@
    "rpt_amount_cr": null,
    "interest_coverage_recent": 2.88,
    "promoter_holding": 37.98
+  }
+ },
+ "SERA": {
+  "ts": 1791560803.4433768,
+  "data": {
+   "roice_pct": null,
+   "promoter_trend": "Sep 2023: 70.00% -> Dec 2023: 70.00% -> Mar 2024: 64.61% -> Jun 2024: 56.05% -> Sep 2024: 56.05% -> Dec 2024: 56.05% -> Mar 2025: 57.77% -> Jun 2025: 58.26% -> Sep 2025: 58.26% -> Dec 2025: 58.15% -> Mar 2026: 58.15% -> Jun 2026: 57.69%",
+   "promoter_holding": 57.69,
+   "rpt_amount_cr": null,
+   "dii_trend": null,
+   "rpt_pct": null,
+   "pat_3yr_cr": [
+    18.0,
+    3.0,
+    54.0
+   ],
+   "name": "Sera Investments & Finance India Ltd",
+   "op_lev_inflecting": true,
+   "pledge_trend": [
+    0.0
+   ],
+   "rpt_status": "NOT_APPLICABLE",
+   "ebit_4q_growth": 120.0,
+   "dii_holding": null,
+   "market_cap_cr": 403.0,
+   "pledge_direction": "flat",
+   "symbol": "SERA",
+   "price": 61.5,
+   "revenue_4q_growth": 11.8,
+   "free_float_cr": 171,
+   "interest_coverage_recent": null,
+   "roce_abs_pct": 21.4,
+   "url": "https://www.screener.in/company/512399/consolidated/",
+   "revenue_ttm_cr": 128.0,
+   "interest_coverage_trend": null,
+   "ocf_3yr_cr": [
+    -7.0,
+    10.0,
+    55.0
+   ],
+   "fcf_pat_ratio": 0.77,
+   "quarterly_quarters": 8,
+   "borrowings_cr": 1.0,
+   "fii_holding": 4.12,
+   "op_lev_ratio": 10.169491525423728,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "fii_trend": "Sep 2023: 0.00% -> Dec 2023: 0.00% -> Mar 2024: 0.00% -> Jun 2024: 0.00% -> Sep 2024: 14.68% -> Dec 2024: 0.00% -> Mar 2025: 0.00% -> Jun 2025: 16.10% -> Sep 2025: 4.12% -> Dec 2025: 4.12% -> Mar 2026: 4.12% -> Jun 2026: 4.12%",
+   "sector_type": "financial"
+  }
+ },
+ "SHREEJISPG": {
+  "ts": 1791560804.814348,
+  "data": {
+   "roice_pct": 3.9,
+   "promoter_trend": "Sep 2025: 90.00% -> Dec 2025: 90.00% -> Mar 2026: 90.00% -> Jun 2026: 90.00%",
+   "promoter_holding": 90.0,
+   "rpt_amount_cr": null,
+   "dii_trend": "Sep 2025: 2.08% -> Dec 2025: 1.25% -> Mar 2026: 1.14% -> Jun 2026: 1.08%",
+   "rpt_pct": null,
+   "pat_3yr_cr": [
+    119.0,
+    125.0,
+    144.0
+   ],
+   "name": "Shreeji Shipping Global Ltd",
+   "op_lev_inflecting": false,
+   "pledge_trend": [
+    0.0
+   ],
+   "rpt_status": "NOT_APPLICABLE",
+   "ebit_4q_growth": 0.018957345971563982,
+   "dii_holding": 1.08,
+   "market_cap_cr": 13224.0,
+   "pledge_direction": "flat",
+   "symbol": "SHREEJISPG",
+   "price": 812.0,
+   "revenue_4q_growth": 0.23089430894308943,
+   "free_float_cr": 1322,
+   "interest_coverage_recent": 13.62,
+   "roce_abs_pct": 20.3,
+   "url": "https://www.screener.in/company/SHREEJISPG/consolidated/",
+   "revenue_ttm_cr": 757.0,
+   "interest_coverage_trend": "deteriorating",
+   "ocf_3yr_cr": [
+    159.0,
+    126.0,
+    191.0
+   ],
+   "fcf_pat_ratio": 1.23,
+   "quarterly_quarters": 9,
+   "borrowings_cr": 278.0,
+   "fii_holding": 0.46,
+   "op_lev_ratio": 0.08210399839797076,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "fii_trend": "Sep 2025: 0.45% -> Dec 2025: 0.44% -> Mar 2026: 0.22% -> Jun 2026: 0.46%"
+  }
+ },
+ "VHL": {
+  "ts": 1791560805.8637037,
+  "data": {
+   "roice_pct": 1.2,
+   "promoter_trend": "Sep 2023: 74.90% -> Dec 2023: 74.90% -> Mar 2024: 74.90% -> Jun 2024: 74.90% -> Sep 2024: 74.90% -> Dec 2024: 74.90% -> Mar 2025: 74.90% -> Jun 2025: 74.90% -> Sep 2025: 74.90% -> Dec 2025: 74.90% -> Mar 2026: 74.90% -> Jun 2026: 74.90%",
+   "promoter_holding": 74.9,
+   "rpt_amount_cr": null,
+   "dii_trend": "Sep 2023: 0.96% -> Dec 2023: 0.97% -> Mar 2024: 0.56% -> Jun 2024: 0.53% -> Sep 2024: 0.13% -> Dec 2024: 0.06% -> Mar 2025: 0.06% -> Jun 2025: 0.06% -> Sep 2025: 0.06% -> Dec 2025: 0.07% -> Mar 2026: 0.07% -> Jun 2026: 0.07%",
+   "rpt_pct": null,
+   "pat_3yr_cr": [
+    228.0,
+    185.0,
+    258.0
+   ],
+   "name": "Vardhman Holdings Ltd",
+   "op_lev_inflecting": true,
+   "pledge_trend": [
+    0.0
+   ],
+   "rpt_status": "NOT_APPLICABLE",
+   "ebit_4q_growth": 0.14285714285714285,
+   "dii_holding": 0.07,
+   "market_cap_cr": 1164.0,
+   "pledge_direction": "flat",
+   "symbol": "VHL",
+   "price": 3650.0,
+   "revenue_4q_growth": 0.05263157894736842,
+   "free_float_cr": 292,
+   "interest_coverage_recent": null,
+   "roce_abs_pct": 0.3,
+   "url": "https://www.screener.in/company/VHL/consolidated/",
+   "revenue_ttm_cr": 20.0,
+   "interest_coverage_trend": null,
+   "ocf_3yr_cr": [
+    -3.0,
+    -6.0,
+    -6.0
+   ],
+   "fcf_pat_ratio": -0.02,
+   "quarterly_quarters": 13,
+   "borrowings_cr": -0.0,
+   "fii_holding": 0.05,
+   "op_lev_ratio": 2.7142857142857144,
+   "pledge_note": "no pledge table/mention on screener page (treated as 0%)",
+   "fii_trend": "Sep 2023: 0.03% -> Dec 2023: 0.03% -> Mar 2024: 0.03% -> Jun 2024: 0.06% -> Sep 2024: 0.06% -> Dec 2024: 0.07% -> Mar 2025: 0.06% -> Jun 2025: 0.06% -> Sep 2025: 0.05% -> Dec 2025: 0.05% -> Mar 2026: 0.05% -> Jun 2026: 0.05%"
   }
  }
 }

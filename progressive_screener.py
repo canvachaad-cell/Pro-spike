@@ -20,7 +20,7 @@ class ProgressiveSpiker:
             df["DATE"] = pd.to_datetime(df["DATE"], errors="coerce")
             max_dt = df["DATE"].max()
             if pd.notna(max_dt):
-                df = df[df["DATE"] >= (max_dt - pd.Timedelta(days=5))]
+                df = df[df["DATE"] == max_dt]
 
         
         # Filter out bad data

@@ -12,9 +12,9 @@ LIVE_FILE = os.path.join("data", "combined_dashboard_live.csv")
 HISTORY_FILE = os.path.join("data", "signal_history.csv")
 
 
-def log_signal_to_history(symbol, exchange, close, deliv_per, momentum_score):
+def log_signal_to_history(symbol, exchange, close, deliv_per, momentum_score, date_str=None):
     """Log signal to history file (deduped per day+symbol). Ported from dashboard_full.py."""
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = date_str if date_str else datetime.now().strftime("%Y-%m-%d")
     if not os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "w") as f:
             f.write("Date,Symbol,Exchange,Price,Delivery_Percent,Momentum_Score\n")
@@ -57,12 +57,14 @@ def load_signal_data(mtime):
         signals = signals.sort_values("MOMENTUM_SCORE", ascending=False)
 
         for _, row in signals.iterrows():
+            date_val = str(row.get("DATE", ""))[:10] if pd.notna(row.get("DATE")) else None
             log_signal_to_history(
                 row["SYMBOL"],
                 row.get("EXCHANGE", "NSE"),
                 row["CLOSE"],
                 row["DELIV_PER"],
                 row["MOMENTUM_SCORE"],
+                date_str=date_val,
             )
     return df, signals
 

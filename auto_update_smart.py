@@ -696,10 +696,12 @@ try:
             sig_df = pd.read_csv("data/signal_scores_today.csv")
             live_max = str(live_df['DATE'].max())
             sig_max = str(sig_df['DATE'].max())
-            if live_max != sig_max:
+            if live_max != sig_max and not sig_df.empty:
                 print(f"🚨 FRESHNESS WARNING: signal_scores_today.csv is stale! (Live: {live_max}, Signals: {sig_max})")
                 with open(METRICS_LOG, "a", encoding="utf-8") as f:
                     f.write(f"\n[FRESHNESS WARNING] signal_scores_today.csv is stale! (Live: {live_max}, Signals: {sig_max})\n")
+            elif sig_df.empty:
+                print(f"ℹ️ Clean zero-signal day: signal_scores_today.csv is empty (0 stocks passed screener on {live_max})")
         except Exception as e:
             print(f"Could not perform freshness check: {e}")
             

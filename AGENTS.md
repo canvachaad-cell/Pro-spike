@@ -58,6 +58,12 @@ All run inside `Pro-spike` root directory:
 > - **Swallowing exceptions in data ingestion loops** (`try/except: pass`) which causes missing signals or corrupted data ledgers.
 > - **Direct editing of production files** (`dashboard_full.py`, `lollipop_dashboard_full.py`, `run.bat`).
 
+### Architectural Anti-Patterns (Where the Project Previously Failed)
+- **No component registry** → ended up with 3 versions of the app shell (Strict rule: canonical entrypoint is `dash_app_v2.py`; never create duplicate app shells).
+- **No copy governance** → agents invented UI text freely, inconsistent terminology (Strict rule: enforce exact UI terminology and copy; never invent labels).
+- **Freeform narrative session log** → hard to scan, had encoding corruption (Strict rule: keep session handoffs structured, tabular, and scan-friendly).
+- **Open questions with no status** → persisted as unresolved ambiguity (Strict rule: every question/blocker must track explicit status: `[OPEN]`, `[RESOLVED]`, or `[VETOED]`).
+
 ## Maintenance Protocol
 - Agent makes the same mistake twice -> user adds one line to this `AGENTS.md` file.
 - Any section >30 lines -> split into the `docs/` folder, leave a pointer here.

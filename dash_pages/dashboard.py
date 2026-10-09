@@ -19,9 +19,9 @@ FALLBACK_TOTAL_SCANNED = 5518
 FALLBACK_NSE = 2543
 FALLBACK_BSE = 2975
 
-@lru_cache(maxsize=1)
-def load_universe_stats():
-    """Derive universe counts from the live combined file (cached per process)."""
+@lru_cache(maxsize=4)
+def load_universe_stats(mtime=0):
+    """Derive universe counts from the live combined file (cached per file mtime)."""
     try:
         df = pd.read_csv(os.path.join("data", "combined_dashboard_live.csv"), usecols=["EXCHANGE", "DATE"])
         nse = int((df["EXCHANGE"] == "NSE").sum())
@@ -32,8 +32,8 @@ def load_universe_stats():
         return FALLBACK_TOTAL_SCANNED, FALLBACK_NSE, FALLBACK_BSE, None
 
 
-@lru_cache(maxsize=1)
-def load_t2t_map():
+@lru_cache(maxsize=4)
+def load_t2t_map(mtime=0):
     """SYMBOL -> EVER_100_DELIV from the live universe file.
 
     The ranked signals CSV does not populate EVER_100_DELIV (all NaN), so the
@@ -46,7 +46,8 @@ def load_t2t_map():
         return {}
 
 
-def load_latest_signals():
+@lru_cache(maxsize=4)
+def load_latest_signals(mtime=0):
     """Read survivors_archive.csv and keep ONLY the latest date's signals.
 
     This ensures 12-condition signal parity with the Streamlit dashboard.
@@ -234,7 +235,7 @@ def build_signal_rows(df):
         ))
     return rows
 
-def _filter_t2t(df, hide_t2t):
+def _filter_t2t(df, hide_t2t, mtime=0):
     """Filter T2T (100% delivery) stocks. Default ON — Streamlit parity.
 
     T2T status comes from the live universe map since the ranked CSV leaves
@@ -242,7 +243,7 @@ def _filter_t2t(df, hide_t2t):
     """
     if not hide_t2t:
         return df
-    t2t_map = load_t2t_map()
+    t2t_map = load_t2t_map(mtime)
     if not t2t_map:
         return df
     mask = df["SYMBOL"].map(lambda s: t2t_map.get(s) is True)
@@ -250,18 +251,37 @@ def _filter_t2t(df, hide_t2t):
 
 
 def layout():
-    total_scanned, nse_count, bse_count, as_of = load_universe_stats()
+    live_file = os.path.join("data", "combined_dashboard_live.csv")
+    mtime = os.path.getmtime(live_file) if os.path.exists(live_file) else 0
+
+    total_scanned, nse_count, bse_count, as_of = load_universe_stats(mtime)
     as_of_str = as_of.strftime("%d %b %Y") if as_of is not None else "—"
 
-    df_latest, latest_date = load_latest_signals()
+    df_latest, latest_date = load_latest_signals(mtime)
     signals_asof = latest_date.strftime("%d %b %Y") if latest_date is not None else "—"
 
-    if df_latest.empty:
+    is_same_day = (as_of is not None and latest_date is not None and as_of.date() == latest_date.date())
+
+    if not is_same_day:
         active_signals = 0
+        status_subtext = f"0 signals on {as_of_str} • Prior triggers: {signals_asof}"
+        signal_rows = [
+            html.Div(
+                children=[
+                    html.Div(f"No new 12-condition breakouts triggered on {as_of_str}.", className="font-semibold text-on-surface mb-1"),
+                    html.Div(f"Market breadth was restrictive. Prior active batch was from {signals_asof} ({len(df_latest)} stocks).", className="text-xs text-on-surface-variant font-mono")
+                ],
+                className="p-5 font-body-md text-outline text-center glass-panel rounded-xl border border-white/5"
+            )
+        ]
+    elif df_latest.empty:
+        active_signals = 0
+        status_subtext = f"As of {signals_asof}"
         signal_rows = [html.Div("No active signals today.", className="p-4 font-body-md text-outline text-center glass-panel rounded-xl")]
     else:
-        df_display = _filter_t2t(df_latest, hide_t2t=True)
+        df_display = _filter_t2t(df_latest, hide_t2t=True, mtime=mtime)
         active_signals = len(df_display)
+        status_subtext = f"As of {signals_asof}"
         signal_rows = build_signal_rows(df_display)
         if active_signals == 0:
             signal_rows = [html.Div("All of today's signals are T2T (100% delivery) — toggle 'Hide T2T' off to view them.", className="p-4 font-body-md text-outline text-center glass-panel rounded-xl")]
@@ -318,7 +338,7 @@ def layout():
                                                             html.Span("Signals Passing", className="font-label-sm text-on-surface-variant uppercase tracking-wider text-xs sm:text-sm font-mono")
                                                         ]
                                                     ),
-                                                    html.Div(f"As of {signals_asof} (signals file)", className="text-[11px] text-outline mt-1 font-mono")
+                                                    html.Div(status_subtext, className="text-[11px] text-outline mt-1 font-mono")
                                                 ]
                                             ),
                                             html.Div(
@@ -433,11 +453,31 @@ _ALL_T2T_MSG = "All of today's signals are T2T (100% delivery) — toggle 'Hide 
 def toggle_t2t_filter(n_clicks):
     """Hide T2T is ON by default (Streamlit parity). Odd clicks turn it OFF."""
     hide_t2t = (n_clicks % 2 == 0)
-    df_latest, _ = load_latest_signals()
-    if df_latest.empty:
+    live_file = os.path.join("data", "combined_dashboard_live.csv")
+    mtime = os.path.getmtime(live_file) if os.path.exists(live_file) else 0
+
+    _, _, _, as_of = load_universe_stats(mtime)
+    as_of_str = as_of.strftime("%d %b %Y") if as_of is not None else "—"
+    df_latest, latest_date = load_latest_signals(mtime)
+    signals_asof = latest_date.strftime("%d %b %Y") if latest_date is not None else "—"
+
+    is_same_day = (as_of is not None and latest_date is not None and as_of.date() == latest_date.date())
+
+    if not is_same_day:
+        count = 0
+        rows = [
+            html.Div(
+                children=[
+                    html.Div(f"No new 12-condition breakouts triggered on {as_of_str}.", className="font-semibold text-on-surface mb-1"),
+                    html.Div(f"Market breadth was restrictive. Prior active batch was from {signals_asof} ({len(df_latest)} stocks).", className="text-xs text-on-surface-variant font-mono")
+                ],
+                className="p-5 font-body-md text-outline text-center glass-panel rounded-xl border border-white/5"
+            )
+        ]
+    elif df_latest.empty:
         count, rows = 0, [html.Div(_EMPTY_MSG, className="p-4 font-body-md text-outline text-center glass-panel rounded-xl")]
     else:
-        df_display = _filter_t2t(df_latest, hide_t2t)
+        df_display = _filter_t2t(df_latest, hide_t2t, mtime=mtime)
         count = len(df_display)
         if count == 0:
             rows = [html.Div(_ALL_T2T_MSG, className="p-4 font-body-md text-outline text-center glass-panel rounded-xl")]

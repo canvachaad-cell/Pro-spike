@@ -176,7 +176,7 @@ def build_right_panel(symbol, df_signals):
 
 
 def layout():
-    filepath = "data/dashboard_cloud.csv"
+    filepath = os.path.join("data", "combined_dashboard_live.csv")
     if not os.path.exists(filepath):
         return html.Div("Data file not found.", className="p-8 text-on-surface")
         
