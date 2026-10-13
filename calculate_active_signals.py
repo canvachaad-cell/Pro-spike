@@ -389,6 +389,10 @@ def run_scoring():
         print("Updating SBIA Trade Ledger and applying target filters...")
         sbia_alpha_active, sbia_ledger_full = update_sbia_ledger(sbia_alpha_watchlist, df, ledger_path="data/sbia_ledger.csv")
 
+        # Normalize DATE format to YYYY-MM-DD to avoid mixed timestamps
+        if not sbia_alpha_active.empty and "DATE" in sbia_alpha_active.columns:
+            sbia_alpha_active["DATE"] = pd.to_datetime(sbia_alpha_active["DATE"].astype(str).str[:10], errors="coerce").dt.strftime("%Y-%m-%d")
+
         legacy_watchlist.to_csv("data/legacy_watchlist.csv", index=False)
         # Restore Dash product output (regression in 80006526): the Dash Dashboard
         # and Institutional Signals pages read this file.

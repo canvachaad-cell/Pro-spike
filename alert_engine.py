@@ -126,6 +126,17 @@ def _to_date_str(v) -> str:
     return "" if pd.isna(ts) else ts.strftime("%Y-%m-%d")
 
 
+def _entry_age_days(entry_date_str: str, detected_at_str: str) -> int:
+    """Return calendar days between entry_date and detected_at, or 0 if unparseable."""
+    try:
+        e_dt = datetime.strptime(str(entry_date_str)[:10], "%Y-%m-%d")
+        d_dt = datetime.strptime(str(detected_at_str)[:10], "%Y-%m-%d")
+        return max(0, (d_dt - e_dt).days)
+    except (ValueError, TypeError):
+        return 0
+
+
+
 # ---------------------------------------------------------------------------
 # Read-only ledger loading
 # ---------------------------------------------------------------------------
@@ -375,8 +386,17 @@ def _format_event(e: dict) -> str:
     symbol = e["symbol"]
 
     if e["event_type"] in ("NEW_ENTRY", "REACTIVATED"):
-        head = "NEW ENTRY" if e["event_type"] == "NEW_ENTRY" else "RE-ENTRY"
-        return (f"🆕 *{head}* — {symbol}\n"
+        age = _entry_age_days(e.get("entry_date", ""), e.get("detected_at", ""))
+        is_stale = age >= 2
+        icon = "📅" if is_stale else "🆕"
+        if is_stale:
+            head = f"EXISTING POSITION ({age}d old)"
+        elif e["event_type"] == "REACTIVATED":
+            head = "RE-ENTRY"
+        else:
+            head = "NEW ENTRY"
+        entry_dt = f" (Entered {e['entry_date']})" if e.get("entry_date") else ""
+        return (f"{icon} *{head}* — {symbol}{entry_dt}\n"
                 f"{label}\n"
                 f"Entry ₹{e['entry_price']} | SL ₹{e['stop_loss']} | TP ₹{e['take_profit']}")
 
@@ -406,14 +426,19 @@ def build_digest(events: list):
     never send one message per stock."""
     exits = [e for e in events if str(e["event_type"]).startswith("EXIT")]
     entries = [e for e in events if not str(e["event_type"]).startswith("EXIT")]
+    fresh_entries = [e for e in entries if _entry_age_days(e.get("entry_date", ""), e.get("detected_at", "")) < 2]
+    stale_entries = len(entries) - len(fresh_entries)
     tp = sum(1 for e in exits if e["event_type"] == "EXIT_TP")
     sl = sum(1 for e in exits if e["event_type"] == "EXIT_SL")
     mo = sum(1 for e in exits if e["event_type"] == "EXIT_MOMENTUM")
 
+    entry_summary = f"New entries: {len(fresh_entries)}"
+    if stale_entries > 0:
+        entry_summary += f" (+{stale_entries} existing positions synced)"
     title = f"Pro Spike — {len(events)} ledger alert(s)"
     lines = [
         f"*PRO SPIKE LEDGER ALERTS* — {len(events)} event(s)",
-        f"Exits: {len(exits)} (TP {tp} / SL {sl} / Momentum {mo}) | New entries: {len(entries)}",
+        f"Exits: {len(exits)} (TP {tp} / SL {sl} / Momentum {mo}) | {entry_summary}",
         "",
     ]
     for e in events[:10]:

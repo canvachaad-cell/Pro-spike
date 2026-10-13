@@ -1830,6 +1830,48 @@ even after the user generated a fresh, valid 16-character Google App Password.
 **FAILED ATTEMPTS**: None.  
 **AI PROCESS**: DEMONCORE: DEEP_AUDIT & ROOT_CAUSE, `fix_before_touch` pre-flight checklist, dynamic `mtime` cache invalidation, single-date screener isolation, and Playwright headless Chrome browser verification.
 
+---
+
+## BUG-095 — Alert Engine False Positive "NEW ENTRY" on Pre-Existing Ledger Positions
+**STATUS**: FIXED
+**FILE**: `alert_engine.py` (L127, L377–381, L404–418)
+**SYMPTOM**: On zero-signal days (e.g. 2026-10-13), email/notification fired alerting "New entries in alpha markups" (specifically `ORGANICREC` which entered on 2026-10-01), causing confusion because the live Pro Spike dashboard showed 0 active signals for the day.
+**ROOT CAUSE**: `alert_engine.py` had no entry-age awareness. Any position encountering `alerts_state.json` without an existing key was assigned `event_type="NEW_ENTRY"`, and `_format_event()` unconditionally formatted it as `🆕 *NEW ENTRY*`. `build_digest()` then tallied it in `New entries: N`.
+**FIX**:
+1. Added helper `_entry_age_days(entry_date_str, detected_at_str)` returning calendar days between trade entry and detection.
+2. In `_format_event()`, if `age >= 2` days, formatted as `📅 *EXISTING POSITION (Xd old)* — {symbol} (Entered {entry_date})` instead of `🆕 *NEW ENTRY*`.
+3. In `build_digest()`, split entries into `New entries: {len(fresh_entries)}` and `(+{stale_entries} existing positions synced)`.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Full DEMONCORE DEEP_AUDIT & ROOT_CAUSE, `fix_before_touch` pre-flight checklist, unit testing age calculations across fresh (<2d) and stale (>=2d) entries via `scratch/test_alert_age_formatting.py`.
+
+---
+
+## BUG-096 — Ledger Manager Drops `ENTRY_SIS` on SBIA Ingestion, Breaking Institutional Signals Table
+**STATUS**: FIXED
+**FILE**: `ledger_manager.py` (L221, L323) & `.agents/rules/DATA-SCHEMA.md` (L19)
+**SYMPTOM**: `dash_pages/institutional_signals.py` read `ENTRY_SIS` from `sbia_ledger.csv` for Alpha Markups positions, but the value was always NaN.
+**ROOT CAUSE**: `update_sbia_ledger()` in `ledger_manager.py` omitted `'ENTRY_SIS'` from the empty schema definition (L219–223) and from `new_records.append()` (L313–326) when ingesting signals from `sbia_alpha_watchlist.csv`.
+**FIX**:
+1. Added `'ENTRY_SIS'` to empty DataFrame schema initialization in `ledger_manager.py:221`.
+2. Added `'ENTRY_SIS': row.get('SIS', np.nan)` to `new_records.append()` dictionary in `ledger_manager.py:323`.
+3. Updated `.agents/rules/DATA-SCHEMA.md` to reflect `ENTRY_IMPLIED_TRADES` and `ENTRY_SIS` in `sbia_ledger.csv`.
+**FAILED ATTEMPTS**: None.
+**AI PROCESS**: Grep search for `ENTRY_SIS` usage across codebase, pinpointed disconnect between `sbia_alpha_watchlist.csv` (`SIS`), `ledger_manager.py` (dropped column), and `dash_pages/institutional_signals.py` (read `ENTRY_SIS`), verified via `scratch/test_sbia_sis_preservation.py`.
+
+---
+
+## BUG-097 — Alpha Watchlist Date Column Timestamp Drift
+**STATUS**: FIXED
+**FILE**: `calculate_active_signals.py` (L391–394) & `data/sbia_alpha_watchlist.csv`
+**SYMPTOM**: `data/sbia_alpha_watchlist.csv` contained mixed date string representations (`2026-10-07 00:00:00` and `2026-10-01 00:00:00` for BSE stocks vs `2026-10-09` for NSE stocks), causing pandas parsing errors and formatting inconsistencies downstream.
+**ROOT CAUSE**: When saving `sbia_alpha_active` to `data/sbia_alpha_watchlist.csv`, timestamps originating from BSE datetime parsing retained the ` 00:00:00` suffix.
+**FIX**:
+1. In `calculate_active_signals.py:391`, normalized `DATE` using `pd.to_datetime(sbia_alpha_active["DATE"].astype(str).str[:10], errors="coerce").dt.strftime("%Y-%m-%d")` prior to `.to_csv()`.
+2. Normalized existing dates in `data/sbia_alpha_watchlist.csv` and `data/sbia_institutional_watchlist.csv`.
+**FAILED ATTEMPTS**: Using `pd.to_datetime(df['DATE'])` without format handling failed in pandas 2.0+ due to mixed-format strings. Resolved using `.astype(str).str[:10]` ISO normalization.
+**AI PROCESS**: Empirical verification of pandas datetime parsing, verified clean regex output `%Y-%m-%d` across all rows.
+
+
 
 
 

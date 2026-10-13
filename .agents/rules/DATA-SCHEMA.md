@@ -16,7 +16,8 @@ description: "Loaded when the agent needs to know the shape of data files."
 - **sbia_flexgate2_watchlist.csv**: `DATE, SYMBOL, EXCHANGE, ENTRY_PRICE, CLOSE, AI_WIN_PROBABILITY, AI_STATUS, CHANDELIER_EXIT, REC_POS_SIZE_INR, ATR14`
 
 ### Ledgers
-- **sbia_ledger.csv / flexgate_ledger.csv / flexgate2_ledger.csv**: `ENTRY_DATE, SYMBOL, ENTRY_PRICE, ATR14, STOP_LOSS, TAKE_PROFIT, ENTRY_AI_PROB, ENTRY_WHALE_DENSITY, REC_POS_SIZE_INR, STATUS, EXIT_DATE, EXIT_PRICE`
+- **sbia_ledger.csv**: `ENTRY_DATE, SYMBOL, ENTRY_PRICE, ATR14, STOP_LOSS, TAKE_PROFIT, ENTRY_AI_PROB, ENTRY_WHALE_DENSITY, ENTRY_IMPLIED_TRADES, ENTRY_SIS, STATUS, EXIT_DATE, EXIT_PRICE`
+- **flexgate_ledger.csv / flexgate2_ledger.csv**: `ENTRY_DATE, SYMBOL, ENTRY_PRICE, ATR14, STOP_LOSS, TAKE_PROFIT, ENTRY_AI_PROB, ENTRY_WHALE_DENSITY, REC_POS_SIZE_INR, STATUS, EXIT_DATE, EXIT_PRICE`
 *(Note: FlexGate ledgers use CHANDELIER_EXIT logic but schema headers remain consistent for simulation).*
 
 ### Real-Time Data
