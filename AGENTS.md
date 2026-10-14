@@ -18,6 +18,7 @@ All run inside `Pro-spike` root directory:
   - `prospike` (`canvachaad-cell/Pro-spike`): Pro Spike Dash application repository.
   - `origin` (`fawaz2023/trading-dashboard`): Live Streamlit dashboard repository.
   - **Daily Data / Signal Updates:** When updating daily market data and signals, you MUST push to **BOTH** remotes (`git push prospike main` AND `git push origin main`) so that both the Dash and Streamlit live dashboards receive fresh data and signals every day.
+  - **Mandatory Pre-Push Session Handoff:** Before running ANY `git push` command, you MUST invoke the `session_handoff` skill (`.agents/skills/session_handoff/SKILL.md`) and verify `scratch/last_session.md` has an entry for today. Never push code with a stale session log. The git hook template at `.agents/scripts/hooks/pre-push.sh` (installed to `.git/hooks/pre-push`) enforces this check.
 
 ## Hard Rules for the AI
 > [!IMPORTANT]
@@ -31,6 +32,7 @@ All run inside `Pro-spike` root directory:
   (a) what you believe the bug is, 
   (b) which line/file proves it, and 
   (c) how you will verify the fix.
+- **MANDATORY SESSION HANDOFF ON PUSH:** Whenever the user requests a git push, or before pushing to either remote, the AI MUST invoke `session_handoff` first. A git push with a stale session log is a protocol violation.
 - **BUG LOGGING:** After fixing any bug, you MUST append an entry to `docs/known_bugs.md` documenting the symptom, root cause, fix, failed attempts, and AI process.
 - **NO SILENT FAILURES:** Do not wrap code in empty `try/except` blocks. Fail loudly.
 - **DESTRUCTIVE ACTION GATE:** Shell commands, file deletions, and external API side effects require explicit per-action confirmation.
@@ -48,7 +50,7 @@ All run inside `Pro-spike` root directory:
 - Before explaining any engine, signal, or metric to the user -> read `docs/system_guide.md` (Vikram Knowledge Base — Simple Terms + Deep Dive for every engine)
 - When user asks "what is X" or "how does X work" about any Pro-spike engine or metric -> read `docs/system_guide.md` first
 - When user types `update !!` -> read `docs/future-updates.md` (if present) or `PROJECT_HISTORY.md`
-- When user types `update session log`, `session handoff`, or `wrap up session` -> invoke the `session_handoff` skill (`.agents/skills/session_handoff/SKILL.md`). Append dated summary to `scratch/last_session.md`. Never overwrite.
+- When user types `update session log`, `session handoff`, or `wrap up session` (or before any git push) -> invoke the `session_handoff` skill (`.agents/skills/session_handoff/SKILL.md`). Append dated summary to `scratch/last_session.md`. Never overwrite.
 
 ## Anti-Pattern Library
 > [!WARNING]

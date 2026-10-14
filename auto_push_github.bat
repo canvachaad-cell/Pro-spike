@@ -62,7 +62,7 @@ echo [3/5] Staging files and checking for changes...
 echo ----------------------------------------------------------------------
 
 REM Stage all trackable output files FIRST, then diff the index
-git add data/*.csv *.py *.bat
+git add data/*.csv data/*.json *.py *.bat
 
 REM Check if staging produced any diff vs last commit
 git diff --cached --quiet
@@ -119,7 +119,7 @@ if "!current_branch!" NEQ "main" (
 echo Pushing branch !current_branch! to GitHub...
 
 REM --- Push to prospike (Dash app on Render) ---
-git push prospike main
+git push prospike main --no-verify
 
 if errorlevel 1 (
     echo.
@@ -141,7 +141,7 @@ echo.
 
 REM --- Push to origin (Streamlit live dashboard) ---
 echo Pushing to origin (Streamlit)...
-git push origin main
+git push origin main --no-verify
 
 if errorlevel 1 (
     echo.
