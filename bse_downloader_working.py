@@ -1,7 +1,11 @@
+import sys
+import io
+if sys.stdout and hasattr(sys.stdout, 'encoding') and sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
 import requests
 import pandas as pd
 import zipfile
-import io
 import os
 import glob
 from datetime import datetime
@@ -168,14 +172,14 @@ class BSEDownloaderWorking:
         if date is None:
             date = datetime.now()
         
-        print(f"\n📅 {date.strftime('%d %b %Y')}")
+        print(f"\n[BSE] {date.strftime('%d %b %Y')}")
         
         # Try new format
         print(f"  Trying BSE Bhav (new format)...", end=" ")
         df_bhav, ok_bhav = self.download_bse_bhav_new_format(date)
         
         if ok_bhav and df_bhav is not None and len(df_bhav) > 0:
-            print(f"✅ ({len(df_bhav)} records)")
+            print(f"[OK] ({len(df_bhav)} records)")
             
             # Save bhav
             out_dir = Config.BSE_RAW_DIR
@@ -189,7 +193,7 @@ class BSEDownloaderWorking:
                 "columns": list(df_bhav.columns)[:5]
             }
         else:
-            print("❌")
+            print("[FAIL]")
             return None, False, "BSE bhav not available"
 
 # Test it
@@ -211,9 +215,9 @@ if __name__ == "__main__":
         df, success, meta = downloader.download_bse_bhav(test_date)
         
         if success:
-            print(f"\n🎉 SUCCESS!")
+            print(f"\n[SUCCESS]")
             print(f"   Records: {meta['rows']}")
             print(f"   Sample columns: {meta['columns']}")
             break
     else:
-        print("\n❌ Could not download BSE data from any recent date")
+        print("\n[FAIL] Could not download BSE data from any recent date")
